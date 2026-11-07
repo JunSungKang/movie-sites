@@ -16,6 +16,8 @@ spring:
   lifecycle:
     timeout-per-shutdown-phase: 15s
 moviesites:
+  theme: ${MOVIESITES_THEME:child-toy}
+  folder-labels: '${MOVIESITES_FOLDER_LABELS:{}}'
   media-root: ${MOVIESITES_MEDIA_ROOT:./movie}
   data-root: ${MOVIESITES_DATA_ROOT:./runtime}
   browser-cache-ttl-seconds: ${MOVIESITES_BROWSER_CACHE_TTL_SECONDS:120}

@@ -1,0 +1,264 @@
+{
+  "schema_version": 1,
+  "id": "moviesites-platform",
+  "version": "v8-themes",
+  "goal": "General-purpose video platform documentation and 19 startup-selectable, independently styled themes",
+  "excluded": [
+    "Media modifications",
+    "Database, recursive indexing or watchers",
+    "Separate frontend server",
+    "Kubernetes or Helm",
+    "Authentication redesign"
+  ],
+  "assumptions": [
+    "Age groups organize optional presets; no age is collected and every preset is available to every user.",
+    "Existing deployment remains child-toy unless explicitly configured."
+  ],
+  "open_questions": [],
+  "approval": {
+    "status": "approved",
+    "spec_version": "v8-themes",
+    "evidence": "2026-11-08 direct user instruction: GitHub README, comments and Markdown must describe a general-purpose video platform. Select the theme through a runtime environment variable; name the current theme child-toy; create three themes for each of the 10s, 20s, 30s, 40s, 50s and 60s groups; organize a dedicated theme directory and proceed. This records the explicit scope instruction, not consent to a separately presented document.",
+    "spec_sha256": "798b768b22019f586b19613ff1fca4b727c3609e8c75edea83b0bbd69d807ac4"
+  },
+  "requirements": [
+    {
+      "id": "R01",
+      "priority": "must",
+      "statement": "Describe a general-purpose self-hosted video platform",
+      "acceptance": "Current tracked Markdown and shared code/copy describe generic video collections; audience-specific copy belongs to optional theme manifests.",
+      "checks": [
+        "C01",
+        "C02"
+      ]
+    },
+    {
+      "id": "R02",
+      "priority": "must",
+      "statement": "Select one of 19 themes at process startup",
+      "acceptance": "MOVIESITES_THEME defaults to child-toy, selects each valid ID, and rejects unknown or unsafe values; six age groups contain three presets each.",
+      "checks": [
+        "C01",
+        "C02"
+      ]
+    },
+    {
+      "id": "R03",
+      "priority": "must",
+      "statement": "Maintain themes in a dedicated directory with distinct designs",
+      "acceptance": "Each theme has its own manifest/style/decorative asset under static/themes; layouts, geometry, density and type differ across presets; catalog previews real pages on mobile.",
+      "checks": [
+        "C01",
+        "C02"
+      ]
+    },
+    {
+      "id": "R04",
+      "priority": "must",
+      "statement": "Preserve the running platform and external media",
+      "acceptance": "Builds, resource limits, bounded cache, nested navigation, covers and native playback remain functional; videos stay outside Git/JAR/image and original media identities remain unchanged.",
+      "checks": [
+        "C01",
+        "C02"
+      ]
+    }
+  ],
+  "tasks": [
+    {
+      "id": "T01",
+      "requirements": [
+        "R01",
+        "R02",
+        "R03",
+        "R04"
+      ],
+      "artifacts": [
+        "A01",
+        "A02",
+        "A03",
+        "A04",
+        "A05",
+        "A06",
+        "A07",
+        "A08",
+        "A09",
+        "A10",
+        "A11"
+      ]
+    }
+  ],
+  "artifacts": [
+    {
+      "id": "A01",
+      "path": "README.md",
+      "version": "v8-themes",
+      "sha256": "651a495254180900de9e2a816ad262dd7a4736a5ec37929a02bf394df3409dfd"
+    },
+    {
+      "id": "A02",
+      "path": "docs/architecture.md",
+      "version": "v8-themes",
+      "sha256": "f5ca079c48c45a8053ad96ee2316462bd73cb6a154a919f42169b7192f8c349f"
+    },
+    {
+      "id": "A03",
+      "path": "docs/themes.md",
+      "version": "v8-themes",
+      "sha256": "3c654be0cfcbc2a38feb23a6cff1ff15bafe2a6fb3c87011906a38443aa96a67"
+    },
+    {
+      "id": "A04",
+      "path": "src/main/java/io/moviesites/PresentationService.java",
+      "version": "v8-themes",
+      "sha256": "8dac3ca03b8724c282d3615ee305f9816f2ea038407277882ed0168cfa597272"
+    },
+    {
+      "id": "A05",
+      "path": "src/main/resources/static/themes/catalog.json",
+      "version": "v8-themes",
+      "sha256": "94d519eed21caa5f9a78244c3ada3aec6274f90c953873b217127664bec6ee76"
+    },
+    {
+      "id": "A06",
+      "path": "src/main/resources/static/themes/runtime.js",
+      "version": "v8-themes",
+      "sha256": "d1194eab7dd6bfd92b2fae7d219763a2a89807ae299280787b89087de76b256a"
+    },
+    {
+      "id": "A07",
+      "path": "src/main/resources/static/themes/_shared/base.css",
+      "version": "v8-themes",
+      "sha256": "eb2a9bedbb69b2c41c7ca21369a3e9a9d541b606d9cd991c77882fc2c76bc104"
+    },
+    {
+      "id": "A08",
+      "path": "src/main/resources/static/js/app.js",
+      "version": "v8-themes",
+      "sha256": "6570286373ec3066c19e09c7542a5f4740e487e0051628ef8027191cb252f808"
+    },
+    {
+      "id": "A09",
+      "path": "src/main/resources/static/index.html",
+      "version": "v8-themes",
+      "sha256": "f9643d3dd77dbfe73dc94dbe51d3c41a39c8d1dc5e51f523fb6bf39cac2f3687"
+    },
+    {
+      "id": "A10",
+      "path": "scripts/validate-themes.mjs",
+      "version": "v8-themes",
+      "sha256": "86529566d70cedfee8660d0ab4b1a577268ab55eda86d1f26d9387d49398c98d"
+    },
+    {
+      "id": "A11",
+      "path": "src/test/java/io/moviesites/PresentationTests.java",
+      "version": "v8-themes",
+      "sha256": "dc0307ebf7c5c0c74ed5ea3c38d73186c364051d724d0bda998e44c684797d66"
+    }
+  ],
+  "checks": [
+    {
+      "id": "C01",
+      "requirements": [
+        "R01",
+        "R02",
+        "R03",
+        "R04"
+      ],
+      "artifacts": [
+        "A01",
+        "A02",
+        "A03",
+        "A04",
+        "A05",
+        "A06",
+        "A07",
+        "A08",
+        "A09",
+        "A10",
+        "A11"
+      ],
+      "method": "automatic",
+      "required": true,
+      "status": "pass",
+      "evidence": "docs/verification.md",
+      "reason": "Observed scoped automatic, runtime and visual checks; untested platforms and load conditions are explicit in the report.",
+      "artifact_hashes": {
+        "A01": "651a495254180900de9e2a816ad262dd7a4736a5ec37929a02bf394df3409dfd",
+        "A02": "f5ca079c48c45a8053ad96ee2316462bd73cb6a154a919f42169b7192f8c349f",
+        "A03": "3c654be0cfcbc2a38feb23a6cff1ff15bafe2a6fb3c87011906a38443aa96a67",
+        "A04": "8dac3ca03b8724c282d3615ee305f9816f2ea038407277882ed0168cfa597272",
+        "A05": "94d519eed21caa5f9a78244c3ada3aec6274f90c953873b217127664bec6ee76",
+        "A06": "d1194eab7dd6bfd92b2fae7d219763a2a89807ae299280787b89087de76b256a",
+        "A07": "eb2a9bedbb69b2c41c7ca21369a3e9a9d541b606d9cd991c77882fc2c76bc104",
+        "A08": "6570286373ec3066c19e09c7542a5f4740e487e0051628ef8027191cb252f808",
+        "A09": "f9643d3dd77dbfe73dc94dbe51d3c41a39c8d1dc5e51f523fb6bf39cac2f3687",
+        "A10": "86529566d70cedfee8660d0ab4b1a577268ab55eda86d1f26d9387d49398c98d",
+        "A11": "dc0307ebf7c5c0c74ed5ea3c38d73186c364051d724d0bda998e44c684797d66"
+      }
+    },
+    {
+      "id": "C02",
+      "requirements": [
+        "R01",
+        "R02",
+        "R03",
+        "R04"
+      ],
+      "artifacts": [
+        "A01",
+        "A02",
+        "A03",
+        "A04",
+        "A05",
+        "A06",
+        "A07",
+        "A08",
+        "A09",
+        "A10",
+        "A11"
+      ],
+      "method": "target",
+      "required": true,
+      "status": "pass",
+      "evidence": "docs/verification.md",
+      "reason": "Observed scoped automatic, runtime and visual checks; untested platforms and load conditions are explicit in the report.",
+      "artifact_hashes": {
+        "A01": "651a495254180900de9e2a816ad262dd7a4736a5ec37929a02bf394df3409dfd",
+        "A02": "f5ca079c48c45a8053ad96ee2316462bd73cb6a154a919f42169b7192f8c349f",
+        "A03": "3c654be0cfcbc2a38feb23a6cff1ff15bafe2a6fb3c87011906a38443aa96a67",
+        "A04": "8dac3ca03b8724c282d3615ee305f9816f2ea038407277882ed0168cfa597272",
+        "A05": "94d519eed21caa5f9a78244c3ada3aec6274f90c953873b217127664bec6ee76",
+        "A06": "d1194eab7dd6bfd92b2fae7d219763a2a89807ae299280787b89087de76b256a",
+        "A07": "eb2a9bedbb69b2c41c7ca21369a3e9a9d541b606d9cd991c77882fc2c76bc104",
+        "A08": "6570286373ec3066c19e09c7542a5f4740e487e0051628ef8027191cb252f808",
+        "A09": "f9643d3dd77dbfe73dc94dbe51d3c41a39c8d1dc5e51f523fb6bf39cac2f3687",
+        "A10": "86529566d70cedfee8660d0ab4b1a577268ab55eda86d1f26d9387d49398c98d",
+        "A11": "dc0307ebf7c5c0c74ed5ea3c38d73186c364051d724d0bda998e44c684797d66"
+      }
+    }
+  ],
+  "domain": {
+    "methodology": "SDD continued from prior approved project workflow",
+    "plan": [
+      "Generalize current documentation and shared copy; historical specifications remain available in Git history",
+      "Create dedicated theme catalog, manifests, styles, assets and preview",
+      "Validate allowlisted startup selection and optional collection labels",
+      "Verify distinct layouts and responsive navigation/playback; preserve external media",
+      "Deploy existing Docker service with rollback and complete guarded GitHub review/merge"
+    ],
+    "rollback": "Retain previous container and read-only media mount; no media writes",
+    "workspace": "."
+  },
+  "changes": [
+    {
+      "from": "v7-navigation",
+      "requirements": [
+        "R01",
+        "R02",
+        "R03",
+        "R04"
+      ],
+      "description": "Explicit user expansion to generic platform documentation and 19 configurable themes; inherited media/navigation/playback behavior remains."
+    }
+  ]
+}

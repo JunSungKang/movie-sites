@@ -17,10 +17,10 @@ import jakarta.servlet.http.HttpServletRequest;
 @RestController
 @RequestMapping("/api")
 public class ApiController {
-    private final Settings settings;private final Storage storage;private final DirectoryBrowser browser;private final MediaService media;private final FolderCoverService covers;
-    public ApiController(Settings settings,Storage storage,DirectoryBrowser browser,MediaService media,FolderCoverService covers){this.settings=settings;this.storage=storage;this.browser=browser;this.media=media;this.covers=covers;}
+    private final Settings settings;private final Storage storage;private final DirectoryBrowser browser;private final MediaService media;private final FolderCoverService covers;private final PresentationService presentation;
+    public ApiController(Settings settings,Storage storage,DirectoryBrowser browser,MediaService media,FolderCoverService covers,PresentationService presentation){this.settings=settings;this.storage=storage;this.browser=browser;this.media=media;this.covers=covers;this.presentation=presentation;}
     @GetMapping("/health") public Map<String,Object> health(){return Map.of("status","UP","application","MovieSites");}
-    @GetMapping("/config") public Map<String,Object> config(){return Map.of("rootId",storage.rootId(),"cacheTtlSeconds",settings.browserCacheTtlSeconds(),"pageSize",settings.pageSize(),"sourceUrl","https://github.com/JunSungKang/movie-sites","license","AGPL-3.0-only");}
+    @GetMapping("/config") public Map<String,Object> config(){return Map.of("rootId",storage.rootId(),"cacheTtlSeconds",settings.browserCacheTtlSeconds(),"pageSize",settings.pageSize(),"sourceUrl","https://github.com/JunSungKang/movie-sites","license","AGPL-3.0-only","theme",presentation.theme(),"folderLabels",presentation.folderLabels());}
     @GetMapping("/browse") public CompletableFuture<DirectoryBrowser.Listing> browse(@RequestParam(defaultValue="")String path,@RequestParam(required=false)String cursor){return browser.browseAsync(path,cursor);}
     @GetMapping("/media/folder-cover") public ResponseEntity<byte[]> folderCover(@RequestParam(defaultValue="")String path)throws IOException{
         return ResponseEntity.ok().cacheControl(CacheControl.noStore()).contentType(MediaType.IMAGE_JPEG).body(covers.read(path));

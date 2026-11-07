@@ -1,0 +1,25 @@
+{
+  "id": "20s-color-block",
+  "name": "컬러 블록",
+  "group": "20s",
+  "copy": {
+    "rootTitle": "나의 영상 라이브러리",
+    "rootDescription": "컬렉션을 열고, 보고 싶은 영상을 만나보세요.",
+    "nestedDescription": "보고 싶은 영상을 선택해 주세요.",
+    "rootCaption": "YOUR VIDEO COLLECTION",
+    "headerLabel": "나의 영상 컬렉션",
+    "rootFolders": "컬렉션",
+    "nestedFolders": "이어서 둘러보기",
+    "videosHeading": "영상 목록",
+    "folderTab": "COLLECTION",
+    "openLabel": "열어보기",
+    "footer": "당신의 영상, 당신의 공간",
+    "collectionSuffix": " 컬렉션",
+    "rootCollection": "영상 라이브러리",
+    "emptyTitle": "아직 영상이 없습니다.",
+    "emptyDescription": "저장소에 영상을 추가한 뒤 새로고침해 주세요.",
+    "loadingText": "영상 목록을 불러오고 있습니다."
+  },
+  "hero": "assets/hero.svg",
+  "color": "#eee9ff"
+}

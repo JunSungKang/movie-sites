@@ -20,7 +20,7 @@ class StaticAssetsTests {
         try(var context=new AnnotationConfigWebApplicationContext()){
             context.setServletContext(new MockServletContext());context.register(TestConfig.class);context.refresh();
             var mvc=MockMvcBuilders.webAppContextSetup(context).build();
-            for(String path:new String[]{"/index.html","/js/app.js","/js/cache.js","/css/app.css"}){
+            for(String path:new String[]{"/index.html","/js/app.js","/js/cache.js","/css/app.css","/themes/catalog.json","/themes/runtime.js","/themes/10s/neon-lab/theme.css","/themes/60s/bold-contrast/assets/preview.svg"}){
                 mvc.perform(get(path).header(HttpHeaders.IF_MODIFIED_SINCE,"Sun, 07 Nov 2027 00:00:00 GMT"))
                         .andExpect(status().isOk()).andExpect(header().string(HttpHeaders.CACHE_CONTROL,"no-store"))
                         .andExpect(header().doesNotExist(HttpHeaders.LAST_MODIFIED));
