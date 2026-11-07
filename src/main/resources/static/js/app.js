@@ -12,18 +12,21 @@ function size(bytes){if(!Number.isFinite(bytes)||bytes<0)return '';if(bytes<1024
 function duration(seconds){if(!Number.isFinite(seconds))return '';const n=Math.floor(seconds);return n>=3600?`${Math.floor(n/3600)}:${String(Math.floor(n/60)%60).padStart(2,'0')}:${String(n%60).padStart(2,'0')}`:`${Math.floor(n/60)}:${String(n%60).padStart(2,'0')}`;}
 function date(value){const d=new Date(value);return Number.isNaN(d.valueOf())?'':new Intl.DateTimeFormat('ko-KR',{year:'numeric',month:'2-digit',day:'2-digit'}).format(d)+' 수정';}
 function folderName(path){return path.split('/').filter(Boolean).at(-1)||'라이브러리';}
+const categoryLabels=new Map([['단편','단편 (약1~5분)'],['중편','중편 (약11분)']]);
+function folderLabel(name){return categoryLabels.get(name)||name;}
 function cacheKey(path,cursor){return `${state.config?.rootId??''}\0${path}\0${cursor??''}`;}
 function invalidateCurrent(){cache.invalidatePath(`${state.config?.rootId??''}\0${state.path}\0`);}
 async function api(url,options={}){const response=await fetch(url,{cache:'no-store',...options});if(!response.ok){let data;try{data=await response.json();}catch{data={message:'요청을 처리하지 못했습니다.'};}const error=new Error(data.message);error.code=data.code;error.status=response.status;throw error;}return response.json();}
 function toast(message){$('toast').textContent=message;$('toast').hidden=false;clearTimeout(toast.timer);toast.timer=setTimeout(()=>$('toast').hidden=true,4500);}
 function notice(message,retry){$('notice').replaceChildren(node('div','',message));if(retry)$('notice').append(button('다시 불러오기',()=>loadFolder(state.path,{force:true})));$('notice').hidden=false;}
 function renderLocation(){
-  $('folder-title').textContent=state.path?folderName(state.path):'오늘은 누구랑 놀까요?';document.title=`${folderName(state.path)} — MovieSites`;
+  const parts=state.path.split('/').filter(Boolean),parent=parts.slice(0,-1).join('/');
+  $('folder-title').textContent=state.path?folderLabel(folderName(state.path)):'오늘은 누구랑 놀까요?';document.title=`${folderLabel(folderName(state.path))} — MovieSites`;
   $('folder-description').textContent=state.path?'보고 싶은 이야기를 골라 주세요.':'좋아하는 친구를 골라 이야기를 만나보세요.';
-  $('folders-heading').textContent=state.path?'이야기 폴더를 열어봐요':'친구들을 만나봐요';
-  $('parent-button').hidden=!state.path;
-  const crumbs=$('breadcrumbs');crumbs.replaceChildren();const root=button('영상 놀이터',()=>navigate(''),'breadcrumb-button');if(!state.path)root.setAttribute('aria-current','page');crumbs.append(root);
-  let current='';for(const part of state.path.split('/').filter(Boolean)){current=current?current+'/'+part:part;const target=current,crumb=button(part,()=>navigate(target),'breadcrumb-button');if(current===state.path)crumb.setAttribute('aria-current','page');crumbs.append(icon('chevron'),crumb);}
+  $('folders-heading').textContent=state.path?'보고 싶은 이야기를 골라요':'친구들을 만나봐요';
+  $('location-caption').textContent=parts.length>1?parts[0]+' 이야기':'친구들과 함께하는 이야기 시간';
+  $('screen-navigation').hidden=!parts.length;$('parent-button').hidden=!parent;
+  if(parent){const destination=folderLabel(folderName(parent));$('return-label').textContent=destination+' 돌아가기';$('parent-button').setAttribute('aria-label',destination+' 화면으로 돌아가기');}
 }
 async function listing(path,cursor,force){
   const key=cacheKey(path,cursor);if(!force){const saved=cache.get(key);if(saved)return {data:saved,cached:true};}
@@ -44,7 +47,7 @@ async function loadFolder(path,{force=false,keepPage=false}={}){
     if(!state.config){state.config=await api('/api/config');cache.ttlMs=state.config.cacheTtlSeconds*1000;}
     const result=await listing(path,state.history.current,force);if(generation!==state.generation)return;
     state.listing=result.data;renderListing(result.data,generation);
-    $('listing-status').textContent=result.cached?'최근에 불러온 목록입니다. 변경 사항은 새로고침으로 확인하세요.':'현재 폴더의 목록을 불러왔습니다.';
+    $('listing-status').textContent=result.cached?'최근에 본 목록이에요. 새로고침하면 새 이야기를 확인할 수 있어요.':'이야기 목록을 불러왔어요.';
   }catch(error){if(generation!==state.generation||error.name==='AbortError')return;
     if(error.status===410){invalidateCurrent();notice('목록 조회 시간이 만료되었습니다. 새로고침하면 처음부터 다시 확인할 수 있습니다.',true);}
     else notice(error.message||'폴더를 불러오지 못했습니다.',true);
@@ -54,13 +57,13 @@ async function loadFolder(path,{force=false,keepPage=false}={}){
 function renderListing(data,generation){
   const folders=data.entries.filter(e=>e.kind==='folder'),videos=data.entries.filter(e=>e.kind==='video');
   $('folder-list').replaceChildren();for(const entry of folders){
-    const card=button('',()=>navigate(entry.path),'folder-card');card.setAttribute('aria-label',entry.name+' 폴더 열기');
+    const label=folderLabel(entry.name),card=button('',()=>navigate(entry.path),'folder-card');card.setAttribute('aria-label',label+' 보기');
     card.dataset.tone=({'뽀로로':'sky','띠띠뽀':'mint','베베핀':'rose'})[entry.path.split('/')[0]]||'lilac';
     const tab=node('span','folder-tab','함께 놀아요');tab.setAttribute('aria-hidden','true');
     const face=node('span','folder-face'),portal=node('span','folder-portal');portal.setAttribute('aria-hidden','true');
     const fallback=node('span','cover-fallback');fallback.append(icon('folder'));portal.append(fallback);
     const image=node('img');image.alt='';image.loading='lazy';image.decoding='async';image.addEventListener('error',()=>image.remove(),{once:true});image.src='/api/media/folder-cover?'+new URLSearchParams({path:entry.path});portal.append(image);
-    const copy=node('span','folder-copy'),bottom=node('span','folder-bottom');bottom.append(node('span','','열어 보기'),node('span','folder-arrow','↗'));copy.append(node('span','folder-name',entry.name),bottom);face.append(portal,copy);card.append(tab,face);$('folder-list').append(card);
+    const copy=node('span','folder-copy'),bottom=node('span','folder-bottom');bottom.append(node('span','','보기'),node('span','folder-arrow','↗'));copy.append(node('span','folder-name',label),bottom);face.append(portal,copy);card.append(tab,face);$('folder-list').append(card);
   }
   $('folder-section').hidden=!folders.length;$('video-section').hidden=!videos.length;
   observer=new IntersectionObserver(items=>{for(const item of items){item.target._visible=item.isIntersecting;if(item.isIntersecting&&!item.target._queued){item.target._queued=true;state.queue.push({entry:item.target._entry,row:item.target,generation});pump();}}},{rootMargin:'200px'});
@@ -99,7 +102,7 @@ async function enrich({entry,row,generation}){
 }
 async function openPlayer(entry){
   closePlayer(false);state.playerSerial=(state.playerSerial||0)+1;state.player={entry,token:String(state.playerSerial),version:null};const token=state.player.token;
-  $('player-title').textContent=title(entry.name);$('player-folder').textContent=state.path?state.path.replaceAll('/',' › '):'라이브러리';$('player-file').textContent=entry.name+' · '+size(entry.size);$('video-player').hidden=true;$('player-preparing').hidden=false;$('player-progress').hidden=false;$('retry-player').hidden=true;$('player-state').textContent='영상을 확인하고 있습니다.';
+  $('player-title').textContent=title(entry.name);$('player-folder').textContent=state.path?state.path.split('/')[0]+' 이야기':'우리집 이야기';$('player-file').textContent=entry.name+' · '+size(entry.size);$('video-player').hidden=true;$('player-preparing').hidden=false;$('player-progress').hidden=false;$('retry-player').hidden=true;$('player-state').textContent='영상을 확인하고 있습니다.';
   if(!$('player-dialog').open)$('player-dialog').showModal();
   await pollPlayer(token,false);
 }
@@ -121,6 +124,7 @@ async function pollPlayer(token,retry){
   }
 }
 function closePlayer(closeDialog=true){clearTimeout(state.playerTimer);state.player=null;const video=$('video-player');video.pause();video.removeAttribute('src');video.load();if(closeDialog&&$('player-dialog').open)$('player-dialog').close();}
+$('home-button').addEventListener('click',()=>navigate(''));
 $('parent-button').addEventListener('click',()=>navigate(state.path.includes('/')?state.path.slice(0,state.path.lastIndexOf('/')):''));
 $('refresh-button').addEventListener('click',()=>loadFolder(state.path,{force:true}));
 $('first-button').addEventListener('click',()=>loadFolder(state.path));

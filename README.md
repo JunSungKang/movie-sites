@@ -60,6 +60,8 @@ docker run -d --init --name moviesites --restart unless-stopped \
 
 화면과 표지 변경은 [설계](docs/design-kids.md), [명세](docs/spec-kids.json), [검증](docs/verification-kids.md)에 기록합니다.
 
+현재 보관된 영상 기준으로 `단편 (약1~5분)`, `중편 (약11분)`을 표시합니다. 기존 분류는 유지하며 실제 파일이나 경로를 바꾸지 않습니다. 시간 설명은 현재 자료에 맞춘 표시 문구로, 하위 영상을 자동 탐색해 계산하지 않습니다. 화면 이동은 `처음으로`와 목적지가 적힌 돌아가기 버튼으로 제공하며 현재 친구와 선택을 제목으로 보여줍니다. 이번 변경은 [명세](docs/spec-navigation.json), [검증](docs/verification-navigation.md)에 기록합니다.
+
 ## 탐색·재생 동작
 
 - 현재 폴더 바로 아래 항목만 읽습니다. 폴더를 클릭하면 그 폴더를 조회합니다.
