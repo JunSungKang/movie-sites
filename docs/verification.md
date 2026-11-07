@@ -17,6 +17,7 @@ Date: 2026-11-07. These observations describe the tested environment; structural
 - Container limit: 2 GiB memory and 2 CPUs. One post-processing snapshot showed 213.7 MiB, 0.22% CPU and 38 processes/threads. This snapshot is not a peak-memory guarantee or a concurrency benchmark.
 - The health check became healthy. An attempted test-file write to `/media` failed with a read-only filesystem error.
 - A separate disposable container with an unavailable media root returned HTTP 503 `STORAGE_UNAVAILABLE` while application health remained HTTP 200. The test container was removed. This simulates missing storage; a real SMB/NFS outage has not been tested.
+- After the cache fixes, a disposable container with a 1 MiB generated-cache budget started with a 950,000-byte completed cache, a 900,000-byte abandoned partial file and an interrupted process log. Startup removed the recognized abandoned work; actual WebM-to-MP4 conversion reclaimed the old completed cache and reached `ready`. The test container was removed. The public container was replaced with this build and its runtime smoke checks passed again.
 - Original and generated videos remain outside the JAR/image. The JAR is approximately 19 MiB; the image is approximately 1 GiB because it includes the Java runtime and Ubuntu FFmpeg dependencies. Adding originals does not increase either artifact.
 
 ## Media processing
