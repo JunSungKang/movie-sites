@@ -1,8 +1,8 @@
-import {DirectoryCache} from './cache.js';
+import {DirectoryCache,PageHistory} from './cache.js';
 
 const $=id=>document.getElementById(id);
 const cache=new DirectoryCache();
-const state={config:null,path:'',pages:[],page:0,listing:null,generation:0,requests:new Map(),known:new Map(),metadata:new Map(),queue:[],workers:0,player:null,playerTimer:null};
+const state={config:null,path:'',history:new PageHistory(),listing:null,generation:0,requests:new Map(),known:new Map(),metadata:new Map(),queue:[],workers:0,player:null,playerTimer:null};
 let observer;
 function icon(name){const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.classList.add('icon');svg.setAttribute('aria-hidden','true');const use=document.createElementNS(svg.namespaceURI,'use');use.setAttribute('href','#i-'+name);svg.append(use);return svg;}
 function node(tag,className,text){const el=document.createElement(tag);if(className)el.className=className;if(text!==undefined)el.textContent=text;return el;}
@@ -36,15 +36,15 @@ async function listing(path,cursor,force){
   state.requests.set(key,request);return request.promise;
 }
 function navigate(path){if(path!==state.path){const url=new URL(location.href);if(path)url.searchParams.set('path',path);else url.searchParams.delete('path');history.pushState({path},'',url);}loadFolder(path);}
-async function loadFolder(path,{force=false,page=0}={}){
+async function loadFolder(path,{force=false,keepPage=false}={}){
   const generation=++state.generation;state.queue=[];observer?.disconnect();state.path=path;
-  if(page===0){state.pages=[null];state.page=0;}else state.page=page;
+  if(!keepPage)state.history.reset();
   if(force){invalidateCurrent();state.metadata.clear();}
   $('notice').hidden=true;$('empty-state').hidden=true;$('folder-section').hidden=true;$('pagination').hidden=true;$('video-list').replaceChildren();$('loading-state').hidden=false;$('video-list').setAttribute('aria-busy','true');$('refresh-button').disabled=true;
   renderLocation();
   try{
     if(!state.config){state.config=await api('/api/config');cache.ttlMs=state.config.cacheTtlSeconds*1000;}
-    const result=await listing(path,state.pages[page],force);if(generation!==state.generation)return;
+    const result=await listing(path,state.history.current,force);if(generation!==state.generation)return;
     state.listing=result.data;renderListing(result.data,generation);
     $('listing-status').textContent=result.cached?'최근에 불러온 목록입니다. 변경 사항은 새로고침으로 확인하세요.':'현재 폴더의 목록을 불러왔습니다.';
   }catch(error){if(generation!==state.generation||error.name==='AbortError')return;
@@ -61,7 +61,7 @@ function renderListing(data,generation){
   observer=new IntersectionObserver(items=>{for(const item of items){item.target._visible=item.isIntersecting;if(item.isIntersecting&&!item.target._queued){item.target._queued=true;state.queue.push({entry:item.target._entry,row:item.target,generation});pump();}}},{rootMargin:'200px'});
   for(const entry of videos){const row=renderVideo(entry);$('video-list').append(row);observer.observe(row);}
   $('empty-state').hidden=data.entries.length>0||Boolean(data.nextCursor);
-  $('previous-button').disabled=state.page===0;$('next-button').disabled=!data.nextCursor;$('page-label').textContent=`${state.page+1}번째 목록`;$('pagination').hidden=state.page===0&&!data.nextCursor;
+  $('first-button').hidden=state.history.offset===0;$('previous-button').disabled=!state.history.canPrevious;$('next-button').disabled=!data.nextCursor;$('page-label').textContent=`${state.history.pageNumber}번째 목록`;$('pagination').hidden=state.history.pageNumber===1&&!data.nextCursor;
   if(data.warnings)notice('일부 항목은 읽을 수 없거나 연결된 링크여서 표시하지 않았습니다.',false);
   if(!data.entries.length&&data.nextCursor)notice('이 구간에는 표시할 영상이 없습니다. 다음 목록에서 계속 확인할 수 있습니다.',false);
 }
@@ -118,8 +118,9 @@ async function pollPlayer(token,retry){
 function closePlayer(closeDialog=true){clearTimeout(state.playerTimer);state.player=null;const video=$('video-player');video.pause();video.removeAttribute('src');video.load();if(closeDialog&&$('player-dialog').open)$('player-dialog').close();}
 $('home-button').addEventListener('click',()=>navigate(''));
 $('refresh-button').addEventListener('click',()=>loadFolder(state.path,{force:true}));
-$('previous-button').addEventListener('click',()=>{if(state.page>0)loadFolder(state.path,{page:state.page-1});});
-$('next-button').addEventListener('click',()=>{if(state.listing?.nextCursor){state.pages[state.page+1]=state.listing.nextCursor;loadFolder(state.path,{page:state.page+1});}});
+$('first-button').addEventListener('click',()=>loadFolder(state.path));
+$('previous-button').addEventListener('click',()=>{if(state.history.canPrevious){state.history.previous();loadFolder(state.path,{keepPage:true});}});
+$('next-button').addEventListener('click',()=>{if(state.listing?.nextCursor){state.history.next(state.listing.nextCursor);loadFolder(state.path,{keepPage:true});}});
 $('close-player').addEventListener('click',()=>closePlayer());$('player-dialog').addEventListener('close',()=>closePlayer(false));
 $('retry-player').addEventListener('click',()=>{if(state.player){$('retry-player').hidden=true;$('player-progress').hidden=false;$('player-state').textContent='다시 확인하고 있습니다.';pollPlayer(state.player.token,true);}});
 $('video-player').addEventListener('error',()=>{if(state.player){$('video-player').hidden=true;$('player-preparing').hidden=false;$('player-state').textContent='재생 중 연결이 끊겼거나 영상이 변경되었습니다. 다시 확인해 주세요.';$('player-progress').hidden=true;$('retry-player').hidden=false;invalidateCurrent();}});

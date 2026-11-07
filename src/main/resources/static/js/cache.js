@@ -11,3 +11,18 @@ export class DirectoryCache {
   invalidatePath(prefix){for(const key of this.entries.keys())if(key.startsWith(prefix))this.entries.delete(key);}
   clear(){this.entries.clear();}
 }
+
+// A sliding cursor window bounds navigation metadata independently of response caching.
+export class PageHistory {
+  constructor(maxEntries=20){this.maxEntries=maxEntries;this.reset();}
+  reset(){this.cursors=[null];this.index=0;this.offset=0;}
+  get current(){return this.cursors[this.index];}
+  get pageNumber(){return this.offset+this.index+1;}
+  get canPrevious(){return this.index>0;}
+  previous(){if(this.canPrevious)this.index--;}
+  next(cursor){
+    this.cursors.splice(this.index+1);this.cursors.push(cursor);this.index++;
+    const excess=this.cursors.length-this.maxEntries;
+    if(excess>0){this.cursors.splice(0,excess);this.offset+=excess;this.index-=excess;}
+  }
+}

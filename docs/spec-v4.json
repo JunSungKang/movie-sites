@@ -257,7 +257,7 @@
       "id": "A03",
       "path": "src/main/java/io/moviesites/Storage.java",
       "version": "v4",
-      "sha256": "3437c459fb82dd1e8da8d852443f3117e6e2ad30b7938f9f51111dc4f527753a"
+      "sha256": "db8a4e159f7e24182e8dcc4afdcf786b125a6d5d4c62b3c66882a28474247270"
     },
     {
       "id": "A04",
@@ -269,19 +269,19 @@
       "id": "A05",
       "path": "src/main/resources/static/index.html",
       "version": "v4",
-      "sha256": "d5804da21fa9d5ad0760edad12e5420c500ee5efe7c49e9c492af929a8238a6a"
+      "sha256": "e9d430f86a255c8fc48e0e2945974dddd901d2dcb5a9c4aff12e161781b7e23d"
     },
     {
       "id": "A06",
       "path": "src/main/resources/static/js/cache.js",
       "version": "v4",
-      "sha256": "df046b157c48c0d4fe375e629a410b116396dc3a5a5860e072e8a25770c30b6c"
+      "sha256": "39b9fda8f3bd565c383438e340a4a1400a5a601530129c33ad4c4cbadb63f08c"
     },
     {
       "id": "A07",
       "path": "src/main/java/io/moviesites/MediaService.java",
       "version": "v4",
-      "sha256": "1f622a9284b04119cc7cccc92841a386a3b40caa5517b92cd2d3b84583b9a954"
+      "sha256": "5853e1462151faaa367dce4e011cca9db8a16c5383eb09c5b900a375aef3930c"
     },
     {
       "id": "A08",
@@ -293,7 +293,7 @@
       "id": "A09",
       "path": "README.md",
       "version": "v4",
-      "sha256": "7a8e9d42c23cbe729fbe2214d5c991122230ef992dd6b9abe5d4c8e88e3f9c90"
+      "sha256": "e6b52f908c4616c588d253431c493aa89364fcac1f555a7457be34e4799b313d"
     },
     {
       "id": "A10",
@@ -311,7 +311,7 @@
       "id": "A12",
       "path": "src/main/resources/static/js/app.js",
       "version": "v4",
-      "sha256": "868dc40a9b98d1f0e5a616ec75ac88005fb71bb6ed6bcfd2050858e5a84d90d3"
+      "sha256": "1a5139ce9d3fc1c44f01aca89ecc590117724b6dd6a704b177c756c519ce04de"
     }
   ],
   "checks": [
@@ -349,7 +349,7 @@
       "reason": "Observed checks are scoped by the verification report, including explicit untested browser/NAS cases.",
       "artifact_hashes": {
         "A02": "7f44e7cb2ed84b58d9b06df993db92a2bd28ee1fa9461e7d9d16c5b8774c3edd",
-        "A03": "3437c459fb82dd1e8da8d852443f3117e6e2ad30b7938f9f51111dc4f527753a",
+        "A03": "db8a4e159f7e24182e8dcc4afdcf786b125a6d5d4c62b3c66882a28474247270",
         "A08": "9ec87be3d5ea01eacbb1144363edc061bd3282036c23634c6b75de525b7b0517"
       }
     },
@@ -368,7 +368,7 @@
       "evidence": "docs/verification.md",
       "reason": "Observed checks are scoped by the verification report, including explicit untested browser/NAS cases.",
       "artifact_hashes": {
-        "A03": "3437c459fb82dd1e8da8d852443f3117e6e2ad30b7938f9f51111dc4f527753a",
+        "A03": "db8a4e159f7e24182e8dcc4afdcf786b125a6d5d4c62b3c66882a28474247270",
         "A04": "4461e039683f84319a2297511fd88172232b2e49f8c116799ca9492944ed1988"
       }
     },
@@ -387,8 +387,8 @@
       "evidence": "docs/verification.md",
       "reason": "Observed checks are scoped by the verification report, including explicit untested browser/NAS cases.",
       "artifact_hashes": {
-        "A06": "df046b157c48c0d4fe375e629a410b116396dc3a5a5860e072e8a25770c30b6c",
-        "A12": "868dc40a9b98d1f0e5a616ec75ac88005fb71bb6ed6bcfd2050858e5a84d90d3"
+        "A06": "39b9fda8f3bd565c383438e340a4a1400a5a601530129c33ad4c4cbadb63f08c",
+        "A12": "1a5139ce9d3fc1c44f01aca89ecc590117724b6dd6a704b177c756c519ce04de"
       }
     },
     {
@@ -407,9 +407,9 @@
       "evidence": "docs/verification.md",
       "reason": "Observed checks are scoped by the verification report, including explicit untested browser/NAS cases.",
       "artifact_hashes": {
-        "A05": "d5804da21fa9d5ad0760edad12e5420c500ee5efe7c49e9c492af929a8238a6a",
+        "A05": "e9d430f86a255c8fc48e0e2945974dddd901d2dcb5a9c4aff12e161781b7e23d",
         "A11": "c733222bd92dc263fb1875f8deee8af6fd7dbca49bce33c04050f3314db4ee91",
-        "A12": "868dc40a9b98d1f0e5a616ec75ac88005fb71bb6ed6bcfd2050858e5a84d90d3"
+        "A12": "1a5139ce9d3fc1c44f01aca89ecc590117724b6dd6a704b177c756c519ce04de"
       }
     },
     {
@@ -427,8 +427,8 @@
       "evidence": "docs/verification.md",
       "reason": "Observed checks are scoped by the verification report, including explicit untested browser/NAS cases.",
       "artifact_hashes": {
-        "A07": "1f622a9284b04119cc7cccc92841a386a3b40caa5517b92cd2d3b84583b9a954",
-        "A05": "d5804da21fa9d5ad0760edad12e5420c500ee5efe7c49e9c492af929a8238a6a"
+        "A07": "5853e1462151faaa367dce4e011cca9db8a16c5383eb09c5b900a375aef3930c",
+        "A05": "e9d430f86a255c8fc48e0e2945974dddd901d2dcb5a9c4aff12e161781b7e23d"
       }
     },
     {
@@ -447,9 +447,9 @@
       "evidence": "docs/verification.md",
       "reason": "Observed checks are scoped by the verification report, including explicit untested browser/NAS cases.",
       "artifact_hashes": {
-        "A03": "3437c459fb82dd1e8da8d852443f3117e6e2ad30b7938f9f51111dc4f527753a",
+        "A03": "db8a4e159f7e24182e8dcc4afdcf786b125a6d5d4c62b3c66882a28474247270",
         "A04": "4461e039683f84319a2297511fd88172232b2e49f8c116799ca9492944ed1988",
-        "A07": "1f622a9284b04119cc7cccc92841a386a3b40caa5517b92cd2d3b84583b9a954"
+        "A07": "5853e1462151faaa367dce4e011cca9db8a16c5383eb09c5b900a375aef3930c"
       }
     },
     {
@@ -468,7 +468,7 @@
       "reason": "Observed checks are scoped by the verification report, including explicit untested browser/NAS cases.",
       "artifact_hashes": {
         "A08": "9ec87be3d5ea01eacbb1144363edc061bd3282036c23634c6b75de525b7b0517",
-        "A09": "7a8e9d42c23cbe729fbe2214d5c991122230ef992dd6b9abe5d4c8e88e3f9c90"
+        "A09": "e6b52f908c4616c588d253431c493aa89364fcac1f555a7457be34e4799b313d"
       }
     },
     {
@@ -507,7 +507,7 @@
       "evidence": "docs/verification.md",
       "reason": "Observed checks are scoped by the verification report, including explicit untested browser/NAS cases.",
       "artifact_hashes": {
-        "A09": "7a8e9d42c23cbe729fbe2214d5c991122230ef992dd6b9abe5d4c8e88e3f9c90",
+        "A09": "e6b52f908c4616c588d253431c493aa89364fcac1f555a7457be34e4799b313d",
         "A10": "d8a6cc31abc16b6748c7a21f21611f5a1ec33f67d22ca23d7da1c19b95496bee"
       }
     },
@@ -527,7 +527,7 @@
       "reason": "Observed checks are scoped by the verification report, including explicit untested browser/NAS cases.",
       "artifact_hashes": {
         "A08": "9ec87be3d5ea01eacbb1144363edc061bd3282036c23634c6b75de525b7b0517",
-        "A12": "868dc40a9b98d1f0e5a616ec75ac88005fb71bb6ed6bcfd2050858e5a84d90d3"
+        "A12": "1a5139ce9d3fc1c44f01aca89ecc590117724b6dd6a704b177c756c519ce04de"
       }
     }
   ],

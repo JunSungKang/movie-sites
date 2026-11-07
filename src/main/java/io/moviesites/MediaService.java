@@ -25,11 +25,10 @@ public class MediaService {
     private final JsonMapper json=new JsonMapper();
     private final Map<String,Job> jobs=new LinkedHashMap<>(32,.75f,true);
     private final Set<Process> processes=ConcurrentHashMap.newKeySet();
-    private final Map<Path,AtomicInteger> activeFiles=new ConcurrentHashMap<>();
+    private final CacheBudget budget;
     private final ThreadPoolExecutor analysis=new ThreadPoolExecutor(2,2,0,TimeUnit.SECONDS,new ArrayBlockingQueue<>(8),r->daemon(r,"media-analysis"));
     private final ThreadPoolExecutor conversion=new ThreadPoolExecutor(1,1,0,TimeUnit.SECONDS,new ArrayBlockingQueue<>(4),r->daemon(r,"media-conversion"));
     private final AtomicInteger streams=new AtomicInteger();
-    private volatile long lastCleanup;
     private static Thread daemon(Runnable r,String name){Thread t=new Thread(r,name);t.setDaemon(true);return t;}
     private static class Job {
         final String key,path; volatile String state="queued",thumbnailState="queued",codec="",audio="",pixel="",transfer="",message="";
@@ -37,7 +36,7 @@ public class MediaService {
         Job(String key,String path){this.key=key;this.path=path;}
         Info info(String token){return new Info(key,state,thumbnailState,duration,width,height,codec,direct?"original":"converted",message,token);}
     }
-    public MediaService(Settings settings,Storage storage){this.settings=settings;this.storage=storage;}
+    public MediaService(Settings settings,Storage storage)throws IOException{this.settings=settings;this.storage=storage;this.budget=new CacheBudget(settings);}
     public Info inspect(String input,boolean play,boolean retry) throws IOException {
         String path=storage.normalize(input),key=storage.version(path);Job job;
         synchronized(jobs){
@@ -62,7 +61,7 @@ public class MediaService {
     private void analyze(Job job){
         job.state="analyzing";
         try{
-            cleanup();Path input=storage.processInput(job.path);
+            budget.enforce();Path input=storage.processInput(job.path);
             String result=run(List.of(settings.ffprobe(),"-v","error","-protocol_whitelist","file,pipe","-format_whitelist",FORMATS,"-probesize","5000000","-analyzeduration","5000000","-show_entries","format=duration:stream=index,codec_type,codec_name,width,height,pix_fmt,color_transfer:stream_disposition=attached_pic","-of","json",input.toString()),null,30);
             JsonNode root=json.readTree(result);JsonNode video=null;
             for(JsonNode stream:root.path("streams")){
@@ -80,7 +79,7 @@ public class MediaService {
             if(!Files.isRegularFile(thumb)){
                 Path partial=settings.dataRoot().resolve("work").resolve(job.key+".part.jpg");
                 try{
-                    requireSpace();
+                    budget.enforce();
                     run(List.of(settings.ffmpeg(),"-nostdin","-hide_banner","-loglevel","error","-y","-protocol_whitelist","file,pipe","-format_whitelist",FORMATS,"-i",input.toString(),"-map","0:"+job.videoIndex,"-frames:v","1","-vf","scale=640:-2","-threads","1","-q:v","3",partial.toString()),partial,45);
                     Files.move(partial,thumb,StandardCopyOption.REPLACE_EXISTING);
                 }catch(Exception e){job.thumbnailState="unavailable";Files.deleteIfExists(partial);}
@@ -91,7 +90,7 @@ public class MediaService {
     private void convert(Job job){
         Path partial=settings.dataRoot().resolve("work").resolve(job.key+".part.mp4");
         try{
-            requireSpace();cleanup();Path input=storage.processInput(job.path);
+            budget.enforce();Path input=storage.processInput(job.path);
             List<String> command=new ArrayList<>(List.of(settings.ffmpeg(),"-nostdin","-hide_banner","-loglevel","error","-y","-protocol_whitelist","file,pipe","-format_whitelist",FORMATS,"-i",input.toString(),"-map","0:"+job.videoIndex,"-map_metadata","-1","-map_chapters","-1"));
             if(job.audioIndex>=0)command.addAll(List.of("-map","0:"+job.audioIndex));
             if(job.copyCompatible)command.addAll(List.of("-c","copy"));
@@ -114,10 +113,11 @@ public class MediaService {
             synchronized(processes){processes.removeIf(p->!p.isAlive());if(processes.size()>=3)throw new RejectedExecutionException();process=new ProcessBuilder(command).redirectErrorStream(true).redirectOutput(log.toFile()).start();processes.add(process);}
             long deadline=System.nanoTime()+TimeUnit.SECONDS.toNanos(timeoutSeconds);long lastBudgetCheck=0;
             while(!process.waitFor(250,TimeUnit.MILLISECONDS)){
-                if(output!=null&&System.nanoTime()-lastBudgetCheck>TimeUnit.SECONDS.toNanos(1)){lastBudgetCheck=System.nanoTime();if(storageUsage()>settings.maxCacheBytes())throw new IOException("Generated cache budget reached");}
-                if(System.nanoTime()>deadline || Files.size(log)>1_048_576 || (output!=null && (Files.exists(output) && Files.size(output)>settings.maxCacheBytes() || Files.getFileStore(settings.dataRoot()).getUsableSpace()<settings.minFreeBytes())))throw new IOException("Processing resource limit reached");
+                if(output!=null&&(System.nanoTime()-lastBudgetCheck>TimeUnit.SECONDS.toNanos(1)||Files.getFileStore(settings.dataRoot()).getUsableSpace()<settings.minFreeBytes())){lastBudgetCheck=System.nanoTime();budget.enforce();}
+                if(System.nanoTime()>deadline || Files.size(log)>1_048_576 || (output!=null && (Files.exists(output) && Files.size(output)>settings.maxCacheBytes())))throw new IOException("Processing resource limit reached");
             }
             if(process.exitValue()!=0)throw new IOException("Media process failed");
+            if(output!=null){if(Files.size(output)>settings.maxCacheBytes())throw new IOException("Output exceeds cache budget");budget.enforce();}
             if(Files.size(log)>1_048_576)throw new IOException("Process output limit reached");
             return Files.readString(log);
         }finally{
@@ -125,10 +125,6 @@ public class MediaService {
             Files.deleteIfExists(log);
         }
     }
-    private long storageUsage() throws IOException {
-        long total=0;for(String dir:List.of("thumbnails","playback","work"))try(var files=Files.newDirectoryStream(settings.dataRoot().resolve(dir))){for(Path p:files)if(Files.isRegularFile(p,LinkOption.NOFOLLOW_LINKS))total+=Files.size(p);}return total;
-    }
-    private void requireSpace() throws IOException {if(Files.getFileStore(settings.dataRoot()).getUsableSpace()<settings.minFreeBytes())throw new IOException("Insufficient free space");}
     private Path thumbnail(Job job){return settings.dataRoot().resolve("thumbnails").resolve(job.key+".jpg");}
     private Path playback(Job job){return settings.dataRoot().resolve("playback").resolve(job.key+".mp4");}
     public Path thumbnailPath(String path,String version) throws IOException {
@@ -154,18 +150,7 @@ public class MediaService {
     }
     public boolean acquireStream(){int value=streams.incrementAndGet();if(value>settings.maxStreams()){streams.decrementAndGet();return false;}return true;}
     public void releaseStream(){streams.decrementAndGet();}
-    public synchronized void pin(Path path){if(path!=null)activeFiles.computeIfAbsent(path,p->new AtomicInteger()).incrementAndGet();}
-    public synchronized void unpin(Path path){if(path!=null)activeFiles.computeIfPresent(path,(p,count)->count.decrementAndGet()<=0?null:count);}
-    private synchronized void cleanup() throws IOException {
-        if(System.nanoTime()-lastCleanup<TimeUnit.SECONDS.toNanos(30))return;lastCleanup=System.nanoTime();
-        List<Path> dirs=List.of(settings.dataRoot().resolve("thumbnails"),settings.dataRoot().resolve("playback"));long total=0;
-        for(Path dir:dirs)try(var files=Files.newDirectoryStream(dir)){for(Path p:files)if(Files.isRegularFile(p,LinkOption.NOFOLLOW_LINKS))total+=Files.size(p);}
-        for(int i=0;total>settings.maxCacheBytes() && i<50;i++){
-            Path oldest=null;long oldestTime=Long.MAX_VALUE;
-            for(Path dir:dirs)try(var files=Files.newDirectoryStream(dir)){for(Path p:files){if(activeFiles.containsKey(p)||!Files.isRegularFile(p,LinkOption.NOFOLLOW_LINKS))continue;long time=Files.getLastModifiedTime(p,LinkOption.NOFOLLOW_LINKS).toMillis();if(time<oldestTime){oldestTime=time;oldest=p;}}}
-            if(oldest==null)break;long size=Files.size(oldest);Files.deleteIfExists(oldest);total-=size;
-        }
-        if(total>settings.maxCacheBytes())throw new IOException("Cache storage limit reached");
-    }
+    public void pin(Path path){budget.pin(path);}
+    public void unpin(Path path){budget.unpin(path);}
     @PreDestroy public void close(){analysis.shutdownNow();conversion.shutdownNow();for(Process p:processes)p.destroyForcibly();}
 }

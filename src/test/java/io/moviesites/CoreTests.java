@@ -5,12 +5,16 @@ import java.nio.file.*;
 import java.nio.ByteBuffer;
 import java.util.*;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.io.TempDir;
 
 class CoreTests {
     @TempDir Path temp;
+    final List<Storage> opened=new ArrayList<>();
+    @AfterEach void closeStorage()throws Exception{for(var storage:opened)storage.close();}
+    Storage tracked(Storage storage){opened.add(storage);return storage;}
     Settings settings(int page){return new Settings(temp.resolve("media"),temp.resolve("data"),120,page,8,120,4,10_737_418_240L,0,"ffmpeg","ffprobe");}
-    Storage storage(Settings s)throws Exception{Files.createDirectories(s.mediaRoot());return new Storage(s);}
+    Storage storage(Settings s)throws Exception{Files.createDirectories(s.mediaRoot());return tracked(new Storage(s));}
     @Test void validatesExternalRootsAndLimits(){
         assertThrows(IllegalArgumentException.class,()->new Settings(temp,temp.resolve("data"),120,48,8,120,4,10000000,0,"ffmpeg","ffprobe"));
         assertThrows(IllegalArgumentException.class,()->new Settings(temp.resolve("media"),temp.resolve("data"),10,48,8,120,4,10000000,0,"ffmpeg","ffprobe"));
@@ -75,7 +79,7 @@ class CoreTests {
         Path probe=temp.resolve("probe.sh");
         Files.writeString(probe,"#!/bin/sh\nprintf '%s' '{\"format\":{\"duration\":\"5\"},\"streams\":[{\"index\":0,\"codec_type\":\"video\",\"codec_name\":\"mjpeg\",\"width\":100,\"height\":100,\"disposition\":{\"attached_pic\":1}},{\"index\":1,\"codec_type\":\"video\",\"codec_name\":\"h264\",\"pix_fmt\":\"yuv420p\",\"width\":1280,\"height\":720},{\"index\":2,\"codec_type\":\"audio\",\"codec_name\":\"ac3\"},{\"index\":3,\"codec_type\":\"audio\",\"codec_name\":\"aac\"}]}'\n");
         assertTrue(probe.toFile().setExecutable(true));
-        var s=new Settings(base.mediaRoot(),base.dataRoot(),120,48,8,120,4,base.maxCacheBytes(),0,"/bin/false",probe.toString());var media=new MediaService(s,new Storage(s));
+        var s=new Settings(base.mediaRoot(),base.dataRoot(),120,48,8,120,4,base.maxCacheBytes(),0,"/bin/false",probe.toString());var media=new MediaService(s,tracked(new Storage(s)));
         try{MediaService.Info info=null;for(int i=0;i<100;i++){info=media.inspect("video.mp4",false,false);if(info.state().equals("inspected")||info.state().equals("failed"))break;Thread.sleep(20);}assertNotNull(info);assertEquals("inspected",info.state());assertEquals(1280,info.width());assertEquals("converted",info.playback());}finally{media.close();}
     }
     @Test void sourceVersionChangesWhenFileChanges()throws Exception{

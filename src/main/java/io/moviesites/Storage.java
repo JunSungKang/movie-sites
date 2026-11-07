@@ -2,6 +2,9 @@ package io.moviesites;
 
 import java.io.IOException;
 import java.nio.channels.SeekableByteChannel;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
+import jakarta.annotation.PreDestroy;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -13,19 +16,25 @@ import java.util.Set;
 import org.springframework.stereotype.Component;
 
 @Component
-public class Storage {
+public class Storage implements AutoCloseable {
     private final Settings settings;
     private final Path dataRootReal;
+    private final FileChannel lockChannel;
+    private final FileLock dataLock;
     public Storage(Settings settings) throws IOException {
         this.settings = settings;
         Files.createDirectories(settings.dataRoot());
         dataRootReal = settings.dataRoot().toRealPath();
-        for (String name : new String[]{"thumbnails", "playback", "work"}) {
+        lockChannel=FileChannel.open(dataRootReal.resolve(".moviesites.lock"),StandardOpenOption.CREATE,StandardOpenOption.WRITE,LinkOption.NOFOLLOW_LINKS);
+        try{FileLock lock=lockChannel.tryLock();if(lock==null)throw new IOException("Data root is already in use");dataLock=lock;}
+        catch(IOException|RuntimeException e){lockChannel.close();throw new IOException("Data root is already in use or cannot be locked",e);}
+        try { for (String name : new String[]{"thumbnails", "playback", "work"}) {
             Path p = settings.dataRoot().resolve(name);
             if (Files.isSymbolicLink(p)) throw new IllegalArgumentException("Data subdirectories must not be symbolic links");
             Files.createDirectories(p);
-        }
+        }} catch(IOException|RuntimeException e){close();throw e;}
     }
+    @PreDestroy public void close()throws IOException{if(dataLock.isValid())dataLock.release();lockChannel.close();}
     public String normalize(String input) {
         if (input == null || input.isEmpty()) return "";
         if (input.length() > 4096 || input.indexOf('\0') >= 0 || input.contains("\\")) throw new IllegalArgumentException("Invalid path");
