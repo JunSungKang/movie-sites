@@ -1,0 +1,8 @@
+*
+!Dockerfile
+!.dockerignore
+!pom.xml
+!src/
+!src/**
+!LICENSE
+!THIRD_PARTY_NOTICES.md

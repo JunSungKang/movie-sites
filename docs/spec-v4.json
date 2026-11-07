@@ -1,0 +1,552 @@
+{
+  "schema_version": 1,
+  "id": "moviesites",
+  "version": "v4",
+  "goal": "Implement and publicly run a self-hosted, folder-based video journal with external media storage",
+  "excluded": [
+    "Kubernetes",
+    "Helm",
+    "database",
+    "global index",
+    "continuous filesystem watches",
+    "separate frontend runtime",
+    "upload/delete APIs",
+    "authentication"
+  ],
+  "assumptions": [
+    "Public access is anonymous read-only",
+    "Current host and Docker must remain running for availability"
+  ],
+  "open_questions": [],
+  "approval": {
+    "status": "approved",
+    "spec_version": "v4",
+    "evidence": "2026-11-07 user: 개발 시작해. 서비스로 외부에서 접속되도록까지 오픈까지 완료해. 중간에 멈추지마; subsequent approval of initial GitHub flow repair and immediate continuation. Scope follows the v4 design with Dockerfile-only deployment.",
+    "spec_sha256": "2fc52eb2dcb17c8d6733fc05d995f2a09d1e30104dfe788795d9d8d4e80299fd"
+  },
+  "requirements": [
+    {
+      "id": "R01",
+      "priority": "must",
+      "statement": "Single JDK25 Spring Boot application",
+      "acceptance": "Maven verify and JAR start succeed",
+      "checks": [
+        "C01"
+      ]
+    },
+    {
+      "id": "R02",
+      "priority": "must",
+      "statement": "External media and work roots",
+      "acceptance": "Roots are configurable, disjoint, and original media is not packaged",
+      "checks": [
+        "C02"
+      ]
+    },
+    {
+      "id": "R03",
+      "priority": "must",
+      "statement": "Immediate-directory browsing",
+      "acceptance": "No recursive enumeration; bounded cursors reject stale/wrong-path use",
+      "checks": [
+        "C03"
+      ]
+    },
+    {
+      "id": "R04",
+      "priority": "must",
+      "statement": "Path-scoped browser cache",
+      "acceptance": "TTL 60-180s, fixed fetch expiry and bounded LRU",
+      "checks": [
+        "C04"
+      ]
+    },
+    {
+      "id": "R05",
+      "priority": "must",
+      "statement": "Horizontal journal UI",
+      "acceptance": "Desktop horizontal rows, mobile reflow, no layout toggle",
+      "checks": [
+        "C05"
+      ]
+    },
+    {
+      "id": "R06",
+      "priority": "must",
+      "statement": "Standard browser playback",
+      "acceptance": "Native HTML video, HTTP ranges and bounded compatibility processing",
+      "checks": [
+        "C06"
+      ]
+    },
+    {
+      "id": "R07",
+      "priority": "must",
+      "statement": "NAS and resource handling",
+      "acceptance": "Storage failures distinct from empty results and bounded jobs/streams",
+      "checks": [
+        "C07"
+      ]
+    },
+    {
+      "id": "R08",
+      "priority": "must",
+      "statement": "Dockerfile deployment",
+      "acceptance": "Build and run a single container with external read-only media mount",
+      "checks": [
+        "C08"
+      ]
+    },
+    {
+      "id": "R09",
+      "priority": "must",
+      "statement": "Package/data separation",
+      "acceptance": "Git, JAR and image exclude originals and generated runtime data",
+      "checks": [
+        "C09"
+      ]
+    },
+    {
+      "id": "R10",
+      "priority": "must",
+      "statement": "Open-source delivery",
+      "acceptance": "AGPL license, source link and dependency notices included",
+      "checks": [
+        "C10"
+      ]
+    },
+    {
+      "id": "R11",
+      "priority": "must",
+      "statement": "Externally reachable service",
+      "acceptance": "External HTTP observation and functional navigation/playback checks",
+      "checks": [
+        "C11"
+      ]
+    }
+  ],
+  "tasks": [
+    {
+      "id": "T01",
+      "requirements": [
+        "R01"
+      ],
+      "artifacts": [
+        "A01"
+      ]
+    },
+    {
+      "id": "T02",
+      "requirements": [
+        "R02"
+      ],
+      "artifacts": [
+        "A02",
+        "A03",
+        "A08"
+      ]
+    },
+    {
+      "id": "T03",
+      "requirements": [
+        "R03"
+      ],
+      "artifacts": [
+        "A03",
+        "A04"
+      ]
+    },
+    {
+      "id": "T04",
+      "requirements": [
+        "R04"
+      ],
+      "artifacts": [
+        "A06",
+        "A12"
+      ]
+    },
+    {
+      "id": "T05",
+      "requirements": [
+        "R05"
+      ],
+      "artifacts": [
+        "A05",
+        "A11",
+        "A12"
+      ]
+    },
+    {
+      "id": "T06",
+      "requirements": [
+        "R06"
+      ],
+      "artifacts": [
+        "A07",
+        "A05"
+      ]
+    },
+    {
+      "id": "T07",
+      "requirements": [
+        "R07"
+      ],
+      "artifacts": [
+        "A03",
+        "A04",
+        "A07"
+      ]
+    },
+    {
+      "id": "T08",
+      "requirements": [
+        "R08"
+      ],
+      "artifacts": [
+        "A08",
+        "A09"
+      ]
+    },
+    {
+      "id": "T09",
+      "requirements": [
+        "R09"
+      ],
+      "artifacts": [
+        "A01",
+        "A02",
+        "A08"
+      ]
+    },
+    {
+      "id": "T10",
+      "requirements": [
+        "R10"
+      ],
+      "artifacts": [
+        "A09",
+        "A10"
+      ]
+    },
+    {
+      "id": "T11",
+      "requirements": [
+        "R11"
+      ],
+      "artifacts": [
+        "A08",
+        "A12"
+      ]
+    }
+  ],
+  "artifacts": [
+    {
+      "id": "A01",
+      "path": "pom.xml",
+      "version": "v4",
+      "sha256": "b1a909683544d7542e1919ce5e6fd188d09f3a891ca6dd4ebf0d771b199e2b11"
+    },
+    {
+      "id": "A02",
+      "path": ".gitignore",
+      "version": "v4",
+      "sha256": "7f44e7cb2ed84b58d9b06df993db92a2bd28ee1fa9461e7d9d16c5b8774c3edd"
+    },
+    {
+      "id": "A03",
+      "path": "src/main/java/io/moviesites/Storage.java",
+      "version": "v4",
+      "sha256": "3437c459fb82dd1e8da8d852443f3117e6e2ad30b7938f9f51111dc4f527753a"
+    },
+    {
+      "id": "A04",
+      "path": "src/main/java/io/moviesites/DirectoryBrowser.java",
+      "version": "v4",
+      "sha256": "4461e039683f84319a2297511fd88172232b2e49f8c116799ca9492944ed1988"
+    },
+    {
+      "id": "A05",
+      "path": "src/main/resources/static/index.html",
+      "version": "v4",
+      "sha256": "d5804da21fa9d5ad0760edad12e5420c500ee5efe7c49e9c492af929a8238a6a"
+    },
+    {
+      "id": "A06",
+      "path": "src/main/resources/static/js/cache.js",
+      "version": "v4",
+      "sha256": "df046b157c48c0d4fe375e629a410b116396dc3a5a5860e072e8a25770c30b6c"
+    },
+    {
+      "id": "A07",
+      "path": "src/main/java/io/moviesites/MediaService.java",
+      "version": "v4",
+      "sha256": "1f622a9284b04119cc7cccc92841a386a3b40caa5517b92cd2d3b84583b9a954"
+    },
+    {
+      "id": "A08",
+      "path": "Dockerfile",
+      "version": "v4",
+      "sha256": "9ec87be3d5ea01eacbb1144363edc061bd3282036c23634c6b75de525b7b0517"
+    },
+    {
+      "id": "A09",
+      "path": "README.md",
+      "version": "v4",
+      "sha256": "7a8e9d42c23cbe729fbe2214d5c991122230ef992dd6b9abe5d4c8e88e3f9c90"
+    },
+    {
+      "id": "A10",
+      "path": "LICENSE",
+      "version": "v4",
+      "sha256": "d8a6cc31abc16b6748c7a21f21611f5a1ec33f67d22ca23d7da1c19b95496bee"
+    },
+    {
+      "id": "A11",
+      "path": "src/main/resources/static/css/app.css",
+      "version": "v4",
+      "sha256": "c733222bd92dc263fb1875f8deee8af6fd7dbca49bce33c04050f3314db4ee91"
+    },
+    {
+      "id": "A12",
+      "path": "src/main/resources/static/js/app.js",
+      "version": "v4",
+      "sha256": "868dc40a9b98d1f0e5a616ec75ac88005fb71bb6ed6bcfd2050858e5a84d90d3"
+    }
+  ],
+  "checks": [
+    {
+      "id": "C01",
+      "requirements": [
+        "R01"
+      ],
+      "artifacts": [
+        "A01"
+      ],
+      "method": "automatic",
+      "required": true,
+      "status": "pass",
+      "evidence": "docs/verification.md",
+      "reason": "Observed checks are scoped by the verification report, including explicit untested browser/NAS cases.",
+      "artifact_hashes": {
+        "A01": "b1a909683544d7542e1919ce5e6fd188d09f3a891ca6dd4ebf0d771b199e2b11"
+      }
+    },
+    {
+      "id": "C02",
+      "requirements": [
+        "R02"
+      ],
+      "artifacts": [
+        "A02",
+        "A03",
+        "A08"
+      ],
+      "method": "automatic",
+      "required": true,
+      "status": "pass",
+      "evidence": "docs/verification.md",
+      "reason": "Observed checks are scoped by the verification report, including explicit untested browser/NAS cases.",
+      "artifact_hashes": {
+        "A02": "7f44e7cb2ed84b58d9b06df993db92a2bd28ee1fa9461e7d9d16c5b8774c3edd",
+        "A03": "3437c459fb82dd1e8da8d852443f3117e6e2ad30b7938f9f51111dc4f527753a",
+        "A08": "9ec87be3d5ea01eacbb1144363edc061bd3282036c23634c6b75de525b7b0517"
+      }
+    },
+    {
+      "id": "C03",
+      "requirements": [
+        "R03"
+      ],
+      "artifacts": [
+        "A03",
+        "A04"
+      ],
+      "method": "automatic",
+      "required": true,
+      "status": "pass",
+      "evidence": "docs/verification.md",
+      "reason": "Observed checks are scoped by the verification report, including explicit untested browser/NAS cases.",
+      "artifact_hashes": {
+        "A03": "3437c459fb82dd1e8da8d852443f3117e6e2ad30b7938f9f51111dc4f527753a",
+        "A04": "4461e039683f84319a2297511fd88172232b2e49f8c116799ca9492944ed1988"
+      }
+    },
+    {
+      "id": "C04",
+      "requirements": [
+        "R04"
+      ],
+      "artifacts": [
+        "A06",
+        "A12"
+      ],
+      "method": "automatic",
+      "required": true,
+      "status": "pass",
+      "evidence": "docs/verification.md",
+      "reason": "Observed checks are scoped by the verification report, including explicit untested browser/NAS cases.",
+      "artifact_hashes": {
+        "A06": "df046b157c48c0d4fe375e629a410b116396dc3a5a5860e072e8a25770c30b6c",
+        "A12": "868dc40a9b98d1f0e5a616ec75ac88005fb71bb6ed6bcfd2050858e5a84d90d3"
+      }
+    },
+    {
+      "id": "C05",
+      "requirements": [
+        "R05"
+      ],
+      "artifacts": [
+        "A05",
+        "A11",
+        "A12"
+      ],
+      "method": "visual",
+      "required": true,
+      "status": "pass",
+      "evidence": "docs/verification.md",
+      "reason": "Observed checks are scoped by the verification report, including explicit untested browser/NAS cases.",
+      "artifact_hashes": {
+        "A05": "d5804da21fa9d5ad0760edad12e5420c500ee5efe7c49e9c492af929a8238a6a",
+        "A11": "c733222bd92dc263fb1875f8deee8af6fd7dbca49bce33c04050f3314db4ee91",
+        "A12": "868dc40a9b98d1f0e5a616ec75ac88005fb71bb6ed6bcfd2050858e5a84d90d3"
+      }
+    },
+    {
+      "id": "C06",
+      "requirements": [
+        "R06"
+      ],
+      "artifacts": [
+        "A07",
+        "A05"
+      ],
+      "method": "target",
+      "required": true,
+      "status": "pass",
+      "evidence": "docs/verification.md",
+      "reason": "Observed checks are scoped by the verification report, including explicit untested browser/NAS cases.",
+      "artifact_hashes": {
+        "A07": "1f622a9284b04119cc7cccc92841a386a3b40caa5517b92cd2d3b84583b9a954",
+        "A05": "d5804da21fa9d5ad0760edad12e5420c500ee5efe7c49e9c492af929a8238a6a"
+      }
+    },
+    {
+      "id": "C07",
+      "requirements": [
+        "R07"
+      ],
+      "artifacts": [
+        "A03",
+        "A04",
+        "A07"
+      ],
+      "method": "automatic",
+      "required": true,
+      "status": "pass",
+      "evidence": "docs/verification.md",
+      "reason": "Observed checks are scoped by the verification report, including explicit untested browser/NAS cases.",
+      "artifact_hashes": {
+        "A03": "3437c459fb82dd1e8da8d852443f3117e6e2ad30b7938f9f51111dc4f527753a",
+        "A04": "4461e039683f84319a2297511fd88172232b2e49f8c116799ca9492944ed1988",
+        "A07": "1f622a9284b04119cc7cccc92841a386a3b40caa5517b92cd2d3b84583b9a954"
+      }
+    },
+    {
+      "id": "C08",
+      "requirements": [
+        "R08"
+      ],
+      "artifacts": [
+        "A08",
+        "A09"
+      ],
+      "method": "target",
+      "required": true,
+      "status": "pass",
+      "evidence": "docs/verification.md",
+      "reason": "Observed checks are scoped by the verification report, including explicit untested browser/NAS cases.",
+      "artifact_hashes": {
+        "A08": "9ec87be3d5ea01eacbb1144363edc061bd3282036c23634c6b75de525b7b0517",
+        "A09": "7a8e9d42c23cbe729fbe2214d5c991122230ef992dd6b9abe5d4c8e88e3f9c90"
+      }
+    },
+    {
+      "id": "C09",
+      "requirements": [
+        "R09"
+      ],
+      "artifacts": [
+        "A01",
+        "A02",
+        "A08"
+      ],
+      "method": "automatic",
+      "required": true,
+      "status": "pass",
+      "evidence": "docs/verification.md",
+      "reason": "Observed checks are scoped by the verification report, including explicit untested browser/NAS cases.",
+      "artifact_hashes": {
+        "A01": "b1a909683544d7542e1919ce5e6fd188d09f3a891ca6dd4ebf0d771b199e2b11",
+        "A02": "7f44e7cb2ed84b58d9b06df993db92a2bd28ee1fa9461e7d9d16c5b8774c3edd",
+        "A08": "9ec87be3d5ea01eacbb1144363edc061bd3282036c23634c6b75de525b7b0517"
+      }
+    },
+    {
+      "id": "C10",
+      "requirements": [
+        "R10"
+      ],
+      "artifacts": [
+        "A09",
+        "A10"
+      ],
+      "method": "automatic",
+      "required": true,
+      "status": "pass",
+      "evidence": "docs/verification.md",
+      "reason": "Observed checks are scoped by the verification report, including explicit untested browser/NAS cases.",
+      "artifact_hashes": {
+        "A09": "7a8e9d42c23cbe729fbe2214d5c991122230ef992dd6b9abe5d4c8e88e3f9c90",
+        "A10": "d8a6cc31abc16b6748c7a21f21611f5a1ec33f67d22ca23d7da1c19b95496bee"
+      }
+    },
+    {
+      "id": "C11",
+      "requirements": [
+        "R11"
+      ],
+      "artifacts": [
+        "A08",
+        "A12"
+      ],
+      "method": "target",
+      "required": true,
+      "status": "pass",
+      "evidence": "docs/verification.md",
+      "reason": "Observed checks are scoped by the verification report, including explicit untested browser/NAS cases.",
+      "artifact_hashes": {
+        "A08": "9ec87be3d5ea01eacbb1144363edc061bd3282036c23634c6b75de525b7b0517",
+        "A12": "868dc40a9b98d1f0e5a616ec75ac88005fb71bb6ed6bcfd2050858e5a84d90d3"
+      }
+    }
+  ],
+  "domain": {
+    "ui": "horizontal-journal",
+    "mediaRootEnv": "MOVIESITES_MEDIA_ROOT",
+    "dataRootEnv": "MOVIESITES_DATA_ROOT",
+    "browserCacheTtlSeconds": 120
+  },
+  "changes": [
+    {
+      "from": "v3",
+      "requirements": [
+        "R02",
+        "R08",
+        "R09",
+        "R11"
+      ],
+      "description": "External roots and Dockerfile-only deployment; public service authorized separately by the user."
+    }
+  ]
+}
