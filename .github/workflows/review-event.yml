@@ -1,0 +1,12 @@
+name: Review event
+run-name: review-${{ github.event.pull_request.number }}
+on:
+  pull_request_review:
+    types: [submitted, dismissed]
+permissions: {}
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify the trusted default-branch approval verifier
+        run: ':'

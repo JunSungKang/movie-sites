@@ -1,0 +1,9 @@
+/movie/*
+!/movie/.gitkeep
+/runtime/
+/target/
+/.cache/
+/.codex-work/
+.env
+.env.*
+.DS_Store

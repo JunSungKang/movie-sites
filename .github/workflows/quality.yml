@@ -1,0 +1,31 @@
+name: Quality
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3
+        with:
+          distribution: temurin
+          java-version: '25'
+      - name: Verify repository and application
+        shell: bash
+        run: |
+          python3 -B - <<'PY'
+          import subprocess
+          files = subprocess.check_output(['git', 'ls-files', '-z']).decode().split('\0')
+          forbidden = [p for p in files if (p.startswith('movie/') and p != 'movie/.gitkeep') or p.startswith(('runtime/', '.cache/', '.codex-work/'))]
+          assert not forbidden, f'Private runtime files are tracked: {forbidden}'
+          PY
+          if [ -f pom.xml ]; then
+            bash ./mvnw -B -ntp -Dmaven.repo.local="$GITHUB_WORKSPACE/.cache/m2" verify
+            bash ./scripts/check.sh
+          fi

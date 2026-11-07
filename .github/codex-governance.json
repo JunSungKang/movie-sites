@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 2,
+  "prAuthorLogin": "JunSungKang",
+  "assigneeLogin": "JunSungKang",
+  "reviewerLogin": "junsung-bot[bot]",
+  "protectedBranches": [
+    "main"
+  ],
+  "requiredChecks": [
+    "quality",
+    "app-review"
+  ],
+  "checkProviders": {
+    "quality": 15368,
+    "app-review": 15368
+  },
+  "mergeMethods": [
+    "squash"
+  ]
+}
