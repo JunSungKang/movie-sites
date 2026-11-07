@@ -1,0 +1,29 @@
+server:
+  port: ${PORT:8080}
+  shutdown: graceful
+  tomcat:
+    threads:
+      max: 32
+      min-spare: 2
+    max-connections: 128
+    accept-count: 16
+spring:
+  application:
+    name: MovieSites
+  mvc:
+    async:
+      request-timeout: 21600000
+  lifecycle:
+    timeout-per-shutdown-phase: 15s
+moviesites:
+  media-root: ${MOVIESITES_MEDIA_ROOT:./movie}
+  data-root: ${MOVIESITES_DATA_ROOT:./runtime}
+  browser-cache-ttl-seconds: ${MOVIESITES_BROWSER_CACHE_TTL_SECONDS:120}
+  page-size: ${MOVIESITES_PAGE_SIZE:48}
+  max-browse-sessions: 8
+  browse-idle-seconds: 120
+  max-streams: ${MOVIESITES_MAX_STREAMS:4}
+  max-cache-bytes: ${MOVIESITES_MAX_CACHE_BYTES:10737418240}
+  min-free-bytes: ${MOVIESITES_MIN_FREE_BYTES:536870912}
+  ffmpeg: ${MOVIESITES_FFMPEG:ffmpeg}
+  ffprobe: ${MOVIESITES_FFPROBE:ffprobe}

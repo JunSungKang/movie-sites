@@ -1,0 +1,20 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-parent</artifactId><version>4.1.2</version><relativePath/></parent>
+  <groupId>io.moviesites</groupId><artifactId>moviesites</artifactId><version>1.0.0</version>
+  <name>MovieSites</name><description>A self-hosted folder-based video journal</description>
+  <licenses><license><name>GNU Affero General Public License v3.0 only</name><url>https://www.gnu.org/licenses/agpl-3.0.html</url></license></licenses>
+  <properties><java.version>25</java.version><project.build.outputTimestamp>2026-11-07T00:00:00Z</project.build.outputTimestamp></properties>
+  <dependencies>
+    <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-webmvc</artifactId></dependency>
+    <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-test</artifactId><scope>test</scope></dependency>
+  </dependencies>
+  <build>
+    <finalName>moviesites</finalName>
+    <resources><resource><directory>src/main/resources</directory><excludes><exclude>**/*.mp4</exclude><exclude>**/*.mov</exclude><exclude>**/*.mkv</exclude><exclude>**/*.webm</exclude></excludes></resource></resources>
+    <plugins>
+      <plugin><groupId>org.springframework.boot</groupId><artifactId>spring-boot-maven-plugin</artifactId></plugin>
+      <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-surefire-plugin</artifactId><configuration><argLine>-XX:-UsePerfData -Djava.io.tmpdir=${project.basedir}/.cache/tmp</argLine></configuration></plugin>
+    </plugins>
+  </build>
+</project>
