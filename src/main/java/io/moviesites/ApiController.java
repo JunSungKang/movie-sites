@@ -17,11 +17,14 @@ import jakarta.servlet.http.HttpServletRequest;
 @RestController
 @RequestMapping("/api")
 public class ApiController {
-    private final Settings settings;private final Storage storage;private final DirectoryBrowser browser;private final MediaService media;
-    public ApiController(Settings settings,Storage storage,DirectoryBrowser browser,MediaService media){this.settings=settings;this.storage=storage;this.browser=browser;this.media=media;}
+    private final Settings settings;private final Storage storage;private final DirectoryBrowser browser;private final MediaService media;private final FolderCoverService covers;
+    public ApiController(Settings settings,Storage storage,DirectoryBrowser browser,MediaService media,FolderCoverService covers){this.settings=settings;this.storage=storage;this.browser=browser;this.media=media;this.covers=covers;}
     @GetMapping("/health") public Map<String,Object> health(){return Map.of("status","UP","application","MovieSites");}
     @GetMapping("/config") public Map<String,Object> config(){return Map.of("rootId",storage.rootId(),"cacheTtlSeconds",settings.browserCacheTtlSeconds(),"pageSize",settings.pageSize(),"sourceUrl","https://github.com/JunSungKang/movie-sites","license","AGPL-3.0-only");}
     @GetMapping("/browse") public CompletableFuture<DirectoryBrowser.Listing> browse(@RequestParam(defaultValue="")String path,@RequestParam(required=false)String cursor){return browser.browseAsync(path,cursor);}
+    @GetMapping("/media/folder-cover") public ResponseEntity<byte[]> folderCover(@RequestParam(defaultValue="")String path)throws IOException{
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).contentType(MediaType.IMAGE_JPEG).body(covers.read(path));
+    }
     @GetMapping("/media/info") public MediaService.Info info(@RequestParam String path,@RequestParam(defaultValue="false")boolean play,@RequestParam(defaultValue="false")boolean retry)throws IOException{return media.inspect(path,play,retry);}
     @GetMapping("/media/thumbnail") public ResponseEntity<FileSystemResource> thumbnail(@RequestParam String path,@RequestParam String v)throws IOException{
         Path file=media.thumbnailPath(path,v);
