@@ -1,6 +1,6 @@
 # MovieSites
 
-폴더에 보관한 영상을 가로형 저널로 둘러보는 오픈소스 개인 영상 서재입니다. JDK 25와 Spring Boot 4.1.2의 단일 애플리케이션이며, 정적 HTML/CSS/JavaScript를 함께 제공합니다. DB, 전체 색인, 전체 폴더 감시는 사용하지 않습니다.
+폴더에 보관한 영상을 미궁 포털 형태의 폴더 데크와 갤러리로 둘러보는 오픈소스 영상 라이브러리입니다. JDK 25와 Spring Boot 4.1.2의 단일 애플리케이션이며, 정적 HTML/CSS/JavaScript를 함께 제공합니다. DB, 전체 색인, 전체 폴더 감시는 사용하지 않습니다.
 
 ## 실행
 
@@ -51,6 +51,12 @@ docker run -d --init --name moviesites --restart unless-stopped \
 | `MOVIESITES_FFMPEG` | `ffmpeg` | 실행 파일 경로 |
 | `MOVIESITES_FFPROBE` | `ffprobe` | 실행 파일 경로 |
 | `PORT` | `8080` | HTTP 포트 |
+
+## 화면
+
+겹친 문틀과 은은한 별빛을 사용한 `미궁 포털` 디자인입니다. 실제 폴더를 카드로 표시하고, 폴더를 열면 그 경로의 하위 폴더와 영상만 보여줍니다. 폴더의 포털 장식은 CSS로 그리며 하위 영상 검색을 발생시키지 않습니다. 모바일에서는 폴더 카드가 좌우로 엇갈리고 영상은 2열 갤러리로 표시됩니다. 레이아웃 전환이나 외부 폰트·이미지 라이브러리는 사용하지 않습니다.
+
+화면 변경 명세와 검증은 [설계](docs/design-liminal.md), [명세](docs/spec-liminal.json), [검증](docs/verification-liminal.md)에 기록합니다.
 
 ## 탐색·재생 동작
 
