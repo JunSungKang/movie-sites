@@ -18,6 +18,11 @@ public class WebConfiguration implements WebMvcConfigurer {
     private final Settings settings;
     public WebConfiguration(Settings settings){this.settings=settings;}
     @Bean public ThreadPoolTaskExecutor streamingExecutor(){ThreadPoolTaskExecutor e=new ThreadPoolTaskExecutor();e.setCorePoolSize(settings.maxStreams());e.setMaxPoolSize(settings.maxStreams());e.setQueueCapacity(settings.maxStreams());e.setThreadNamePrefix("video-stream-");e.setAwaitTerminationSeconds(5);return e;}
+    @Override public void addResourceHandlers(ResourceHandlerRegistry registry){
+        // Reproducible JAR timestamps do not identify changed content across releases.
+        registry.addResourceHandler("/**").addResourceLocations("classpath:/static/")
+                .setCacheControl(CacheControl.noStore()).setUseLastModified(false);
+    }
     @Override public void configureAsyncSupport(AsyncSupportConfigurer configurer){configurer.setTaskExecutor(streamingExecutor());}
     @Bean public OncePerRequestFilter headers(){return new OncePerRequestFilter(){
         private final Semaphore fileRequests=new Semaphore(8);
