@@ -1,4 +1,4 @@
-import {DirectoryCache,PageHistory} from './cache.js';
+import {DirectoryCache,PageHistory} from './cache.js?v=39b9fda8f3bd565c';
 
 const $=id=>document.getElementById(id);
 const cache=new DirectoryCache();
