@@ -1,0 +1,217 @@
+{
+  "schema_version": 1,
+  "id": "moviesites-liminal-ui",
+  "version": "v5-liminal",
+  "goal": "Apply selected liminal folder-deck concept 3 to the existing publicly served MovieSites application",
+  "excluded": [
+    "Backend/API/schema/dependency changes",
+    "Recursive cover discovery or global indexing",
+    "New hosting provider, Kubernetes or Helm",
+    "Stock photography or fictional media in the production UI"
+  ],
+  "assumptions": [
+    "Existing v4 technical requirements and deployment authorization remain in force"
+  ],
+  "open_questions": [],
+  "approval": {
+    "status": "approved",
+    "spec_version": "v5-liminal",
+    "evidence": "2026-11-07 user selected the already presented design: 폴더 데크 우주 시안 3번 · 미궁 포털. This delta codifies that exact design selection and preserves previously authorized implementation/publication scope; it does not claim the user saw a new technical specification.",
+    "spec_sha256": "53015a48bfddb7366da1dcb4ccc2346941a42d6c008bcbc3cfbac07d70bcf06b"
+  },
+  "requirements": [
+    {
+      "id": "R05",
+      "priority": "must",
+      "statement": "Selected liminal folder deck replaces the journal interface",
+      "acceptance": "Dark plum/champagne space, nested door frames, staggered folder cards, native breadcrumbs and responsive video gallery match selected concept 3 without a layout switch.",
+      "checks": [
+        "C01",
+        "C02"
+      ]
+    },
+    {
+      "id": "R12",
+      "priority": "must",
+      "statement": "Preserve bounded real-directory navigation and playback",
+      "acceptance": "Cards use actual immediate-child folder names; no folder-cover descendant requests; existing TTL/LRU, pagination, two-worker enrichment, native playback, refresh and error states remain usable.",
+      "checks": [
+        "C01",
+        "C02",
+        "C03"
+      ]
+    },
+    {
+      "id": "R11",
+      "priority": "must",
+      "statement": "Publish the selected interface at the existing service",
+      "acceptance": "JAR and Docker build pass; HTTP health and updated static assets match; external media mount, runtime limits and port are preserved.",
+      "checks": [
+        "C03"
+      ]
+    }
+  ],
+  "tasks": [
+    {
+      "id": "T01",
+      "requirements": [
+        "R05",
+        "R12"
+      ],
+      "artifacts": [
+        "A01",
+        "A02",
+        "A03",
+        "A04"
+      ]
+    },
+    {
+      "id": "T02",
+      "requirements": [
+        "R11"
+      ],
+      "artifacts": [
+        "A04",
+        "A05"
+      ]
+    }
+  ],
+  "artifacts": [
+    {
+      "id": "A01",
+      "path": "src/main/resources/static/index.html",
+      "version": "v5-liminal",
+      "sha256": "14699301335688baff2c4b026077624ee1c65cdb4c98948e42f3dc6bd951bdb7"
+    },
+    {
+      "id": "A02",
+      "path": "src/main/resources/static/css/app.css",
+      "version": "v5-liminal",
+      "sha256": "0758709630eb0eed46789394f606f6778ba6cf8f56090eb4c48859eb59e06d83"
+    },
+    {
+      "id": "A03",
+      "path": "src/main/resources/static/js/app.js",
+      "version": "v5-liminal",
+      "sha256": "8c48faf53d3579d03fd1bc154fc82c732f7dfca0c555113dbe643329c916f211"
+    },
+    {
+      "id": "A04",
+      "path": "docs/design-liminal.md",
+      "version": "v5-liminal",
+      "sha256": "6b52379c0a5a552b2dc993c4c2b29ced3c6391184cf972abca2bbc14be39c2ae"
+    },
+    {
+      "id": "A05",
+      "path": "README.md",
+      "version": "v5-liminal",
+      "sha256": "f3bfdea79e42c7e8562bffd6a7a5635e7d8aa1b1292b17ca236559491136881c"
+    }
+  ],
+  "checks": [
+    {
+      "id": "C01",
+      "requirements": [
+        "R05",
+        "R12"
+      ],
+      "artifacts": [
+        "A01",
+        "A02",
+        "A03"
+      ],
+      "method": "automatic",
+      "required": true,
+      "status": "pass",
+      "evidence": "docs/verification-liminal.md",
+      "reason": "Observed checks and explicit untested limits are recorded in the verification report.",
+      "artifact_hashes": {
+        "A01": "14699301335688baff2c4b026077624ee1c65cdb4c98948e42f3dc6bd951bdb7",
+        "A02": "0758709630eb0eed46789394f606f6778ba6cf8f56090eb4c48859eb59e06d83",
+        "A03": "8c48faf53d3579d03fd1bc154fc82c732f7dfca0c555113dbe643329c916f211"
+      }
+    },
+    {
+      "id": "C02",
+      "requirements": [
+        "R05",
+        "R12"
+      ],
+      "artifacts": [
+        "A01",
+        "A02",
+        "A03"
+      ],
+      "method": "visual",
+      "required": true,
+      "status": "pass",
+      "evidence": "docs/verification-liminal.md",
+      "reason": "Observed checks and explicit untested limits are recorded in the verification report.",
+      "artifact_hashes": {
+        "A01": "14699301335688baff2c4b026077624ee1c65cdb4c98948e42f3dc6bd951bdb7",
+        "A02": "0758709630eb0eed46789394f606f6778ba6cf8f56090eb4c48859eb59e06d83",
+        "A03": "8c48faf53d3579d03fd1bc154fc82c732f7dfca0c555113dbe643329c916f211"
+      }
+    },
+    {
+      "id": "C03",
+      "requirements": [
+        "R12",
+        "R11"
+      ],
+      "artifacts": [
+        "A01",
+        "A02",
+        "A03",
+        "A04",
+        "A05"
+      ],
+      "method": "target",
+      "required": true,
+      "status": "pass",
+      "evidence": "docs/verification-liminal.md",
+      "reason": "Observed checks and explicit untested limits are recorded in the verification report.",
+      "artifact_hashes": {
+        "A01": "14699301335688baff2c4b026077624ee1c65cdb4c98948e42f3dc6bd951bdb7",
+        "A02": "0758709630eb0eed46789394f606f6778ba6cf8f56090eb4c48859eb59e06d83",
+        "A03": "8c48faf53d3579d03fd1bc154fc82c732f7dfca0c555113dbe643329c916f211",
+        "A04": "6b52379c0a5a552b2dc993c4c2b29ced3c6391184cf972abca2bbc14be39c2ae",
+        "A05": "f3bfdea79e42c7e8562bffd6a7a5635e7d8aa1b1292b17ca236559491136881c"
+      }
+    }
+  ],
+  "domain": {
+    "inherits": {
+      "spec": "docs/spec-v4.json",
+      "unchanged": [
+        "R01",
+        "R02",
+        "R03",
+        "R04",
+        "R06",
+        "R07",
+        "R08",
+        "R09",
+        "R10"
+      ],
+      "reason": "Presentation-only change; existing backend, cache module, dependencies and Dockerfile retained"
+    },
+    "selected_preview": {
+      "url": "http://175.195.62.165:18082/folder-space-v4.html?v=4.1#space-3",
+      "files": {
+        "folder-space-v4.html": "5df894fe20129684e4c20ffaf6db0f21963c298ce984d1447538a977e88abe67",
+        "folder-space-v4.css": "d267256382dfd441f5a5b8d66c6c94908fd2123ebf072fb1ea858f0cd6fd49b9",
+        "folder-space-v4.js": "27eb378fc757432b95c34b1ec263c9cbdee6d885687f4f36e30eb51c4cb42eaa"
+      }
+    }
+  },
+  "changes": [
+    {
+      "from": "v4",
+      "requirements": [
+        "R05"
+      ],
+      "description": "User selected preview concept 3, liminal portal; replaces journal rows/sidebar with folder deck and gallery. Existing technical requirements inherit v4."
+    }
+  ]
+}

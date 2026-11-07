@@ -2,10 +2,10 @@
 <html lang="ko">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#f7f7f2"><meta name="description" content="폴더 속 영상을 편안하게 둘러보는 나만의 영상 저널, MovieSites">
-  <title>MovieSites — 나의 영상 서재</title>
-  <link rel="icon" href="data:,"><link rel="stylesheet" href="/css/app.css?v=c733222bd92dc263">
-  <script type="module" src="/js/app.js?v=408e2937b5e3dc41"></script>
+  <meta name="theme-color" content="#0d0c14"><meta name="description" content="폴더를 열어 나만의 영상 속으로. MovieSites 영상 라이브러리">
+  <title>MovieSites — 영상 라이브러리</title>
+  <link rel="icon" href="data:,"><link rel="stylesheet" href="/css/app.css?v=0758709630eb0eed">
+  <script type="module" src="/js/app.js?v=8c48faf53d3579d0"></script>
 </head>
 <body>
 <a class="skip-link" href="#content">목록으로 바로 가기</a>
@@ -20,31 +20,23 @@
 <symbol id="i-library" viewBox="0 0 24 24"><rect x="3" y="4" width="5" height="16" rx="1"/><rect x="10" y="4" width="5" height="16" rx="1"/><path d="m17 5 4 14"/></symbol>
 <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
 </defs></svg>
+<div class="space-geometry" aria-hidden="true"><i></i><i></i><i></i></div>
 <header class="site-header">
-  <a class="brand" href="/" aria-label="MovieSites 처음으로"><span class="brand-mark"><svg class="icon"><use href="#i-film"/></svg></span><span>MovieSites</span></a>
-  <span class="brand-note">장면을 모아, 기록으로.</span>
-  <span class="header-label">YOUR PERSONAL VIDEO JOURNAL</span>
+  <a class="brand" href="/" aria-label="MovieSites 처음으로"><span class="brand-mark" aria-hidden="true">◇</span><span>MovieSites</span></a>
+  <span class="header-label">LIMINAL GATE</span>
 </header>
-<div class="app-shell">
-<aside class="sidebar" aria-label="폴더 탐색">
-  <div class="side-label">LIBRARY</div>
-  <button class="nav-root" id="home-button" type="button"><svg class="icon"><use href="#i-library"/></svg>나의 영상 서재</button>
-  <nav id="folder-nav" aria-label="열어본 폴더"></nav>
-  <div class="side-footer"><span class="status-dot"></span><span>폴더에 담긴 그대로</span></div>
-</aside>
 <main id="content" class="main-content">
-  <nav id="breadcrumbs" class="breadcrumbs" aria-label="현재 위치"></nav>
-  <div class="page-heading"><div><span class="eyebrow">VIDEO JOURNAL</span><h1 id="folder-title">나의 영상들</h1><p class="page-description" id="folder-description">오래 간직하고 싶은 장면들을 만나보세요.</p></div><button id="refresh-button" class="refresh-button" type="button"><svg class="icon"><use href="#i-refresh"/></svg><span>목록 새로고침</span></button></div>
-  <div id="listing-status" class="listing-status" role="status" aria-live="polite"></div>
+  <div class="wayfinding"><button id="parent-button" class="parent-button" type="button" hidden><svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg><span>상위 폴더</span></button><nav id="breadcrumbs" class="breadcrumbs" aria-label="현재 위치"></nav></div>
+  <div class="page-heading"><div><p class="eyebrow">나의 영상 라이브러리</p><h1 id="folder-title">어느 폴더를 열까요?</h1><p class="page-description" id="folder-description">폴더를 열어, 담아 둔 영상을 만나보세요.</p></div><span class="heading-orbit" aria-hidden="true">◌</span></div>
+  <div class="listing-toolbar"><p id="listing-status" class="listing-status" role="status" aria-live="polite"></p><button id="refresh-button" class="refresh-button" type="button"><svg class="icon" aria-hidden="true"><use href="#i-refresh"/></svg><span>새로고침</span></button></div>
   <section id="notice" class="notice" role="alert" hidden></section>
-  <section id="folder-section" class="folder-section" aria-label="하위 폴더" hidden><div class="section-caption">FOLDERS</div><div id="folder-list" class="folder-list"></div></section>
-  <section id="video-list" class="video-list" aria-label="영상 목록" aria-busy="true"></section>
-  <section id="empty-state" class="empty-state" hidden><span class="empty-mark"><svg class="icon"><use href="#i-film"/></svg></span><h2>이곳에 새로운 장면을 담아보세요.</h2><p>이 폴더에는 아직 표시할 영상이 없습니다.<br>영상을 추가했다면 목록을 새로고침해 주세요.</p></section>
+  <section id="folder-section" class="folder-section" aria-labelledby="folders-heading" hidden><h2 id="folders-heading" class="section-caption">폴더</h2><div id="folder-list" class="folder-list"></div></section>
+  <section id="video-section" class="video-section" aria-labelledby="videos-heading" hidden><h2 id="videos-heading" class="section-caption">영상</h2><div id="video-list" class="video-list" aria-busy="true"></div></section>
+  <section id="empty-state" class="empty-state" hidden><span class="empty-mark" aria-hidden="true">◇</span><h2>아직 열린 장면이 없어요.</h2><p>이 폴더에는 표시할 영상이 없습니다.<br>영상을 추가했다면 새로고침해 주세요.</p></section>
   <div id="loading-state" class="loading-state" role="status"><span class="loading-dot"></span>폴더를 불러오는 중입니다.</div>
-  <nav id="pagination" class="pagination" aria-label="목록 이동" hidden><button id="first-button" class="text-button" type="button" hidden>처음 목록</button><button id="previous-button" class="text-button" type="button"><svg class="icon"><use href="#i-arrow"/></svg>이전 목록</button><span id="page-label"></span><button id="next-button" class="text-button" type="button">다음 목록<svg class="icon"><use href="#i-chevron"/></svg></button></nav>
-  <footer class="page-footer"><span>당신의 폴더가, 하나의 기록이 됩니다.</span><a id="source-link" href="https://github.com/JunSungKang/movie-sites" target="_blank" rel="noopener noreferrer">오픈소스 · AGPL-3.0</a></footer>
+  <nav id="pagination" class="pagination" aria-label="목록 이동" hidden><button id="first-button" class="text-button" type="button" hidden>처음 목록</button><button id="previous-button" class="text-button" type="button"><svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg>이전</button><span id="page-label"></span><button id="next-button" class="text-button" type="button">다음<svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></button></nav>
+  <footer class="page-footer"><span>폴더에 담긴 그대로</span><a id="source-link" href="https://github.com/JunSungKang/movie-sites" target="_blank" rel="noopener noreferrer">오픈소스 · AGPL-3.0</a></footer>
 </main>
-</div>
 <dialog id="player-dialog" class="player-dialog" aria-labelledby="player-title">
   <header class="player-heading"><div><p id="player-folder" class="eyebrow"></p><h2 id="player-title"></h2></div><button id="close-player" class="icon-button" type="button" aria-label="재생 화면 닫기"><svg class="icon"><use href="#i-close"/></svg></button></header>
   <div class="player-surface"><video id="video-player" controls playsinline preload="metadata" hidden></video><div id="player-preparing" class="player-preparing"><svg class="icon"><use href="#i-film"/></svg><p id="player-state" role="status" aria-live="polite">영상을 확인하고 있습니다.</p><progress id="player-progress" aria-label="영상 준비 중"></progress></div></div>
