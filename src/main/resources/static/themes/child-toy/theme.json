@@ -1,0 +1,25 @@
+{
+  "id": "child-toy",
+  "name": "토이 플레이그라운드",
+  "group": "child",
+  "copy": {
+    "rootTitle": "오늘은 누구랑 놀까요?",
+    "rootDescription": "좋아하는 친구를 골라 이야기를 만나보세요.",
+    "nestedDescription": "보고 싶은 이야기를 골라 주세요.",
+    "rootCaption": "친구들과 함께하는 이야기 시간",
+    "headerLabel": "우리집 영상 놀이터",
+    "rootFolders": "친구들을 만나봐요",
+    "nestedFolders": "보고 싶은 이야기를 골라요",
+    "videosHeading": "보고 싶은 이야기를 골라요",
+    "folderTab": "함께 놀아요",
+    "openLabel": "보기",
+    "footer": "함께 웃는 우리집 영상 시간",
+    "collectionSuffix": " 이야기",
+    "rootCollection": "우리집 이야기",
+    "emptyTitle": "아직 이야기가 없어요.",
+    "emptyDescription": "영상을 넣으면 여기에 나타나요. 추가한 영상은 새로고침으로 만나보세요.",
+    "loadingText": "이야기를 불러오는 중이에요."
+  },
+  "hero": "assets/hero.svg",
+  "color": "#fff9ed"
+}

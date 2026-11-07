@@ -1,89 +1,93 @@
 # MovieSites
 
-폴더에 보관한 영상을 영유아에게 어울리는 밝고 둥근 폴더 데크와 갤러리로 둘러보는 오픈소스 영상 라이브러리입니다. JDK 25와 Spring Boot 4.1.2의 단일 애플리케이션이며, 정적 HTML/CSS/JavaScript를 함께 제공합니다. DB, 전체 색인, 전체 폴더 감시는 사용하지 않습니다.
+폴더에 보관한 영상을 브라우저에서 탐색하고 감상하는 오픈소스 셀프 호스팅 영상 플랫폼입니다. 개인 영상, 가족 기록, 교육 자료, 팀 영상 아카이브처럼 다양한 컬렉션에 사용할 수 있습니다. 폴더 구조가 화면의 분류가 되며, 파일명이 영상 제목이 됩니다.
 
-## 실행
+JDK 25와 Spring Boot 4.1.2로 만든 단일 애플리케이션입니다. 정적 HTML/CSS/JavaScript와 API를 하나의 JAR에서 제공하므로 별도의 프런트엔드 서버나 Node.js 운영 프로세스가 필요하지 않습니다. 데이터베이스, 전체 색인, 재귀 폴더 감시도 사용하지 않습니다.
 
-JDK 25로 빌드합니다. Maven은 프로젝트의 wrapper가 내려받으며 캐시는 프로젝트 `.cache/`에 저장됩니다.
+## 빠른 시작
+
+JDK 25, FFmpeg와 ffprobe를 준비한 뒤 실행합니다.
 
 ```bash
 ./mvnw verify
 MOVIESITES_MEDIA_ROOT="/absolute/path/to/videos" \
 MOVIESITES_DATA_ROOT="/absolute/path/to/moviesites-data" \
+MOVIESITES_THEME="child-toy" \
 java -jar target/moviesites.jar
 ```
 
-직접 JAR로 실행할 때는 `ffmpeg`, `ffprobe`를 설치해야 합니다. 원본과 데이터 경로는 서로 겹치지 않아야 합니다. 미설정 개발 기본값은 `./movie`, `./runtime`이며 상대 경로는 현재 작업 디렉터리를 기준으로 합니다. 운영에서는 절대 경로를 지정하세요. 앱은 원본 디렉터리를 자동 생성하지 않습니다.
+브라우저에서 `http://localhost:8080`을 엽니다. 미디어 경로는 미리 존재해야 하며, 데이터 경로와 서로 겹치면 안 됩니다. 상대 경로는 실행한 디렉터리 기준입니다. 운영 환경에서는 절대 경로를 지정하세요. 빌드 도구와 로컬 캐시는 `.cache/`에 저장됩니다.
 
-## Docker
+## Docker 실행
 
 ```bash
 docker build -t moviesites:local .
 
 docker run -d --init --name moviesites --restart unless-stopped \
-  -p 127.0.0.1:8080:8080 \
-  --memory=2g --cpus=2 \
+  -p 127.0.0.1:8080:8080 --memory=2g --cpus=2 \
   --mount type=bind,source=/absolute/path/to/videos,target=/media,readonly \
   --mount type=bind,source=/absolute/path/to/moviesites-data,target=/data \
   -e MOVIESITES_MEDIA_ROOT=/media \
   -e MOVIESITES_DATA_ROOT=/data \
-  -e MOVIESITES_BROWSER_CACHE_TTL_SECONDS=120 \
+  -e MOVIESITES_THEME=20s-soft-minimal \
   moviesites:local
 ```
 
-두 호스트 디렉터리를 먼저 준비하고, 데이터 경로를 컨테이너 사용자 UID/GID `10001:10001`이 쓸 수 있게 설정하세요. Linux/macOS에서 본인 소유 디렉터리를 사용할 때는 `--user "$(id -u):$(id -g)"`로 실행할 수도 있습니다. NAS는 Docker 호스트에 먼저 마운트하고 그 경로를 연결합니다. Docker Desktop에서는 호스트 경로 공유가 허용되어야 합니다.
+두 호스트 디렉터리를 먼저 준비하고 데이터 경로를 컨테이너 사용자 `10001:10001`이 쓸 수 있게 설정하세요. 본인 소유 경로에서는 `--user "$(id -u):$(id -g)"`로 실행할 수도 있습니다. NAS는 호스트에 먼저 마운트한 뒤 그 경로를 연결합니다. Docker Desktop에서는 호스트 경로 공유를 허용해야 합니다.
 
-기본 예시는 이 PC에서만 접속할 수 있습니다. 외부 공개 시 포트 publish 주소와 방화벽을 운영 환경에 맞게 설정하세요. 현재 버전에는 로그인 기능이 없으며, 공개 주소에 접속한 방문자는 지정한 원본 루트 안의 지원 영상을 익명으로 탐색·재생할 수 있습니다. 원본 수정·삭제·업로드 API는 없습니다.
+컨테이너에는 Java와 FFmpeg가 포함됩니다. 원본 영상과 생성 데이터는 외부 마운트에 남으며 Git, JAR, Docker 이미지에 포함되지 않습니다. 예제의 접속 범위는 로컬 PC입니다. 외부 접속 주소·방화벽·TLS는 운영 환경에서 설정합니다. 현재 서비스는 로그인 없는 읽기 전용 방식으로, 접속자는 지정한 루트의 영상을 탐색·재생할 수 있습니다. 업로드·수정·삭제 API는 없습니다.
 
-컨테이너에는 Java 런타임, 애플리케이션과 FFmpeg가 포함됩니다. 원본·썸네일·변환 영상은 Git, JAR, 이미지에 포함하지 않습니다. 컨테이너를 교체해도 외부 볼륨의 데이터는 보존됩니다. 위 CPU/메모리 값은 예시이며 영상 해상도·동시 재생 수에 맞춰 검증해야 합니다.
+## 테마
+
+기존 장난감 스타일인 `child-toy`를 기본으로, 10대부터 60대까지 각 3개씩 총 19개 프리셋을 제공합니다. 나이대는 스타일 분류이며 사용 제한이나 사용자 나이 수집을 의미하지 않습니다. 모든 테마는 같은 미디어·탐색·재생 기능을 사용합니다.
+
+실행 중인 서비스에서 `/themes/preview.html`을 열면 전체 목록과 실제 화면을 볼 수 있습니다. 미리보기는 해당 탭에만 적용됩니다. 기본 테마는 `MOVIESITES_THEME`를 변경하고 프로세스 또는 컨테이너를 다시 만들어 적용합니다. 등록되지 않은 ID는 시작 오류로 안내합니다.
+
+테마 목록과 전용 디렉터리 구조는 [테마 안내](docs/themes.md), 추가 방법은 [테마 디렉터리 문서](src/main/resources/static/themes/README.md)를 참고하세요.
 
 ## 설정
 
 | 환경변수 | 기본값 | 설명 |
 |---|---|---|
-| `MOVIESITES_MEDIA_ROOT` | `./movie` | 원본 영상 경로, 읽기 전용 사용 |
-| `MOVIESITES_DATA_ROOT` | `./runtime` | 썸네일·재생본·작업 파일 경로 |
-| `MOVIESITES_BROWSER_CACHE_TTL_SECONDS` | `120` | 60~180초 |
-| `MOVIESITES_PAGE_SIZE` | `48` | 응답당 1~100개 |
-| `MOVIESITES_MAX_STREAMS` | `4` | 최대 동시 전송 수, 1~16 |
-| `MOVIESITES_MAX_CACHE_BYTES` | `10737418240` | 생성 캐시 예산, 기본 10 GiB |
+| `MOVIESITES_THEME` | `child-toy` | 등록된 테마 ID |
+| `MOVIESITES_MEDIA_ROOT` | `./movie` | 원본 영상 경로, 읽기 전용 권장 |
+| `MOVIESITES_DATA_ROOT` | `./runtime` | 썸네일·호환 재생본·작업 데이터 |
+| `MOVIESITES_FOLDER_LABELS` | `{}` | 폴더 이름 → 표시 문구의 JSON 객체, 최대 32개 |
+| `MOVIESITES_BROWSER_CACHE_TTL_SECONDS` | `120` | 목록 캐시 수명, 60~180초 |
+| `MOVIESITES_PAGE_SIZE` | `48` | 응답당 항목 수, 1~100 |
+| `MOVIESITES_MAX_STREAMS` | `4` | 최대 동시 영상 전송, 1~16 |
+| `MOVIESITES_MAX_CACHE_BYTES` | `10737418240` | 생성 데이터 예산, 기본 10 GiB |
 | `MOVIESITES_MIN_FREE_BYTES` | `536870912` | 새 작업에 필요한 최소 여유 공간 |
-| `MOVIESITES_FFMPEG` | `ffmpeg` | 실행 파일 경로 |
-| `MOVIESITES_FFPROBE` | `ffprobe` | 실행 파일 경로 |
+| `MOVIESITES_FFMPEG` | `ffmpeg` | FFmpeg 실행 파일 |
+| `MOVIESITES_FFPROBE` | `ffprobe` | ffprobe 실행 파일 |
 | `PORT` | `8080` | HTTP 포트 |
 
-## 화면
+표시 문구 예: `MOVIESITES_FOLDER_LABELS='{"강의":"강의 모음","인터뷰":"인터뷰 영상"}'`. 원본 이름·경로는 바뀌지 않습니다. 모든 경로에서 같은 폴더 이름에 동일한 문구가 적용되며, 영상 길이를 자동 집계하는 기능은 아닙니다.
 
-하늘색·분홍색·노란색과 구름·별·하트 장식을 사용한 영상 놀이터입니다. 실제 폴더와 편 제목을 표시하며, 모바일에서는 폴더 카드가 좌우로 엇갈리고 영상은 2열 갤러리로 보입니다. 정적 SVG 장식과 시스템 글꼴을 사용합니다.
+## 미디어 관리
 
-각 폴더에 `.folder.jpg`를 두면 그 폴더의 대표 이미지로 표시합니다. JPEG, 최대 512 KiB, 한 변 1280 이하 및 총 921600 픽셀 이하를 지원합니다. 예를 들어 960×540 이미지를 사용할 수 있습니다. 표지가 없으면 기본 그림이 나타납니다. 표지를 찾기 위한 하위 폴더 검색은 하지 않으며, 표지는 원본 영상과 함께 외부 미디어 폴더에 보관되어 Git/JAR/Docker 이미지에 포함되지 않습니다. 이미지 사용 권한은 해당 미디어를 운영하는 사람이 관리합니다.
+```text
+videos/
+├── 여행/
+│   ├── .folder.jpg
+│   └── 바다에서 보낸 하루.mp4
+└── 강의/
+    └── 시작하기.mp4
+```
 
-화면과 표지 변경은 [설계](docs/design-kids.md), [명세](docs/spec-kids.json), [검증](docs/verification-kids.md)에 기록합니다.
+현재 위치 바로 아래만 조회합니다. 전체 정렬·총개수 집계·전역 검색은 하지 않으며 파일시스템의 열거 순서대로 나눠 표시합니다. 파일을 옮기거나 추가한 뒤에는 새로고침으로 변경을 확인할 수 있습니다. 캐시는 만료 시 자동 폴링하지 않고 다음 조회에서 갱신합니다.
 
-현재 보관된 영상 기준으로 `단편 (약1~5분)`, `중편 (약11분)`을 표시합니다. 기존 분류는 유지하며 실제 파일이나 경로를 바꾸지 않습니다. 시간 설명은 현재 자료에 맞춘 표시 문구로, 하위 영상을 자동 탐색해 계산하지 않습니다. 화면 이동은 `처음으로`와 목적지가 적힌 돌아가기 버튼으로 제공하며 현재 친구와 선택을 제목으로 보여줍니다. 이번 변경은 [명세](docs/spec-navigation.json), [검증](docs/verification-navigation.md)에 기록합니다.
+각 폴더에 `.folder.jpg`를 두면 대표 이미지로 사용합니다. JPEG 최대 512 KiB, 한 변 1280 이하, 총 921600픽셀 이하를 지원합니다. 예를 들어 960×540 이미지를 사용할 수 있습니다. 표지가 없으면 기본 그림을 표시하며 하위 폴더를 검색하지 않습니다. 표지와 영상의 사용 권한은 운영자가 관리합니다.
 
-## 탐색·재생 동작
+MP4/H.264/yuv420p/AAC 조건에 맞으면 원본을 스트리밍하고, 필요한 경우 FFmpeg로 호환 재생본을 만듭니다. 표준 HTML `<video controls playsinline>`을 사용하며 원본은 수정하지 않습니다. 브라우저·입력 코덱별 실제 검증 범위와 NAS/자원 한계는 [설계](docs/architecture.md), [검증 기록](docs/verification.md)을 확인하세요.
 
-- 현재 폴더 바로 아래 항목만 읽습니다. 폴더를 클릭하면 그 폴더를 조회합니다.
-- 브라우저는 조회한 목록을 경로·조회 구간별로 캐싱합니다. 재사용해도 유효기간을 연장하지 않으며, 만료 후 다시 열 때만 조회합니다. 목록 새로고침은 캐시를 우회합니다.
-- 목록은 파일시스템의 열거 순서입니다. 초대형 폴더의 전체 정렬·총개수·전역 검색은 제공하지 않습니다. 분할 탐색 토큰이 만료되면 목록을 새로고침하세요.
-- 심볼릭 링크를 따라가지 않으며, 보안 디렉터리 접근을 지원하는 파일시스템이 필요합니다. Linux/macOS 서버를 검증 대상으로 합니다.
-- MP4/H.264/yuv420p/AAC 조건을 충족하면 원본을 재생합니다. 필요한 경우 재포장 또는 최대 1920×1080 범위의 SDR 호환 재생본을 만듭니다. 세로 영상은 비율을 보존합니다. 원본은 수정하지 않습니다.
-- 변환은 한 번에 하나, 분석은 최대 두 개입니다. 최초 변환에는 대기 시간이 필요합니다. 손상·암호화·지원하지 않는 입력은 오류로 안내합니다.
-- 캐시는 원본 경로·크기·수정 시각·파일 식별 정보로 구분합니다. 파일이 같은 크기·시각·식별 정보로 덮어써진 특수한 경우에는 생성 캐시 정리가 필요할 수 있습니다.
-- NAS 오류는 빈 폴더와 구분합니다. 네트워크 파일 호출은 OS 수준에서 멈출 수 있으므로 앱 타임아웃이 물리적 읽기를 즉시 취소한다고 보장하지 않습니다.
-
-캐시는 작업 중 출력까지 용량에 포함하며, 한도에 도달하면 재생 중이지 않은 오래된 생성 파일을 회수합니다. 재시작 시 중단된 임시 파일을 정리합니다. 데이터 경로는 서버 인스턴스마다 따로 지정해야 하며 동일 경로의 동시 실행은 잠금으로 차단됩니다. 목록의 이전 페이지 기록은 최근 20개까지 보관하고 처음 목록으로 돌아갈 수 있습니다.
-
-## 검증
+## 개발과 라이선스
 
 ```bash
 ./mvnw verify
 bash scripts/check.sh
 ```
 
-서버의 `/api/health`는 애플리케이션 상태를 확인하며 NAS 전체를 검사하지 않습니다. 구체적인 실측 결과와 미검증 환경은 `docs/verification.md`에 기록합니다. 설계·요구사항은 `docs/design-v4.md`, `docs/spec-v4.json`에 있습니다.
+[개발 안내](docs/development.md) · [현재 명세](docs/spec-platform.json) · [기여 절차](docs/governance/initialization.md)
 
-## 라이선스
-
-AGPL-3.0-only. 실행 중인 수정 버전을 네트워크로 제공할 때는 해당 버전의 대응 소스를 사용자에게 제공해야 합니다. 영상과 개인 데이터는 프로젝트 라이선스 대상이 아닙니다. 의존성·컨테이너 구성요소는 `THIRD_PARTY_NOTICES.md`와 각 배포물의 고지 사항을 확인하세요.
+AGPL-3.0-only. 수정 버전을 네트워크로 제공할 때는 해당 버전의 대응 소스를 사용자에게 제공해야 합니다. 영상과 개인 데이터는 애플리케이션 라이선스의 배포 대상이 아닙니다. 의존성과 컨테이너 구성요소는 [서드파티 고지](THIRD_PARTY_NOTICES.md)를 참고하세요.
