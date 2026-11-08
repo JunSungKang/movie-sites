@@ -34,6 +34,8 @@ export MOVIESITES_FOLDER_LABELS='{"Tutorials":"Learning","Interviews":"Conversat
 
 디렉토리 세션·읽기/분석 대기열·변환 작업에도 고정 제한이 있습니다. [아키텍처](architecture.md)를 참고하세요. 캐시 바이트 예산은 전체 메모리 제한이 아닙니다. JVM·FFmpeg·브라우저 디코더·GPU 사용량은 별개이므로 실제 저장소와 동시 사용 조건으로 시험해야 합니다.
 
+소개와 영상 화면은 같은 `MOVIESITES_THEME`를 사용하며 로고·헤더·푸터·테마 CSS·일러스트를 공유합니다. 소개는 시작 시 테마를 결정해 JavaScript·영상 목록 조회 없이 보이는 HTML을 제공합니다. 실행 테마를 바꾸고 재시작하면 두 화면에 함께 적용됩니다. `css/about.css`는 소개 배치만 담당하고 색상·글꼴·이미지는 등록된 테마 디렉토리에서 관리합니다.
+
 ## 검색 노출
 
 검색 노출 대상은 `/about` 소개 페이지입니다. 서버에서 일반적인 소개·설명·Open Graph/Twitter·WebPage JSON-LD를 만들고 영상 목록을 조회하지 않습니다. `MOVIESITES_PUBLIC_URL`로 canonical·Open Graph 주소와 `/sitemap.xml`을 생성합니다. 외부에서 접속하는 출처를 입력하고 기본 포트가 아니면 포트도 포함하세요. 요청의 Host·전달 헤더는 이 주소에 반영하지 않습니다. 잘못된 설정은 시작을 거부하며 빈 값이면 canonical을 생략하고 사이트맵은 설정 전까지 503을 반환합니다. 변경 후 재시작합니다.

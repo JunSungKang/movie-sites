@@ -2,6 +2,14 @@
 
 [한국어](ko/verification.md) · [Documentation index](../README.md#documentation)
 
+## Shared introduction theme — 2026-11-09
+
+- The introduction now reuses the configured service theme CSS, logo, header/footer and packaged illustration. Its small layout stylesheet has no independent palette/font family; server-rendered HTML is visible without app JavaScript or catalog requests.
+- Gradle and multi-stage Docker builds passed with 49 JUnit and 24 JavaScript tests. The new integration assertion checks child-toy and Midnight Stream selection, current asset fingerprints and absence of unresolved placeholders/catalog scripts. Existing SEO/CSP/Host/304 boundaries, package/theme and bilingual-documentation checks passed.
+- Actual Docker HTTP checks passed for both runtime themes: four fingerprinted presentation assets each, immutable/304 behavior, gzip, canonical/JSON-LD/CSP and application/API noindex. Actual macOS Chrome matched the library's child-toy font, background token and header appearance; the introduction rendered without horizontal overflow at 390×844 and 320×568, with a 48-pixel primary link. The dark alternate theme also loaded its illustration and rendered without overflow at 320×568. Desktop and mobile screenshots remain local.
+
+These are targeted layout/runtime checks, not exhaustive visual certification of every theme/browser/device.
+
 ## Introduction SEO and caching — 2026-11-09
 
 - Gradle clean build and multi-stage Docker build passed: 48 JUnit tests and 24 JavaScript tests, without failures/skips. Theme, content-fingerprint, package/media exclusion and bilingual documentation checks passed.

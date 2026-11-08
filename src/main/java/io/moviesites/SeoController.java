@@ -16,8 +16,15 @@ import tools.jackson.databind.json.JsonMapper;
 public class SeoController {
     private final String origin,html,csp;
     private static final String DESCRIPTION="내 영상 폴더를 그대로 탐색하고, 길이와 주제로 골라 보는 오픈소스 영상 라이브러리, MovieSites.";
-    public SeoController(@Value("${moviesites.public-url:}")String url) throws Exception {
+    public SeoController(@Value("${moviesites.public-url:}")String url,PresentationService presentation) throws Exception {
         origin=validateOrigin(url);
+        var theme=presentation.theme();
+        tools.jackson.databind.JsonNode manifest;
+        try(var input=new ClassPathResource("static/themes/"+theme.directory()+"/theme.json").getInputStream()) {
+            manifest=new JsonMapper().readTree(input);
+        }
+        String color=manifest.path("color").asText();
+        if(!color.matches("#[a-fA-F0-9]{6}"))throw new IllegalArgumentException("Invalid packaged theme color");
         Map<String,Object> data=new LinkedHashMap<>();data.put("@context","https://schema.org");data.put("@type","WebPage");data.put("name","MovieSites — 나의 영상 라이브러리");data.put("description",DESCRIPTION);data.put("inLanguage","ko");
         if(!origin.isEmpty())data.put("url",origin+"/about");
         String json=new JsonMapper().writeValueAsString(data).replace("<","\\u003c").replace(">","\\u003e").replace("&","\\u0026");
@@ -25,7 +32,18 @@ public class SeoController {
         csp="default-src 'self'; img-src 'self' data:; media-src 'self'; script-src 'self' 'sha256-"+hash+"'; style-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'";
         String canonical=origin.isEmpty()?"":"<link rel=\"canonical\" href=\""+escape(origin+"/about")+"\"><meta property=\"og:url\" content=\""+escape(origin+"/about")+"\">";
         try(var input=new ClassPathResource("seo/about.html").getInputStream()) {
-            html=new String(input.readAllBytes(),StandardCharsets.UTF_8).replace("{{CANONICAL}}",canonical).replace("{{DESCRIPTION}}",escape(DESCRIPTION)).replace("{{STRUCTURED_DATA}}",json);
+            html=new String(input.readAllBytes(),StandardCharsets.UTF_8).replace("{{CANONICAL}}",canonical).replace("{{DESCRIPTION}}",escape(DESCRIPTION)).replace("{{STRUCTURED_DATA}}",json)
+                .replace("{{THEME_ID}}",escape(theme.id())).replace("{{THEME_COLOR}}",color)
+                .replace("{{APP_STYLE}}",assetUrl("css/app.css")).replace("{{ABOUT_STYLE}}",assetUrl("css/about.css"))
+                .replace("{{THEME_STYLE}}",assetUrl("themes/"+theme.directory()+"/theme.css"))
+                .replace("{{THEME_HERO}}",assetUrl("themes/"+theme.directory()+"/assets/hero.svg"))
+                .replace("{{HEADER_LABEL}}",escape(manifest.path("copy").path("headerLabel").asText()))
+                .replace("{{FOOTER_COPY}}",escape(manifest.path("copy").path("footer").asText()));
+        }
+    }
+    private static String assetUrl(String path)throws IOException {
+        try(var input=new ClassPathResource("static/"+path).getInputStream()) {
+            return "/"+path+"?v="+ByteCache.tag(input.readAllBytes()).substring(1,17);
         }
     }
     static String validateOrigin(String value) {
