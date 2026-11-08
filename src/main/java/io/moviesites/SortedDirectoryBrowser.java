@@ -16,7 +16,7 @@ import tools.jackson.databind.json.JsonMapper;
 /** Short-lived, disk-backed query results for one directory; no recursive index or database. */
 @Service
 public class SortedDirectoryBrowser {
-    public record Item(String name, String path, String kind, long size, String modified, Double duration, List<String> tags, String tagSource) {}
+    public record Item(String name, String path, String kind, long size, String modified, Double duration, List<String> tags, String tagSource, String coverVersion) {}
     public record Page(String path, String parent, List<Item> entries, String nextCursor, int warnings,
                        String state, String query, long examined, long analyzed, long unknown, String message) {}
     @FunctionalInterface interface DurationReader { Double read(String path) throws IOException; }
@@ -32,6 +32,7 @@ public class SortedDirectoryBrowser {
     private final MediaService media;
     private final int chunkSize;
     private final long maxQueryBytes;
+    private final java.util.function.LongSupplier clock;
     private final JsonMapper json = new JsonMapper();
     private final Map<String, Query> queries = new LinkedHashMap<>();
     private final Map<String, CachedDuration> durationCache = new LinkedHashMap<>(32, .75f, true);
@@ -43,6 +44,7 @@ public class SortedDirectoryBrowser {
         final String id = UUID.randomUUID().toString(), secret = UUID.randomUUID().toString(), path;
         final Set<Path> files = new HashSet<>();
         volatile long touched = System.nanoTime(), examined, analyzed, unknown;
+        volatile long readyAt;
         volatile String state = "preparing";
         volatile String message = "";
         volatile boolean cancelled, building = true;
@@ -57,18 +59,28 @@ public class SortedDirectoryBrowser {
         this(settings, storage, topics, durations, media, chunkSize, MAX_BYTES);
     }
     SortedDirectoryBrowser(Settings settings, Storage storage, VideoTopics topics, DurationReader durations, MediaService media, int chunkSize, long maxQueryBytes) throws IOException {
+        this(settings,storage,topics,durations,media,chunkSize,maxQueryBytes,System::nanoTime);
+    }
+    SortedDirectoryBrowser(Settings settings, Storage storage, VideoTopics topics, DurationReader durations, MediaService media, int chunkSize, long maxQueryBytes, java.util.function.LongSupplier clock) throws IOException {
         this.settings = settings; this.storage = storage; this.topics = topics; this.durations = durations; this.media = media; this.chunkSize = chunkSize;
         this.maxQueryBytes = maxQueryBytes;
+        this.clock=clock;
         try (var files = Files.newDirectoryStream(settings.dataRoot().resolve("work"), "browse-*.bin")) {
             for (Path file : files) if (Files.isRegularFile(file, LinkOption.NOFOLLOW_LINKS) && file.getFileName().toString().matches("browse-[a-f0-9-]+\\.bin")) Files.delete(file);
         }
         cleanup.scheduleWithFixedDelay(this::retireIdle, 15, 15, TimeUnit.SECONDS);
     }
     public CompletableFuture<Page> browseAsync(String path, String cursor, String query) {
-        try { return CompletableFuture.supplyAsync(() -> { try { return browse(path,cursor,query); } catch (IOException e) { throw new CompletionException(e); } },readers).orTimeout(8,TimeUnit.SECONDS); }
+        return browseAsync(path,cursor,query,false);
+    }
+    public CompletableFuture<Page> browseAsync(String path, String cursor, String query,boolean refresh) {
+        try { return CompletableFuture.supplyAsync(() -> { try { return browse(path,cursor,query,refresh); } catch (IOException e) { throw new CompletionException(e); } },readers).orTimeout(8,TimeUnit.SECONDS); }
         catch (RejectedExecutionException e) { return CompletableFuture.failedFuture(e); }
     }
     public Page browse(String input, String cursor, String queryId) throws IOException {
+        return browse(input,cursor,queryId,false);
+    }
+    public Page browse(String input, String cursor, String queryId,boolean refresh) throws IOException {
         String path = storage.normalize(input);
         Query query; long offset = 0;
         if (cursor != null && !cursor.isBlank()) {
@@ -79,18 +91,26 @@ public class SortedDirectoryBrowser {
             if (offset < 0 || !MessageDigest.isEqual(signature(query, offset).getBytes(StandardCharsets.US_ASCII), parts[2].getBytes(StandardCharsets.US_ASCII))) throw new DirectoryBrowser.ExpiredCursor();
         } else if (queryId != null && !queryId.isBlank()) query = find(queryId, path);
         else {
-            retireIdle(); query = new Query(path);
+            retireIdle();
             synchronized (queries) {
+                Query latest=null;
+                for(Query candidate:queries.values())if(candidate.path.equals(path))latest=candidate;
+                if(!refresh&&latest!=null&&!latest.cancelled&&!latest.state.equals("failed")
+                    &&(latest.building||clock.getAsLong()-latest.readyAt<TimeUnit.SECONDS.toNanos(settings.browserCacheTtlSeconds()))) {
+                    query=latest;
+                } else {
                 if (queries.size() >= settings.maxBrowseSessions()) {
                     Query oldest = queries.values().stream().filter(q -> !q.building).min(Comparator.comparingLong(q -> q.touched)).orElse(null);
                     if (oldest != null) { queries.remove(oldest.id); discard(oldest); }
                 }
                 if (queries.size() >= settings.maxBrowseSessions()) throw new RejectedExecutionException();
+                query=new Query(path);
                 queries.put(query.id, query);
-            }
             Query task = query;
             try { workers.execute(() -> prepare(task)); }
             catch (RejectedExecutionException e) { synchronized (queries) { queries.remove(task.id); } task.building = false; discard(task); throw e; }
+                }
+            }
         }
         synchronized (query) {
             if (query.cancelled) throw new DirectoryBrowser.ExpiredCursor();
@@ -105,6 +125,10 @@ public class SortedDirectoryBrowser {
                 return page(query, entries, nextOffset < file.size() ? query.id + "." + nextOffset + "." + signature(query, nextOffset) : null, "");
             }
         }
+    }
+    long cacheSeconds(Page page) {
+        if(!page.state().equals("ready"))return 0;
+        synchronized(queries){Query q=queries.get(page.query());return q==null?0:Math.max(0,TimeUnit.NANOSECONDS.toSeconds(TimeUnit.SECONDS.toNanos(settings.browserCacheTtlSeconds())-(clock.getAsLong()-q.readyAt)));}
     }
     private Query find(String id, String path) {
         synchronized (queries) {
@@ -154,7 +178,9 @@ public class SortedDirectoryBrowser {
                         var labels = folder ? new VideoTopics.Topics(List.of(), "none", false) : topics.read(path);
                         if (!folder) { q.analyzed++; if (length == null) q.unknown++; }
                         if (labels.invalidMetadata()) q.warnings++;
-                        chunk.add(new Item(filename, path, folder ? "folder" : "video", folder ? 0 : attributes.size(), attributes.lastModifiedTime().toInstant().toString(), length, labels.tags(), labels.source()));
+                        String cover=null;
+                        if(folder)try{cover=storage.version(path+"/.folder.jpg");}catch(IOException|IllegalArgumentException ignored){}
+                        chunk.add(new Item(filename, path, folder ? "folder" : "video", folder ? 0 : attributes.size(), attributes.lastModifiedTime().toInstant().toString(), length, labels.tags(), labels.source(),cover));
                     } catch (IOException e) { q.warnings++; }
                     if (chunk.size() >= chunkSize) { if (runs.size() >= MAX_RUNS) throw new IOException("Query exceeds run limit"); runs.add(writeChunk(q, chunk)); chunk.clear(); }
                 }
@@ -165,7 +191,7 @@ public class SortedDirectoryBrowser {
                 for (int i = 0; i < runs.size(); i += FAN_IN) merged.add(merge(q, runs.subList(i, Math.min(runs.size(), i + FAN_IN))));
                 runs = merged;
             }
-            synchronized (q) { check(q); q.result = runs.getFirst(); q.state = "ready"; }
+            synchronized (q) { check(q); q.result = runs.getFirst(); q.readyAt=clock.getAsLong();q.state = "ready"; }
         } catch (IOException | RuntimeException e) {
             q.message = e instanceof RejectedExecutionException ? "처리 중인 영상이 많습니다. 잠시 후 새로고침해 주세요." : "영상 목록을 정리하지 못했습니다. 저장소 연결·여유 공간을 확인한 뒤 새로고침해 주세요.";
             q.state = "failed";

@@ -2,10 +2,11 @@
 <html lang="ko">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow,noimageindex">
   <meta name="theme-color" content="#f5f7f6"><meta name="description" content="폴더 구조 그대로 탐색하고 감상하는 셀프 호스팅 영상 플랫폼, MovieSites">
   <title>MovieSites — 영상 라이브러리</title>
   <link rel="icon" href="data:,"><link rel="stylesheet" href="/css/app.css?v=80730371d1c6aa9b">
-  <script type="module" src="/js/app.js?v=2f330a5452236836"></script>
+  <script type="module" src="/js/app.js?v=67737cfc02f7340f"></script>
 </head>
 <body>
 <section id="boot-state" class="boot-state" role="status"><p id="boot-message">영상 라이브러리를 준비하고 있습니다.</p><button id="boot-retry" type="button" hidden>다시 연결</button></section>
@@ -45,7 +46,7 @@
   <section id="empty-state" class="empty-state" hidden><span class="empty-mark" aria-hidden="true">☆</span><h2 id="empty-title">아직 영상이 없습니다.</h2><p id="empty-description">저장소에 영상을 추가한 뒤 새로고침해 주세요.</p></section>
   <div id="loading-state" class="loading-state" role="status"><span class="loading-dot"></span><span id="loading-text">영상 목록을 불러오고 있습니다.</span></div>
   <nav id="pagination" class="pagination" aria-label="목록 이동" hidden><button id="first-button" class="text-button" type="button" hidden>처음 목록</button><button id="previous-button" class="text-button" type="button"><svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg>이전</button><span id="page-label"></span><button id="next-button" class="text-button" type="button">다음<svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></button></nav>
-  <footer class="page-footer"><span id="footer-label">당신의 영상, 당신의 공간</span><a id="source-link" href="https://github.com/JunSungKang/movie-sites" target="_blank" rel="noopener noreferrer">오픈소스 · AGPL-3.0</a></footer>
+  <footer class="page-footer"><span id="footer-label">당신의 영상, 당신의 공간</span><a href="/about">MovieSites 소개</a><a id="source-link" href="https://github.com/JunSungKang/movie-sites" target="_blank" rel="noopener noreferrer">오픈소스 · AGPL-3.0</a></footer>
 </main>
 <dialog id="player-dialog" class="player-dialog" aria-labelledby="player-title">
   <header class="player-heading"><div><p id="player-folder" class="eyebrow"></p><h2 id="player-title"></h2></div><button id="close-player" class="icon-button" type="button" aria-label="재생 화면 닫기"><svg class="icon"><use href="#i-close"/></svg></button></header>

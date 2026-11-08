@@ -24,3 +24,23 @@ test('long navigation retains at most 20 cursors and supports backtracking and r
  h.next('new');assert.equal(h.current,'new');assert.equal(h.cursors.length,2);
  h.reset();assert.deepEqual(h.cursors,[null]);assert.equal(h.pageNumber,1);assert.equal(h.offset,0);
 });
+
+const memoryStorage=()=>{const values=new Map();return {getItem:key=>values.get(key)??null,setItem:(key,value)=>values.set(key,value)};};
+test('session restoration preserves remaining server TTL without extending expiry',()=>{
+ let time=0;const storage=memoryStorage();const first=new DirectoryCache({clock:()=>time});first.useStorage(storage,'cache','root/instance');first.put('page',page('one'),30000);
+ time=20000;const restored=new DirectoryCache({clock:()=>time});restored.useStorage(storage,'cache','root/instance');assert.ok(restored.get('page'));
+ time=30000;assert.equal(restored.get('page'),null);
+});
+test('server restart or root change discards stored cursors and invalidation persists',()=>{
+ const storage=memoryStorage();const first=new DirectoryCache();first.useStorage(storage,'cache','old');first.put('a',page('a'));
+ const changed=new DirectoryCache();changed.useStorage(storage,'cache','new');assert.equal(changed.get('a'),null);changed.put('b',page('b'));changed.invalidatePath('b');
+ const restored=new DirectoryCache();restored.useStorage(storage,'cache','new');assert.equal(restored.get('b'),null);
+});
+test('storage denial malformed snapshots and quota failure retain bounded memory operation',()=>{
+ const c=new DirectoryCache({maxEntries:2});c.useStorage({getItem(){throw Error('denied');},setItem(){throw Error('quota');}},'cache');
+ c.put('a',page('a'));c.put('b',page('b'));c.put('c',page('c'));assert.equal(c.get('a'),null);assert.ok(c.get('c'));c.clear();assert.equal(c.get('c'),null);
+ const storage=memoryStorage();storage.setItem('cache','{invalid');new DirectoryCache().useStorage(storage,'cache');
+});
+test('zero remaining server freshness is never persisted as a fresh response',()=>{
+ const c=new DirectoryCache();c.put('a',page('a'),0);assert.equal(c.get('a'),null);
+});

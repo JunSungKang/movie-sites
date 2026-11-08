@@ -10,7 +10,9 @@ Only immediate children of the requested directory are enumerated. The UI uses t
 
 The original filesystem-order API retains up to eight short-lived directory sessions, with idle retirement and ordered, path-bound cursors. Replayed, expired or mismatched cursors fail rather than pretending to be a complete list. Two reader workers and a bounded queue limit concurrent listings; the API times out a delayed browse after eight seconds. A blocked OS file operation is not guaranteed to be immediately canceled by that timeout.
 
-A per-tab in-memory LRU stores up to 20 directory responses, 2000 entries and approximately 10 MiB of serialized metadata. TTL defaults to 120 seconds, does not extend on cache hits and does not trigger polling on expiry. Explicit refresh bypasses the cache. Cursor history retains the most recent 20 pages. Moving files invalidates old references; the server does not search for the new location.
+Ready snapshots are coalesced/reused for the configured 60–180-second freshness period; `refresh=true` starts a fresh query. Only remaining snapshot freshness is passed to HTTP/browser caches, so stacked caches do not restart a full TTL.
+
+A per-tab in-memory LRU stores up to 20 directory responses, 2000 entries and approximately 10 MiB of serialized metadata. TTL defaults to 120 seconds, does not extend on cache hits and does not trigger polling on expiry. Optional bounded session storage restores unexpired pages after reload, scoped to the root and server instance. Explicit refresh bypasses browser and server list caches. Cursor history retains the most recent 20 pages. Moving files invalidates old references; the server does not search for the new location.
 
 ## Storage boundaries
 
@@ -32,7 +34,7 @@ The startup theme comes from the packaged allowlist. A theme owns copy, styles a
 
 The browser queue is origin/root-scoped localStorage with a 200-entry limit, or an in-memory fallback if storage is unavailable. Play-all snapshots the saved queue, advances on natural completion and closes after the final item. Closing invalidates pending inspection/playback work. The same dialog/video element retains native controls; responsive sizing preserves the original video ratio and keeps controls inside the available viewport.
 
-Static UI responses use `no-store` rather than reproducible archive timestamps as content versions. HTML/module references also carry content hashes. CSP restricts resources to the service's own origin, and focus/reduced-motion rules are kept in the shared presentation.
+Application HTML remains `no-store`; packaged assets with a verified content fingerprint get one-year immutable caching. Other assets use content ETags and `no-cache`, with archive timestamps disabled. HTML/module references carry content hashes. Text/JSON/SVG compression excludes video/JPEG. The generic `/about` is the only page intended for indexing; catalog/media responses carry noindex headers. See [cache and search policy](configuration.md#cache-policy). CSP restricts resources to the service's own origin, and focus/reduced-motion rules are kept in the shared presentation.
 
 ## HTTP surface
 

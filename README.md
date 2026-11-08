@@ -19,7 +19,9 @@ Layout illustration of the Midnight Stream theme. Collection covers come from yo
 - Keep one browser-local playback queue, reorder it, and play the queue in sequence.
 - Select from 19 bundled themes through an environment variable; contribute additional presets through the theme catalog.
 - Run a single executable JAR or Docker container. The frontend is static HTML, CSS and JavaScript.
-- Use bounded directory pages, short-lived browser caching and limited background processing. There is no database, full-tree index or recursive filesystem watcher.
+- Cache directory snapshots and versioned thumbnails on the server and browser, with bounded memory and explicit refresh.
+- Publish an optional search-friendly introduction while excluding the media catalog from search indexing.
+- Use bounded directory pages and limited background processing. There is no database, full-tree index or recursive filesystem watcher.
 
 ## Quick start
 
@@ -59,6 +61,8 @@ See [Getting started](docs/getting-started.md) for prerequisites and platform re
 ## Configuration
 
 Set `MOVIESITES_MEDIA_ROOT` for original media, `MOVIESITES_DATA_ROOT` for generated data, and `MOVIESITES_THEME` for presentation. The default theme is `child-toy`; for example, use `MOVIESITES_THEME=20s-midnight-stream` and restart the application to choose a different preset.
+
+Set `MOVIESITES_PUBLIC_URL=https://media.example.org` to enable canonical and sitemap URLs for `/about`. Only the generic introduction is intended for indexing; the library remains at `/`. See the SEO and cache policy in the configuration guide.
 
 The [configuration reference](docs/configuration.md) is the source for defaults, limits and all environment variables. `.env.example` is a Docker example; the JAR does not automatically read `.env` files.
 

@@ -41,7 +41,7 @@ class FolderCoverTests {
                 .setControllerAdvice(new WebConfiguration.Errors()).build();
         mvc.perform(get("/api/media/folder-cover").param("path", "컬렉션"))
                 .andExpect(status().isOk()).andExpect(content().contentType("image/jpeg"))
-                .andExpect(header().string("Cache-Control", "no-store")).andExpect(content().bytes(expected));
+                .andExpect(header().string("Cache-Control", org.hamcrest.Matchers.containsString("private"))).andExpect(content().bytes(expected));
         mvc.perform(get("/api/media/folder-cover").param("path", "../outside"))
                 .andExpect(status().isBadRequest());
         mvc.perform(get("/api/media/folder-cover").param("path", "없는 폴더"))
