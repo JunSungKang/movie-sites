@@ -1,53 +1,49 @@
-# 플랫폼 설계
+# Architecture
 
-MovieSites는 외부 파일시스템을 원본으로 사용하는 범용 영상 플랫폼이다. 하나의 JDK 25/Spring Boot 애플리케이션이 정적 UI, JSON API, 영상 전송을 제공한다. Maven으로 하나의 실행 JAR을 만들며 Docker 이미지에는 Java와 FFmpeg를 함께 넣는다. 원본 루트와 생성 데이터 루트는 분리한다.
+[한국어](ko/architecture.md) · [Documentation index](../README.md#documentation)
 
-## 탐색과 변경 반영
+MovieSites is one JDK 25/Spring Boot 4.1.2 application serving static HTML/CSS/ES modules, JSON endpoints and video streams. Gradle builds one executable JAR. The filesystem is the media source of truth; original media and writable generated data are separate external roots.
 
-요청한 경로의 바로 아래 항목만 열거한다. 시작 시 전체 탐색, 하위 항목 수 계산, 재귀 감시, 데이터베이스 색인은 없다. 목록당 기본 48개를 반환하며 한 호출에서 파일시스템 항목을 최대 1000개 확인한다. 지원 영상이 없는 구간에서도 다음 구간이 존재할 수 있다.
+## Browsing and state
 
-서버는 최대 8개의 짧은 탐색 세션을 유지한다. 연속 조회 토큰은 경로·조회 순서와 결합하며 잘못된 순서, 만료, 재사용은 거부한다. 파일시스템 열거는 정렬된 스냅샷이 아니므로 조회 중 변경이 생기면 새로고침이 필요하다. 이동된 파일의 새 위치를 검색해서 추적하지 않는다.
+Only immediate children of the requested directory are enumerated. There is no database, startup tree scan, global index, descendant count or recursive watcher. Default pages contain up to 48 supported entries and each call examines at most 1000 filesystem entries. Enumeration is not a sorted snapshot; an empty page can still have a continuation cursor.
 
-브라우저의 탭별 메모리 캐시는 기본 120초이며 60~180초로 설정할 수 있다. 적중해도 만료 시간을 연장하지 않으며 만료만으로 서버에 요청하지 않는다. 최근 20개 응답·2000개 항목·약 10 MiB 직렬화 데이터로 제한한다. 페이지 이동 기록도 최근 20개까지만 보존한다. 명시적인 새로고침은 캐시를 우회한다. 파일 변경·삭제 오류는 다시 조회하도록 안내한다.
+Up to eight short-lived directory sessions are retained, with idle retirement and ordered, path-bound cursors. Replayed, expired or mismatched cursors fail rather than pretending to be a complete list. Two reader workers and a bounded queue limit concurrent listings; the API times out a delayed browse after eight seconds. A blocked OS file operation is not guaranteed to be immediately canceled by that timeout.
 
-## 미디어와 자원
+A per-tab in-memory LRU stores up to 20 directory responses, 2000 entries and approximately 10 MiB of serialized metadata. TTL defaults to 120 seconds, does not extend on cache hits and does not trigger polling on expiry. Explicit refresh bypasses the cache. Cursor history retains the most recent 20 pages. Moving files invalidates old references; the server does not search for the new location.
 
-분석·썸네일은 요청이 있는 영상에만 처리한다. 화면에 가까운 썸네일부터 두 개의 브라우저 작업자가 요청한다. 서버 분석은 2개, 변환은 1개로 제한하고 대기열·작업 맵·영상 전송·출력 로그·실행 시간을 제한한다. 변환은 완료된 호환 파일을 만든 뒤 재생하며 실시간 HLS 변환은 제공하지 않는다.
+## Storage boundaries
 
-호환 입력은 MP4/H.264/yuv420p/AAC 원본을 전송한다. 다른 지원 입력은 재포장하거나 최대 1920×1080 범위의 SDR 재생본으로 변환한다. 세로 영상 비율을 보존한다. 손상·암호화·지원하지 않는 코덱은 오류로 안내한다. HTML 기본 비디오 컨트롤과 HTTP 단일 byte range를 사용하고 전송 버퍼를 제한한다. 재생 서명은 경로·버전·원본/변환 모드에 연결하며 재시작 후 다시 발급한다.
+Paths are relative to the configured root. Secure directory streams and NOFOLLOW operations reject traversal and symlink access. The provider must support those operations. Errors do not expose absolute server paths. Data/media roots cannot overlap, and a data-root lock prevents concurrent instances from clearing each other's generated work. The public API has no original-media upload/edit/delete operation.
 
-생성 데이터 예산은 진행 중 출력도 포함한다. 오래된 비재생 파일부터 회수하고 시작 시 인식 가능한 중단 작업 파일을 정리한다. 동일 데이터 루트의 동시 실행은 잠금으로 막는다. 서버 인스턴스마다 별도 데이터 경로를 사용해야 한다. 파일 버전은 경로·크기·수정 시각·파일 식별 정보로 구분하므로 이 값이 모두 같은 특수한 덮어쓰기에는 생성 캐시 정리가 필요할 수 있다.
+A fixed `.folder.jpg` provides a folder cover. A video sidecar named with the full video filename plus `.jpg` takes precedence over generated thumbnails. JPEG size/dimension validation uses memory-backed ImageIO input and bounded reads. Explicit images remain external; their version is independent of the original video's stream version.
 
-대용량 NAS를 사용해도 전체 트리를 메모리에 적재하지 않는다. 다만 브라우저 디코더·GPU와 FFmpeg 메모리는 목록 캐시/JVM 힙과 별개다. 호스트·컨테이너 한도를 실제 해상도와 동시 사용자 수에 맞춰 검증해야 한다. NAS 파일 호출은 OS에서 멈출 수 있어 애플리케이션 제한 시간이 물리적 읽기를 즉시 취소한다고 보장할 수 없다. `/api/health`는 앱 상태이며 NAS 전체 정상 여부를 의미하지 않는다.
+## Media work and resources
 
-## 경로와 표지
+Analysis/thumbnail generation is on demand. Two browser enrichment workers prioritize visible/nearby rows. The server has two analysis workers, one conversion worker, bounded queues and a bounded job map. Compatible H.264/yuv420p/AAC MP4 files are streamed directly; other decodable sources are repackaged or converted before playback, preserving originals and aspect ratio. This is complete-file preparation, not live HLS transcoding.
 
-원본 루트 아래의 상대 경로만 허용한다. 보안 디렉터리 스트림과 NOFOLLOW 방식으로 열고 심볼릭 링크는 따라가지 않는다. 이를 지원하는 파일시스템이 필요하며 서버 검증 대상은 Linux/macOS다. 오류 응답에 서버 절대 경로를 노출하지 않는다. 원본 루트에 대한 업로드·수정·삭제 기능은 없다.
+Single HTTP byte ranges use bounded buffers. Signed playback parameters bind a source path, version and original/converted mode; these signatures protect prepared-stream consistency, not user identity. Keys change on restart. Per-source versioning includes path, size, modification time and file identity, so a special overwrite preserving every version input may require generated-cache cleanup.
 
-폴더 표지는 요청 경로의 고정된 `.folder.jpg`만 읽는다. 크기와 JPEG 헤더를 검증한 뒤 응답하며 디스크 이미지 캐시나 하위 검색은 사용하지 않는다. 영상 표지는 `영상파일명.확장자.jpg`를 우선한다(예: `clip.mp4.jpg`). 유효한 JPEG가 없으면 기존 자동 생성 이미지를 사용한다. 명시한 이미지 한 개만 읽으며 최대 512 KiB, 1280px 변 길이와 1280×720 픽셀 수를 검증한다. 이미지 버전은 영상 재생 버전과 독립적이며 썸네일 응답은 `no-store`다.
+Generated-data accounting includes in-progress output, evicts old unpinned files and cleans recognized abandoned work on startup. Process count, queue size, output logs, processing time, free space and concurrent streams are limited. JVM heap is not total container memory; FFmpeg and browser decoders/GPU memory are separate. Actual NAS latency, codec complexity, disk pressure and concurrency need target-environment tests.
 
-원본 영상과 표지는 Git/JAR/이미지에 넣지 않는다. 외부 볼륨은 읽기 전용으로 연결한다.
+## Presentation and playback
 
-## 테마와 UI
+The startup theme comes from the packaged allowlist. A theme owns copy, styles and original SVGs; shared browsing/cache/player logic is not duplicated. Preview overrides accept registered IDs only and do not mutate server settings. Folder display labels are optional literal text, independent of paths. Documentation translations do not imply UI localization.
 
-테마는 `static/themes/`에서만 관리하며 [테마 안내](themes.md)의 카탈로그가 허용 목록이다. 서버가 시작할 때 `MOVIESITES_THEME`를 검증하고 `/api/config`로 선택값을 제공한다. 정적 UI는 해당 테마의 문구·CSS·SVG만 로드한다. 선택 화면의 의미, 제목, 목적지가 적힌 이동 버튼, 기본 비디오 재생은 공통이다. 테마별로 레이아웃·서체·간격·색상·모양을 바꾼다.
+The browser queue is origin/root-scoped localStorage with a 200-entry limit, or an in-memory fallback if storage is unavailable. Play-all snapshots the saved queue, advances on natural completion and closes after the final item. Closing invalidates pending inspection/playback work. The same dialog/video element retains native controls; responsive sizing preserves the original video ratio and keeps controls inside the available viewport.
 
-미리보기 쿼리는 카탈로그에 등록된 ID만 허용하며 서버 설정을 변경하지 않는다. 임의 경로나 원격 CSS를 받지 않는다. 잘못된 미리보기 ID는 서비스 기본 테마와 안내로 대체한다. 테마 로딩 전에는 중립적인 준비 화면을 제공하고 실패하면 재연결 버튼을 표시한다. 테마 자체에는 영상, 사용자 나이, 비밀값, 외부 폰트·분석 서비스가 없다.
+Static UI responses use `no-store` rather than reproducible archive timestamps as content versions. HTML/module references also carry content hashes. CSP restricts resources to the service's own origin, and focus/reduced-motion rules are kept in the shared presentation.
 
-UI 정적 파일은 `no-store`이고 변경 가능한 파일에 재현 빌드 시각을 이용한 304를 반환하지 않는다. 진입 HTML과 모듈 참조에는 콘텐츠 해시도 사용한다. CSP는 자체 출처 자원만 허용한다. 키보드 포커스·기본 dialog/video·움직임 축소 설정을 유지한다.
+## HTTP surface
 
-## 재생 대기열
+| Endpoint | Purpose |
+|---|---|
+| `GET /api/health` | Application response status, not a full storage audit |
+| `GET /api/config` | Root identity, list limits, selected theme and display labels |
+| `GET /api/browse?path=...&cursor=...` | Immediate-child continuation page |
+| `GET /api/media/folder-cover?path=...` | Exact folder's validated JPEG |
+| `GET /api/media/info?path=...&play=true` | Media inspection and optional playback preparation |
+| `GET /api/media/thumbnail?path=...&v=...` | Versioned selected/generated thumbnail |
+| `GET`/`HEAD /api/media/stream?path=...&v=...&token=...` | Prepared video and single byte-range delivery |
 
-선택 화면에서 영상 하나씩 또는 현재 조회 화면의 영상들을 하나의 대기열에 담는다. 중복 경로는 한 번만 저장하며 최대 200개다. 삭제·위/아래 이동·비우기와 처음부터 전체 재생을 제공한다. 이름을 붙인 여러 재생목록이나 서버 저장 API는 없다.
-
-대기열은 출처(origin)와 미디어 루트별 브라우저 `localStorage`에 버전 있는 상대 경로·표시 이름·크기만 저장한다. 저장이 차단되거나 용량이 부족하면 메모리에서 계속 사용하고 유지 범위를 안내한다. 같은 브라우저의 같은 주소에서 새로고침 후 복원한다. 파일을 이동하면 이전 경로는 자동 추적하지 않는다.
-
-전체 재생 시작 시 대기열을 복사하고 첫 영상을 0초부터 재생한다. 진행 중 편집은 다음 전체 재생부터 적용한다. 동일 팝업/비디오 요소에서 `ended`로 다음 영상을 시작하며 마지막 종료는 팝업을 닫는다. 선택 화면의 폴더·페이지·스크롤을 다시 로드하지 않고 대기열은 남긴다. 개별 영상 재생도 종료 시 팝업을 닫는다. 수동 닫기·Escape·이전/다음 이동은 이전 조회와 타이머를 취소하며 늦은 응답이 재생을 다시 시작하지 못하게 한다.
-
-브라우저가 자동 재생을 차단하면 재생 시작 버튼을 제공한다. 실패/삭제된 파일은 이유와 다시 확인·다음 영상 동작을 보여주며 자동으로 성공한 것처럼 건너뛰지 않는다. 마지막 항목의 실패는 다시 확인하거나 팝업을 닫아 복구한다. 반복 재생은 기본 동작에 포함하지 않는다.
-
-플레이어는 동적 뷰포트와 안전 영역 안에서 헤더·재생 조작부를 먼저 배치하고 영상 영역이 남은 높이에 맞춰 줄어든다. 영상 요소는 영역 전체에 맞추고 `object-fit: contain`으로 원본 비율을 보존한다. 낮은 가로 화면에서는 제목과 조작부 간격을 줄여 영상 내부의 기본 재생·음량·전체 화면·추가 옵션 컨트롤이 팝업 아래로 가려지지 않게 한다.
-
-## 배포
-
-Docker 이미지는 비루트 사용자로 실행한다. 미디어와 데이터는 서로 겹치지 않는 외부 경로이며 컨테이너를 바꿔도 보존된다. 현재 접근 모델은 익명 읽기 전용이다. 인증·TLS·공개 주소는 운영 환경에서 구성한다. 실행 가능한 Dockerfile을 제공하며 Kubernetes/Helm 배포물은 포함하지 않는다.
+Use values returned by inspection for thumbnail/stream versions and playback tokens. Missing/changed files, expired cursors, processing limits and unavailable storage have distinct error responses. The current access model is anonymous read-only; deployment authentication/TLS are outside this application. See [configuration](configuration.md), [security](../SECURITY.md) and [verification](verification.md).

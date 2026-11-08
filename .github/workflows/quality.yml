@@ -36,3 +36,4 @@ jobs:
           PY
           ./gradlew --no-daemon clean build
           bash ./scripts/check.sh
+          python3 -B scripts/check-docs.py

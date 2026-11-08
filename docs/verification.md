@@ -1,58 +1,26 @@
-# 플랫폼 검증 기록
+# Verification
 
-## 2026-11-08 모바일 플레이어 수정 및 운영 반영
+[한국어](ko/verification.md) · [Documentation index](../README.md#documentation)
 
-모바일 가로 화면 812×375에서 영상 하단이 팝업 하단보다 약 82px 아래로 내려가 기본 재생·옵션 버튼이 가려지는 현상을 재현했다. 동적 뷰포트와 안전 영역 안에서 팝업을 세로 flex로 배치하고 영상 영역이 남은 높이로 줄어들도록 수정했다. 영상 요소도 같은 영역 전체에 맞춰 원본 비율과 기본 컨트롤을 보존한다. 낮은 화면에서는 제목·조작부 간격을 줄이고 보조 파일명은 숨긴다.
+## Gradle and documentation migration — 2026-11-08
 
-- 19개 테마 × 320×568/812×375의 총 38개 재생 조건에서 영상과 대기열 조작부가 팝업 안에 표시됐고 팝업 내부 넘침이 없었다. 큰 글자 테마에서 긴 영상 제목도 별도로 확인했다. 인앱 브라우저의 기본 추가 옵션 메뉴를 실제로 열어 표시를 확인했다.
-- 서버 JUnit 29개와 JavaScript 검사 16개가 통과했다. Docker 다단계 빌드에서도 JUnit 29개가 통과했다. 배포 후보는 상태 점검, 정적 자원 88개 및 선택 썸네일 32개 일치 검사를 통과했다.
-- 기존 서비스 컨테이너를 새 이미지로 교체했다. 원본 읽기 전용 마운트와 데이터 경로, 기존 실행 사용자 501:20, 테마·폴더 표시 설정, 공개 주소/포트, 읽기 전용 루트, 메모리 2 GiB·CPU 2개·PID 128·재시작 정책을 보존했다. 이전 컨테이너는 복구용으로 남겼다.
-- 운영 주소에서 상태·목록·경로 거부·정적 자원 재검증 검사가 통과했고 컨테이너는 healthy다. 정적 자원 88개와 썸네일 32개가 검증본과 일치했으며, 원본 32개의 SHA256·크기·수정 시각도 유지됐다. 실제 저장 영상은 모바일 가로 화면에서 `readyState=4`, `paused=false`, 양의 재생 시각과 영상 오류 없음이었다. 세로 화면에서도 영상·조작부가 팝업 안에 들어오는 것을 확인했다.
+The pre-migration working tree's queue, per-video thumbnail and mobile-player improvements were preserved in a separate baseline commit. The migration then changed the build/packaging and public documentation; it did not replace those runtime sources or original media.
 
-실제 검증 브라우저는 macOS 인앱 Chromium이며 뷰포트 크기로 모바일을 점검했다. Safari/iOS 및 Android 실기기별 검증 결과를 의미하지 않는다. 배포 이미지·복구 컨테이너 정보와 화면 자료는 Git에서 제외된 프로젝트 작업 영역에 기록했다.
+- JDK 25 and the standard Gradle 9.9.0 Wrapper built the executable JAR successfully. The distribution checksum and official wrapper JAR checksum were verified before use. Spring Boot remains 4.1.2.
+- The 29 JUnit tests passed without failures, errors or skips. Coverage includes path/symlink boundaries, bounded browsing/cursors, byte ranges, generated-cache budgets, startup settings, folder covers and explicit-thumbnail selection/fallback.
+- All 34 packaged runtime dependency JAR filenames matched the pre-migration baseline. The single-JAR/static-frontend architecture was retained.
+- The 16 JavaScript checks passed for cache TTL/LRU/size and cursor history, queue persistence/limits, sequential playback, cancellation, autoplay recovery and mobile player wiring. These adapter checks do not certify every browser policy.
+- Theme, content-hash, Git exclusions and JAR separation checks passed. Actual videos, collection images and generated data stay outside the source package. The 19 bundled theme IDs are a compatibility baseline, not a maximum catalog size.
+- The Gradle multi-stage Docker image built and a non-root, read-only-root candidate started with separate external media/data mounts and an environment-selected theme. Health, config, browsing, path rejection and static-resource revalidation smoke checks passed.
 
-## 이전 로컬 개발 검증: 단일 재생 대기열과 영상별 썸네일
+The documentation checker passed for 29 Markdown files and 155 local links, including heading targets, English/Korean guide counterparts, environment names/examples and active Gradle build references. The final container matched all 88 static source files, loaded the public environment-file defaults, and played representative H.264/AAC media in the in-app Chromium browser with readyState 4, advancing time, native controls and no video error. Command, container and service checks are repeated against the final tree before integration. Repository checks and App approval gate the current head; a historical successful run is not approval of a new head.
 
-이번 변경은 로컬 개발본에서 검증했다. 기존 운영 컨테이너의 교체, Docker 이미지 재빌드와 GitHub commit/push/PR/merge는 수행하지 않았다. 이전 배포 검증 기록은 아래에 별도로 남긴다.
+## Inherited UI evidence
 
-- JDK 25의 `./mvnw verify`: JUnit 29개 통과. 영상별 JPEG 우선 선택, 별도 이미지 버전, 원본 재생 버전 보존, 잘못된/큰 이미지 대체와 심볼릭 링크·경로 경계를 포함한다.
-- `bash scripts/check.sh`: JavaScript 검사 16개, 19개 테마 매니페스트, 모듈/스타일 콘텐츠 해시와 JAR 데이터 분리 검사 통과. 실제 앱 이벤트 연결의 테스트는 최종 종료 후 팝업 닫힘, 폴더·스크롤 보존, 자동 재생 거절 후 재개, 닫힌 후 도착한 응답 무효화, 파일 없음 복구와 조기에 준비된 썸네일 뒤 재생시간 조회 지속을 확인했다.
-- macOS 인앱 브라우저에서 저장 후 새로고침 복원, 위/아래 순서 변경, 이전/다음, 수동 닫기와 파일 없는 항목에서 다음 영상 재생을 확인했다. 별도 3초 H.264/AAC 파일 두 개는 자연 종료로 다음 항목을 거쳐 마지막에 팝업이 닫혔고 대기열과 선택 URL이 유지됐다. 실제 저장 영상 두 개도 `readyState=4`, `paused=false`, 양의 재생 시각과 오류 없음으로 확인했다.
-- 공통 대기열 화면을 테마 19개 × 320px/1440px, 총 38개 조건에서 검사했다. 가로 넘침 없음, 버튼이 패널 안에 표시됨, 최소 높이 44px 이상과 영상 카드 표시를 확인했다. 60대 테마의 새 버튼은 56px 이상이다. 기본·어두운·큰 대비 테마의 화면을 시각 검토했다.
-- 현재 외부 미디어 32개는 각 제목의 내용을 보여주는 장면을 골라 640×360 JPEG로 저장했다. API 응답 32개는 선택 이미지 SHA256과 일치했고 `image/jpeg`, `no-store`를 반환했다. 원본 32개의 SHA256·크기·수정 시각이 모두 유지됐다. 선택 이미지와 실제 장면은 Git/JAR에 포함하지 않는다.
-- 개발 실행본에서 상태·설정·목록·경로 거부·정적 자원 재검증 검사가 통과했다. 검증 후 장면 후보와 일회성 재생 파일/데이터를 정리했다. 선택 이미지 기록, 원본 비교 결과와 스크린샷은 Git에서 제외된 프로젝트 작업 영역에 보관했다.
+The preserved runtime baseline was previously inspected in the macOS in-app Chromium browser: 19 themes at 320×568 and 812×375 playback viewports, queue ordering/restoration, sequential completion, late-response cancellation and native video controls. Real H.264/AAC media reached readyState 4 with advancing playback and no video error. Earlier detailed reports remain in Git history rather than advertising obsolete build commands here.
 
-Safari/iOS 실기기 전체 화면 종료, 브라우저 간 저장 공유, 실제 디스크 고갈·NAS 장애와 대규모 동시 재생은 이번 검증 범위에 포함하지 않는다. 자동 재생 차단은 실제 앱 코드를 실행하는 미디어 어댑터 검사로 확인했으며 모든 브라우저 정책 조합을 실기기로 재현한 결과는 아니다.
+Those observations apply to that baseline and environment. Gradle changes do not expand them into new browser/device certification. Real media frames, private paths, deployment configuration and detailed local evidence are not published in the repository.
 
-## 이전 테마·배포 검증 기록
+## Limits
 
-검증일: 2026-11-08. 대상: `v8-themes`. 현재 범용 문서와 19개 테마 변경을 검증했다. 이전 특정 디자인의 기록은 Git 이력에 보존하며 이 문서의 결과로 과거 검증을 다시 주장하지 않는다.
-
-## 빌드와 자동 검사
-
-- JDK 25의 `./mvnw verify`와 Docker의 다단계 빌드 성공. JUnit 27개가 실패·오류·건너뜀 없이 통과했다. 기존 경로·심볼릭 링크·바로 아래 탐색·조회 토큰·byte range·생성 캐시 예산 검사를 유지했다.
-- 새 설정 검사는 19개 ID 및 패키지 자원, 알 수 없거나 경로 형태인 ID 거부, 선택값과 표시 문구의 API 응답, 잘못된/과도한 표시 문구를 확인했다.
-- 캐시 TTL/LRU/용량과 최근 20개 이동 기록에 대한 Node.js 테스트 5개 통과. 테마 검사는 기본값 1개와 나이대별 3개씩, 고유 스타일, 매니페스트, 로컬 CSS 참조, 독립 SVG, 안전하지 않은 미리보기 값의 대체를 확인했다.
-- 정적 파일의 콘텐츠 해시, JAR의 모든 테마 자원 일치, Git/JAR의 원본 영상·생성 데이터 분리를 확인했다. 테마 자원도 미래의 `If-Modified-Since`에 200과 `no-store`를 반환했다.
-
-## 실행 설정과 실제 화면
-
-- 테마 환경변수 없이 기동한 별도 컨테이너에서 `child-toy` 기본값을 확인했다. `MOVIESITES_THEME=20s-soft-minimal`로 다시 기동한 인스턴스는 미리보기 쿼리 없이 해당 테마를 표시했다. 표시 문구의 기본값은 빈 객체이며 실제 폴더명을 그대로 표시했다.
-- 허용 목록 밖의 경로 형태 테마 값을 넣은 일회성 컨테이너는 명확한 `MOVIESITES_THEME` 오류와 종료 코드 1로 시작을 거부했다.
-- 최종 배포본에서 19개 테마 각각의 모바일 컬렉션(375px), 데스크톱 컬렉션(1425~1440px), 작은 영상 목록(320px)을 확인했다. 총 57개 조건에서 준비 완료·목록 표시·가로 넘침 없음·오류 안내 없음이 확인됐다. 서로 다른 행/열 구성과 카드 형태를 스크린샷으로 검토했다.
-- 작은 화면에서 지나치게 좁았던 클래식 테마의 영상 목록을 2열로 수정하고 재검증했다. 60대 프리셋의 주요 새로고침 버튼은 56px 이상이다. 키보드 포커스, 이동 목적지 문구, 움직임 축소 규칙을 유지했다.
-- 하위 컬렉션 이동, 목적지가 적힌 복귀 버튼, 브라우저 뒤로 이동과 캐시 재사용, 브랜드 홈 링크의 미리보기 유지, 기본 화면으로의 복귀, 잘못된 미리보기 ID의 대체를 확인했다.
-- 어린이 기본 테마와 성인 기본 테마에서 표준 비디오 컨트롤로 실제 H.264/AAC 파일을 재생했다. 각각 `readyState=4`, `paused=false`, 양의 `currentTime`, 오류 없음이었다. 검사 파일 길이는 약 660.49초다. 플레이어는 원본 비율을 유지한다.
-- 테마 안내 페이지는 모바일에서도 19개 카드와 실제 화면 링크를 제공한다. 카드의 그림은 배치 도식이며 원본 영상이나 운영자의 표지를 소스에 복사하지 않았다.
-
-## 배포와 데이터 보존
-
-기존 공개 서비스의 컨테이너를 교체하고 이전 컨테이너를 복구용으로 보존했다. 선택값은 `child-toy`이며, 운영 중이던 분류 설명은 외부 환경 설정으로 유지했다. 원본 읽기 전용 마운트, 외부 데이터 마운트, 비루트 사용자, 읽기 전용 루트 파일시스템, 메모리 2 GiB·CPU 2개·PID 128·재시작 정책을 유지했다.
-
-배포된 모든 정적 UI 자원이 소스와 바이트 단위로 일치했다. 상태·설정·목록·경로 거부·정적 자원 재검증 점검과 컨테이너 health가 통과했다. 외부 원본 30개의 경로·파일 식별자·크기·수정 시각과 대표 이미지 7개의 SHA256이 유지됐다. 검증 인스턴스는 별도 데이터 루트를 사용했다.
-
-테마 소스 트리 SHA256: `a1e8f9d3e408322d5a53eead92be666043ad507f0a14103a96dbddf21e134725`. 정렬된 각 파일의 저장소 상대 경로, NUL, 바이트 내용, NUL을 이어 계산했다. 브라우저 관찰·배포 정보·스크린샷과 미디어 비교 자료는 Git에서 제외된 운영 작업 영역에 보관한다. 사용자 영상과 실제 장면을 저장소에 배포하지 않는다.
-
-## 검증 범위의 한계
-
-실제 화면과 재생 검증은 macOS의 인앱 브라우저에서 수행했다. Edge·Safari 실기기별 모든 테마, 접근성 인증, 대규모 동시 사용자 부하, 실제 NAS 장애·지연 및 초대형 저장소 전체를 이번 변경에서 검증한 것은 아니다. 기존 범용 오류·자원 제한은 유지했으며 설치 환경에 맞는 추가 검증이 필요하다. 공개 호스트 주소를 통한 확인은 했지만 별도 외부 네트워크의 새 측정 결과를 의미하지 않는다.
+Safari/iOS and Edge/Android device combinations, accessibility certification, prolonged load, huge-directory capacity, actual NAS stalls/disconnections and disk exhaustion were not comprehensively exercised by this migration. Native secure-directory support must be checked on the target filesystem. Container example limits are not a service-capacity guarantee. Public-host verification from the development environment is not an independent external-network measurement.

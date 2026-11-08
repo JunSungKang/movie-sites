@@ -17,7 +17,7 @@ class PresentationTests {
         var json = new JsonMapper();
         try (var input = new ClassPathResource("static/themes/catalog.json").getInputStream()) {
             var catalog = json.readTree(input);
-            assertEquals(19, catalog.path("themes").size());
+            assertTrue(catalog.path("themes").size() >= 19, "Keep the bundled baseline and allow contributed themes");
             for (var entry : catalog.path("themes")) {
                 var service = new PresentationService(entry.path("id").asText(), "{}");
                 assertEquals(entry.path("id").asText(), service.theme().id());
