@@ -2,8 +2,11 @@
 !/movie/.gitkeep
 /runtime/
 /target/
+/build/
+/.gradle/
 /.cache/
 /.codex-work/
 .env
 .env.*
+!.env.example
 .DS_Store

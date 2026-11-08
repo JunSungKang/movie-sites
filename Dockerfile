@@ -1,9 +1,13 @@
 # syntax=docker/dockerfile:1
-FROM maven:3.9.12-eclipse-temurin-25-noble@sha256:4f82a03a7d6679281952d628131299b1be88d7030a49c6a2b7d2ba2642e44e3e AS build
+FROM eclipse-temurin:25-jdk-noble@sha256:95e350ad1eb738f943e141640f7e3d797e483359a3b33c3864255bfd1ad71f8a AS build
 WORKDIR /build
-COPY pom.xml ./
+ENV GRADLE_USER_HOME=/build/.cache/gradle
+ENV JAVA_TOOL_OPTIONS="-XX:-UsePerfData -Djava.io.tmpdir=/build/.cache/tmp"
+COPY build.gradle.kts settings.gradle.kts gradle.properties ./
+COPY gradle ./gradle
+COPY --chmod=755 gradlew ./
 COPY src ./src
-RUN mkdir -p .cache/tmp && mvn -B -ntp -Dmaven.repo.local=/build/.cache/m2 verify
+RUN --mount=type=cache,target=/build/.cache/gradle mkdir -p .cache/tmp && ./gradlew --no-daemon build
 
 FROM eclipse-temurin:25-jre-noble@sha256:a98128a57de944a72bd31fbc79b898edd5a5864d3652071d5bbd2160ab7d7dce
 RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg curl ca-certificates \
@@ -11,7 +15,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg curl ca-
     && groupadd --gid 10001 moviesites && useradd --uid 10001 --gid 10001 --no-create-home moviesites \
     && mkdir -p /app /data/work/tmp && chown -R 10001:10001 /app /data
 WORKDIR /app
-COPY --from=build /build/target/moviesites.jar /app/moviesites.jar
+COPY --from=build /build/build/libs/moviesites.jar /app/moviesites.jar
 COPY LICENSE THIRD_PARTY_NOTICES.md /app/
 COPY --chmod=755 <<'SCRIPT' /app/start
 #!/bin/sh

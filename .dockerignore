@@ -1,7 +1,12 @@
 *
 !Dockerfile
 !.dockerignore
-!pom.xml
+!build.gradle.kts
+!settings.gradle.kts
+!gradle.properties
+!gradlew
+!gradle/
+!gradle/**
 !src/
 !src/**
 !LICENSE
