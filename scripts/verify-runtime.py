@@ -15,7 +15,7 @@ listing=get('/api/browse?path=');assert len(listing['entries'])<=config['pageSiz
 for path in ['../secret','/etc/passwd','folder/../../secret']:
     assert get('/api/browse?'+urllib.parse.urlencode({'path':path}),400)['code']=='INVALID_PATH'
 assert get('/api/browse?path=missing-folder-that-does-not-exist',404)['code']=='NOT_FOUND'
-for path in ['/index.html','/js/app.js','/js/cache.js','/css/app.css','/themes/runtime.js','/themes/preview.html','/themes/'+config['theme']['directory']+'/theme.css']:
+for path in ['/index.html','/js/app.js','/js/cache.js','/js/playback.js','/css/app.css','/themes/runtime.js','/themes/preview.html','/themes/'+config['theme']['directory']+'/theme.css']:
     request=urllib.request.Request(base+path,headers={'If-Modified-Since':'Sun, 07 Nov 2027 00:00:00 GMT'})
     with urllib.request.urlopen(request,timeout=15) as response:
         assert response.status==200,(path,response.status)

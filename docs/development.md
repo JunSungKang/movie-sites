@@ -1,32 +1,53 @@
-# 개발 안내
+# Development
 
-JDK 25와 Node.js(정적 코드 검사), FFmpeg/ffprobe(런타임 검증)를 사용한다. Node.js는 서비스 운영에 필요하지 않다.
+[한국어](ko/development.md) · [Documentation index](../README.md#documentation)
+
+## Prerequisites and setup
+
+Use JDK 25, Node.js 24 and Python 3.9 or later for the full repository checks. Install FFmpeg/ffprobe to exercise local media processing, or use the Docker image. A global Gradle installation, frontend development server and database are not required.
+
+Fork/clone the repository, create a focused branch and run:
 
 ```bash
-./mvnw verify
+./gradlew clean build
 bash scripts/check.sh
+python3 -B scripts/check-docs.py
 ```
 
-Maven Wrapper는 프로젝트의 `.cache/`에 도구·의존성·임시 파일을 보관한다. `movie/`는 `.gitkeep`만 추적한다. `runtime/`, `.cache/`, `.codex-work/`, `target/`, `.env`는 추적하지 않는다. 빌드는 미디어 루트를 리소스로 읽지 않으며 패키지 검사에서 영상 파일 포함 여부를 확인한다.
+`build/libs/moviesites.jar` is the executable artifact. Java test results are under `build/test-results/test/` and the HTML report under `build/reports/tests/test/`. `./gradlew test` runs server tests; `node --test scripts/cache.test.mjs scripts/playback.test.mjs scripts/player-ui.test.mjs` runs the JavaScript tests. Package checks require a freshly built JAR. See [CONTRIBUTING](../CONTRIBUTING.md) for the PR workflow.
 
-| 경로 | 역할 |
+## Source layout
+
+| Path | Responsibility |
 |---|---|
-| `src/main/java/io/moviesites/` | 탐색·스트리밍·변환·설정 API |
-| `src/main/resources/static/js/` | 공통 탐색·캐시·재생 동작 |
-| `src/main/resources/static/css/app.css` | 접근성·준비 화면 등 공통 기능 스타일 |
-| `src/main/resources/static/themes/` | 테마 카탈로그·문구·CSS·SVG·미리보기 |
-| `src/test/` | 서버 동작·경계·자원 제한 회귀 검사 |
-| `scripts/` | 프런트엔드·패키지·런타임 검사 |
-| `docs/` | 현재 설계·명세·검증·기여 안내 |
+| `build.gradle.kts`, `settings.gradle.kts`, `gradle/` | Kotlin DSL build, project identity and verified Gradle Wrapper |
+| `src/main/java/io/moviesites/` | Configuration, HTTP API, storage, browsing and media processing |
+| `src/main/resources/application.yml` | Environment-backed application settings |
+| `src/main/resources/static/js/` | Common browsing, response cache, queue and player behavior |
+| `src/main/resources/static/css/app.css` | Shared functional/accessible UI rules |
+| `src/main/resources/static/themes/` | Catalog, preset copy/styles/SVGs and preview |
+| `src/test/java/io/moviesites/` | Server regression tests |
+| `scripts/` | Frontend, theme, documentation, package and runtime checks |
+| `docs/` | Detailed guides linked from the root README |
 
-`scripts/validate-themes.mjs`는 테마 19개, 그룹별 개수, 허용 목록, 매니페스트, 참조 자원과 안전하지 않은 미리보기 값을 검사한다. `scripts/check.sh`는 이 검사와 JavaScript 문법·캐시 테스트, 콘텐츠 해시, Git/JAR 데이터 분리를 함께 확인한다. UI 변경 후에는 모바일·데스크톱에서 실제 레이아웃, 긴 제목, 이동 버튼과 영상 재생도 확인한다. 자동 검사는 시각 품질을 인증하지 않는다.
+The application follows the standard Java/Gradle source layout. The current small Java codebase stays in one base package; new package boundaries should follow actual maintenance needs rather than a required directory taxonomy.
 
-실행 중인 인스턴스 점검:
+## Running and testing changes
+
+Use the [getting-started guide](getting-started.md) for the JAR or run `./gradlew bootRun` with explicit media/data roots. Every concurrent instance needs a distinct data root and port. Tests use project-local temporary files and remove their fixtures. Real media must never become a committed fixture.
+
+`bash scripts/check.sh` checks JavaScript syntax, cache/queue/player behavior, theme assets, content hashes, Git exclusions and JAR/data separation. `scripts/check-docs.py` checks local documentation links, public settings examples, locale counterparts and build references. Visible UI changes also require real browser inspection; native codec/device, NAS failures and load tests are separate from adapter/unit tests.
+
+After changing a versioned UI asset, update its content-hash query reference in `index.html` or its importing module. Keep the root media directory, generated data, build output and credentials untracked. Do not change stream authorization or filesystem boundaries as incidental cleanup.
+
+Runtime smoke check against an already running test instance:
 
 ```bash
 python3 -B scripts/verify-runtime.py http://127.0.0.1:8080
 ```
 
-여러 검증 인스턴스는 서로 다른 데이터 루트와 포트를 사용해야 한다. 테마 설정은 프로세스 시작 시 읽는다. JAR를 다시 빌드할 필요 없이 재시작으로 등록된 테마를 바꿀 수 있으며 새 테마 파일을 추가했다면 재빌드가 필요하다.
+Gradle uses its normal user cache unless `GRADLE_USER_HOME` is set. For workspace-bounded automation, set it to `$PWD/.cache/gradle`, create `$PWD/.cache/tmp`, and set `JAVA_TOOL_OPTIONS` to `-XX:-UsePerfData -Djava.io.tmpdir=$PWD/.cache/tmp`. This keeps that automation's caches/temp files inside the checkout; it is not a special contributor authentication step.
 
-현재 기능 명세는 [spec-platform.json](spec-platform.json)에 있다. 과거 특정 화면의 설계·명세·운영 사례는 Git 이력에 보존하고 현재 문서는 범용 플랫폼의 동작으로 통합한다. 검사 결과에는 실행 조건과 미검증 범위를 함께 기록한다.
+## Themes and documentation
+
+Use [the theme guide](themes.md#adding-a-theme) for preset contributions. English is the documentation source, `README.ko.md` is the root Korean translation, and `docs/ko/` mirrors guide filenames. Keep both languages updated in the same PR. Actual UI copy is currently Korean and is separate from documentation translation. Historical SDD metadata is explained in [maintainer notes](maintainers.md).

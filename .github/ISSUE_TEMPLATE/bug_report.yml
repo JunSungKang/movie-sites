@@ -1,0 +1,32 @@
+name: Bug report
+description: Report a reproducible application, documentation or deployment problem.
+body:
+  - type: markdown
+    attributes:
+      value: Do not include private media, tokens, personal paths or sensitive logs. Follow SECURITY.md for security reports.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What happened?
+      description: Describe the actual behavior and what you expected.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Use synthetic or redistributable examples. Include the page or command involved.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Commit/version, JAR or Docker, OS/filesystem, Java and browser versions, and relevant redacted configuration.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Safe logs or screenshots
+      description: Remove credentials, private paths, personal data and actual private video frames.

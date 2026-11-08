@@ -1,0 +1,22 @@
+name: Feature request
+description: Suggest an improvement to the video platform or its documentation.
+body:
+  - type: textarea
+    id: need
+    attributes:
+      label: Problem or use case
+      description: Who needs this and what are they trying to do?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Describe the intended result and any alternatives you considered.
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Constraints and contribution
+      description: Mention compatibility, storage/resource implications, relevant licenses, or how you could help.

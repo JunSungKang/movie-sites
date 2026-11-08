@@ -4,8 +4,8 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#f5f7f6"><meta name="description" content="폴더 구조 그대로 탐색하고 감상하는 셀프 호스팅 영상 플랫폼, MovieSites">
   <title>MovieSites — 영상 라이브러리</title>
-  <link rel="icon" href="data:,"><link rel="stylesheet" href="/css/app.css?v=e514a96848ae6436">
-  <script type="module" src="/js/app.js?v=6570286373ec3066"></script>
+  <link rel="icon" href="data:,"><link rel="stylesheet" href="/css/app.css?v=399597566a1b2ad4">
+  <script type="module" src="/js/app.js?v=331c7ff8185904f2"></script>
 </head>
 <body>
 <section id="boot-state" class="boot-state" role="status"><p id="boot-message">영상 라이브러리를 준비하고 있습니다.</p><button id="boot-retry" type="button" hidden>다시 연결</button></section>
@@ -35,6 +35,12 @@
   <div class="listing-toolbar"><p id="listing-status" class="listing-status" role="status" aria-live="polite"></p><button id="refresh-button" class="refresh-button" type="button"><svg class="icon" aria-hidden="true"><use href="#i-refresh"/></svg><span>새로고침</span></button></div>
   <section id="notice" class="notice" role="alert" hidden></section>
   <section id="folder-section" class="folder-section" aria-labelledby="folders-heading" hidden><h2 id="folders-heading" class="section-caption">컬렉션</h2><div id="folder-list" class="folder-list"></div></section>
+  <section id="queue-panel" class="queue-panel" aria-labelledby="queue-heading">
+    <div class="queue-heading"><div><h2 id="queue-heading">재생 대기열 <span id="queue-count">0개</span></h2><p id="queue-description">보고 싶은 영상을 담고 순서대로 재생하세요.</p></div><div class="queue-actions"><button id="queue-add-page" class="queue-button" type="button" hidden>이 화면 영상 모두 담기</button><button id="queue-play" class="queue-button queue-primary" type="button" aria-label="처음부터 전체 재생" disabled>전체 재생</button><button id="queue-clear" class="queue-button" type="button" disabled>비우기</button></div></div>
+    <p id="queue-empty" class="queue-empty">영상의 ‘대기열에 담기’ 버튼을 눌러 주세요.</p>
+    <ol id="queue-list" class="queue-list" aria-label="재생 순서"></ol>
+    <p id="queue-warning" class="queue-warning" role="status" hidden></p>
+  </section>
   <section id="video-section" class="video-section" aria-labelledby="videos-heading" hidden><h2 id="videos-heading" class="section-caption">영상 목록</h2><div id="video-list" class="video-list" aria-busy="true"></div></section>
   <section id="empty-state" class="empty-state" hidden><span class="empty-mark" aria-hidden="true">☆</span><h2 id="empty-title">아직 영상이 없습니다.</h2><p id="empty-description">저장소에 영상을 추가한 뒤 새로고침해 주세요.</p></section>
   <div id="loading-state" class="loading-state" role="status"><span class="loading-dot"></span><span id="loading-text">영상 목록을 불러오고 있습니다.</span></div>
@@ -44,6 +50,7 @@
 <dialog id="player-dialog" class="player-dialog" aria-labelledby="player-title">
   <header class="player-heading"><div><p id="player-folder" class="eyebrow"></p><h2 id="player-title"></h2></div><button id="close-player" class="icon-button" type="button" aria-label="재생 화면 닫기"><svg class="icon"><use href="#i-close"/></svg></button></header>
   <div class="player-surface"><video id="video-player" controls playsinline preload="metadata" hidden></video><div id="player-preparing" class="player-preparing"><svg class="icon"><use href="#i-film"/></svg><p id="player-state" role="status" aria-live="polite">영상을 확인하고 있습니다.</p><progress id="player-progress" aria-label="영상 준비 중"></progress></div></div>
+  <div class="player-controls"><button id="player-previous" class="queue-button" type="button">이전 영상</button><p id="player-position" role="status" aria-live="polite"></p><button id="player-resume" class="queue-button queue-primary" type="button" hidden>재생 시작</button><button id="player-next" class="queue-button" type="button">다음 영상</button></div>
   <div class="player-bottom"><p id="player-file"></p><button id="retry-player" class="text-button" type="button" hidden>다시 확인</button></div>
 </dialog>
 <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
