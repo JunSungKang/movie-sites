@@ -22,7 +22,7 @@ export function validateManifest(manifest, id) {
 }
 
 export async function applyTheme(config) {
-  const read = async url => {const response = await fetch(url, {cache:'no-store'});if (!response.ok) throw new Error('테마를 불러오지 못했습니다.');return response.json();};
+  const read = async url => {const response = await fetch(url, {cache:'no-cache'});if (!response.ok) throw new Error('테마를 불러오지 못했습니다.');return response.json();};
   const catalog = await read('/themes/catalog.json');
   const selected = selectTheme(catalog, config.theme.id, new URL(location.href).searchParams.get('preview-theme'));
   const base = '/themes/' + selected.theme.directory + '/';

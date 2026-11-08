@@ -27,6 +27,7 @@ public class MediaService {
     private final SecretKey playbackKey=createPlaybackKey();
     private final JsonMapper json=new JsonMapper();
     private final Map<String,Job> jobs=new LinkedHashMap<>(32,.75f,true);
+    private final Map<String,Boolean> validatedThumbnails=new LinkedHashMap<>(32,.75f,true);
     private final Set<Process> processes=ConcurrentHashMap.newKeySet();
     private final CacheBudget budget;
     private final ThreadPoolExecutor analysis=new ThreadPoolExecutor(2,2,0,TimeUnit.SECONDS,new ArrayBlockingQueue<>(8),r->daemon(r,"media-analysis"));
@@ -151,7 +152,13 @@ public class MediaService {
     // An explicit sidecar travels with its video and is never evicted as generated cache.
     // Its own version must not change the video's stream token or playback cache key.
     String selectedThumbnailVersion(String path) {
-        try { new FolderCoverService(storage).readImage(storage.normalize(path)+".jpg");return storage.version(path+".jpg"); }
+        try {
+            String file=storage.normalize(path)+".jpg",version=storage.version(file);
+            synchronized(validatedThumbnails){if(validatedThumbnails.get(version)!=null)return version;}
+            new FolderCoverService(storage).readImage(file);if(!version.equals(storage.version(file)))return null;
+            synchronized(validatedThumbnails){validatedThumbnails.put(version,true);while(validatedThumbnails.size()>256)validatedThumbnails.remove(validatedThumbnails.keySet().iterator().next());}
+            return version;
+        }
         catch(IOException|IllegalArgumentException e){return null;}
     }
     public Resource thumbnailResource(String path,String version) throws IOException {

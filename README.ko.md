@@ -19,7 +19,9 @@ Midnight Stream 테마의 배치 도식입니다. 실제 컬렉션 표지는 사
 - 브라우저에 대기열 하나를 저장하고 순서를 바꾸거나 연속 재생합니다.
 - 환경변수로 기본 제공 테마 19개를 선택하고 카탈로그에 새 테마를 기여할 수 있습니다.
 - 실행 가능한 JAR 또는 Docker 컨테이너 하나로 실행합니다. 화면은 정적 HTML·CSS·JavaScript입니다.
-- 목록 페이지, 짧은 브라우저 캐시와 백그라운드 처리에 제한을 둡니다. 데이터베이스·전체 트리 색인·재귀 파일 감시는 없습니다.
+- 서버·브라우저에서 목록과 버전별 썸네일을 캐시하고 메모리 제한·명시적 새로고침을 지원합니다.
+- 검색 노출용 소개 페이지를 제공하고 영상 목록은 검색 제외로 처리합니다.
+- 목록 페이지와 백그라운드 처리에 제한을 둡니다. 데이터베이스·전체 트리 색인·재귀 파일 감시는 없습니다.
 
 ## 빠른 시작
 
@@ -59,6 +61,8 @@ java -jar build/libs/moviesites.jar
 ## 설정
 
 원본은 `MOVIESITES_MEDIA_ROOT`, 생성 데이터는 `MOVIESITES_DATA_ROOT`, 화면 테마는 `MOVIESITES_THEME`로 지정합니다. 기본 테마는 `child-toy`입니다. 예를 들어 `MOVIESITES_THEME=20s-midnight-stream`으로 설정하고 재시작하면 해당 테마를 사용합니다.
+
+`MOVIESITES_PUBLIC_URL=https://media.example.org`을 설정하면 `/about` 소개 페이지의 canonical·사이트맵 주소를 활성화합니다. 검색 노출 대상은 일반적인 사이트 소개이며 영상 목록은 기존 `/`에서 이용합니다. SEO·캐시 정책은 설정 안내에 정리했습니다.
 
 모든 환경변수·기본값·허용 범위는 [설정 안내](docs/ko/configuration.md)에 있습니다. `.env.example`은 Docker 예시이며 JAR는 `.env` 파일을 자동으로 읽지 않습니다.
 

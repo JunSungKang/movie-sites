@@ -1,6 +1,6 @@
-import {applyTheme} from '../themes/runtime.js?v=d1194eab7dd6bfd9';
+import {applyTheme} from '../themes/runtime.js?v=8dad06ab9ac9f4d3';
 import {PlaybackQueue,PlaybackSession,MAX_QUEUE} from './playback.js?v=a8c901a9938d717f';
-import {DirectoryCache,PageHistory} from './cache.js?v=39b9fda8f3bd565c';
+import {DirectoryCache,PageHistory} from './cache.js?v=cb07f2467980d05a';
 import {durationGroups,topicLabels,waitForPreparation} from './library.js?v=9b9ec7046b3559fb';
 
 const $=id=>document.getElementById(id);
@@ -58,9 +58,10 @@ function folderName(path){return path.split('/').filter(Boolean).at(-1)||'라이
 let categoryLabels=new Map();
 let themeCopy;
 function folderLabel(name){return categoryLabels.get(name)||name;}
-function cacheKey(path,cursor){return `${state.config?.rootId??''}\0${path}\0${cursor??''}`;}
-function invalidateCurrent(){cache.invalidatePath(`${state.config?.rootId??''}\0${state.path}\0`);}
-async function api(url,options={}){const response=await fetch(url,{cache:'no-store',...options});if(!response.ok){let data;try{data=await response.json();}catch{data={message:'요청을 처리하지 못했습니다.'};}const error=new Error(data.message);error.code=data.code;error.status=response.status;throw error;}return response.json();}
+function cacheScope(){return `${state.config?.rootId??''}\0${state.config?.instanceId??''}\0`;}
+function cacheKey(path,cursor){return `${cacheScope()}${path}\0${cursor??''}`;}
+function invalidateCurrent(){cache.invalidatePath(`${cacheScope()}${state.path}\0`);}
+async function api(url,options={}){const response=await fetch(url,{cache:'no-cache',...options});if(!response.ok){let data;try{data=await response.json();}catch{data={message:'요청을 처리하지 못했습니다.'};}const error=new Error(data.message);error.code=data.code;error.status=response.status;throw error;}const data=await response.json();const age=response.headers?.get('Cache-Control')?.match(/(?:^|,)\s*max-age=(\d+)/);if(url.startsWith('/api/browse?')&&age)data.cacheTtlMs=Number(age[1])*1000;return data;}
 function toast(message){$('toast').textContent=message;$('toast').hidden=false;clearTimeout(toast.timer);toast.timer=setTimeout(()=>$('toast').hidden=true,4500);}
 function notice(message,retry){$('notice').replaceChildren(node('div','',message));if(retry)$('notice').append(button('다시 불러오기',()=>loadFolder(state.path,{force:true})));$('notice').hidden=false;}
 function renderLocation(){
@@ -81,9 +82,9 @@ async function listing(path,cursor,force){
   request.promise=(async()=>{
     let query;
     while(true){
-      const data=await api('/api/browse?'+new URLSearchParams({path,sort:'duration',...(cursor?{cursor}:query?{query}:{})}),{signal:controller.signal});
+      const data=await api('/api/browse?'+new URLSearchParams({path,sort:'duration',...(cursor?{cursor}:query?{query}:force?{refresh:'true'}:{})}),{signal:controller.signal,cache:force?'reload':'no-cache'});
       if(data.state==='failed')throw new Error(data.message||'목록을 정리하지 못했습니다. 잠시 후 새로고침해 주세요.');
-      if(data.state!=='preparing'){cache.put(key,data);return {data,cached:false};}
+      if(data.state!=='preparing'){cache.put(key,data,data.cacheTtlMs??cache.ttlMs);return {data,cached:false};}
       query=data.query;
       if(typeof query!=='string'||!query)throw new Error('목록 준비 상태를 확인하지 못했습니다. 새로고침해 주세요.');
       if(state.path===path){$('loading-text').textContent='짧은 영상부터 볼 수 있도록 길이를 확인하고 있어요.';$('listing-status').textContent=`${data.analyzed||0}편 확인했어요. 처음에는 조금 걸릴 수 있어요.`;}
@@ -120,7 +121,7 @@ function renderListing(data,generation){
     const tab=node('span','folder-tab',themeCopy.folderTab);tab.setAttribute('aria-hidden','true');
     const face=node('span','folder-face'),portal=node('span','folder-portal');portal.setAttribute('aria-hidden','true');
     const fallback=node('span','cover-fallback');fallback.append(icon('folder'));portal.append(fallback);
-    const image=node('img');image.alt='';image.loading='lazy';image.decoding='async';image.addEventListener('error',()=>image.remove(),{once:true});image.src='/api/media/folder-cover?'+new URLSearchParams({path:entry.path});portal.append(image);
+    const image=node('img');image.alt='';image.loading='lazy';image.decoding='async';image.addEventListener('error',()=>image.remove(),{once:true});image.src='/api/media/folder-cover?'+new URLSearchParams({path:entry.path,...(entry.coverVersion?{v:entry.coverVersion}:{})});portal.append(image);
     const copy=node('span','folder-copy'),bottom=node('span','folder-bottom');bottom.append(node('span','',themeCopy.openLabel),node('span','folder-arrow','↗'));copy.append(node('span','folder-name',label),bottom);face.append(portal,copy);card.append(tab,face);$('folder-list').append(card);
   }
   $('folder-section').hidden=!folders.length;$('video-section').hidden=!videos.length;$('queue-add-page').hidden=!videos.length;
@@ -242,5 +243,5 @@ $('video-player').addEventListener('error',()=>{if(state.player?.loaded&&$('vide
 window.addEventListener('popstate',()=>loadFolder(new URL(location.href).searchParams.get('path')||''));
 window.addEventListener('pagehide',()=>{closePlayer();for(const request of state.requests.values())request.controller.abort();});
 $('boot-retry').addEventListener('click',()=>location.reload());
-try{state.config=await api('/api/config');themeCopy=await applyTheme(state.config);categoryLabels=new Map(Object.entries(state.config.folderLabels||{}));cache.ttlMs=state.config.cacheTtlSeconds*1000;let storage;try{storage=window.localStorage;}catch{}playbackQueue=new PlaybackQueue(storage,state.config.rootId);queueChanged();$('source-link').href=state.config.sourceUrl;await loadFolder(new URL(location.href).searchParams.get('path')||'');}
+try{state.config=await api('/api/config');themeCopy=await applyTheme(state.config);categoryLabels=new Map(Object.entries(state.config.folderLabels||{}));cache.ttlMs=state.config.cacheTtlSeconds*1000;let storage,session;try{storage=window.localStorage;}catch{}try{session=window.sessionStorage;}catch{}cache.useStorage(session,'moviesites:directory-cache:v2',cacheScope());playbackQueue=new PlaybackQueue(storage,state.config.rootId);queueChanged();$('source-link').href=state.config.sourceUrl;await loadFolder(new URL(location.href).searchParams.get('path')||'');}
 catch(error){$('boot-message').textContent=error.message||'서비스에 연결하지 못했습니다. 다시 연결해 주세요.';$('boot-retry').hidden=false;}

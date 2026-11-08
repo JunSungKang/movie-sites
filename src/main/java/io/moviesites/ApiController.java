@@ -18,23 +18,29 @@ import jakarta.servlet.http.HttpServletRequest;
 public class ApiController {
     private final Settings settings;private final Storage storage;private final DirectoryBrowser browser;private final MediaService media;private final FolderCoverService covers;private final PresentationService presentation;
     private SortedDirectoryBrowser sorted;
+    private final MediaImageCache images;
+    private final String instanceId=java.util.UUID.randomUUID().toString();
     @org.springframework.beans.factory.annotation.Autowired
     public void setSortedDirectoryBrowser(SortedDirectoryBrowser sorted) { this.sorted = sorted; }
-    public ApiController(Settings settings,Storage storage,DirectoryBrowser browser,MediaService media,FolderCoverService covers,PresentationService presentation){this.settings=settings;this.storage=storage;this.browser=browser;this.media=media;this.covers=covers;this.presentation=presentation;}
+    public ApiController(Settings settings,Storage storage,DirectoryBrowser browser,MediaService media,FolderCoverService covers,PresentationService presentation){this.settings=settings;this.storage=storage;this.browser=browser;this.media=media;this.covers=covers;this.presentation=presentation;this.images=new MediaImageCache(storage,covers,media);}
     @GetMapping("/health") public Map<String,Object> health(){return Map.of("status","UP","application","MovieSites");}
-    @GetMapping("/config") public Map<String,Object> config(){return Map.of("rootId",storage.rootId(),"cacheTtlSeconds",settings.browserCacheTtlSeconds(),"pageSize",settings.pageSize(),"sourceUrl","https://github.com/JunSungKang/movie-sites","license","AGPL-3.0-only","theme",presentation.theme(),"folderLabels",presentation.folderLabels());}
+    @GetMapping("/config") public Map<String,Object> config(){return Map.of("rootId",storage.rootId(),"instanceId",instanceId,"cacheTtlSeconds",settings.browserCacheTtlSeconds(),"pageSize",settings.pageSize(),"sourceUrl","https://github.com/JunSungKang/movie-sites","license","AGPL-3.0-only","theme",presentation.theme(),"folderLabels",presentation.folderLabels());}
     @GetMapping("/browse") public CompletableFuture<?> browse(@RequestParam(defaultValue="")String path,@RequestParam(required=false)String cursor,
-            @RequestParam(defaultValue="filesystem")String sort,@RequestParam(required=false)String query) throws IOException {
-        if (sort.equals("duration")) return sorted.browseAsync(path,cursor,query);
+            @RequestParam(defaultValue="filesystem")String sort,@RequestParam(required=false)String query,@RequestParam(defaultValue="false")boolean refresh) throws IOException {
+        if (sort.equals("duration")) return sorted.browseAsync(path,cursor,query,refresh).thenApply(page->{
+            if(!page.state().equals("ready"))return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(page);
+            String tag="W/\"list-"+Storage.digest(page.toString())+"\"";
+            return ResponseEntity.ok().cacheControl(CacheControl.maxAge(java.time.Duration.ofSeconds(sorted.cacheSeconds(page))).cachePrivate().mustRevalidate()).eTag(tag).body(page);
+        });
         if (!sort.equals("filesystem")) throw new IllegalArgumentException("Unknown list order");
         return browser.browseAsync(path,cursor);
     }
-    @GetMapping("/media/folder-cover") public ResponseEntity<byte[]> folderCover(@RequestParam(defaultValue="")String path)throws IOException{
-        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).contentType(MediaType.IMAGE_JPEG).body(covers.read(path));
+    @GetMapping("/media/folder-cover") public ResponseEntity<Resource> folderCover(@RequestParam(defaultValue="")String path,@RequestParam(required=false)String v)throws IOException{
+        return images.cover(path,v);
     }
     @GetMapping("/media/info") public MediaService.Info info(@RequestParam String path,@RequestParam(defaultValue="false")boolean play,@RequestParam(defaultValue="false")boolean retry)throws IOException{return media.inspect(path,play,retry);}
     @GetMapping("/media/thumbnail") public ResponseEntity<Resource> thumbnail(@RequestParam String path,@RequestParam String v)throws IOException{
-        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).contentType(MediaType.IMAGE_JPEG).body(media.thumbnailResource(path,v));
+        return images.thumbnail(path,v);
     }
     @RequestMapping(value="/media/stream",method={RequestMethod.GET,RequestMethod.HEAD})
     public ResponseEntity<StreamingResponseBody> stream(@RequestParam String path,@RequestParam String v,@RequestParam String token,@RequestHeader(value="Range",required=false)String header,HttpServletRequest request)throws IOException{

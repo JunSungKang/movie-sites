@@ -6,6 +6,10 @@ Release notes will be grouped by published version. The source build currently u
 
 ### Added
 
+- Introduction-only SEO with configured canonical origin, Open Graph, JSON-LD, robots and a single-page sitemap.
+- Bounded/coalesced server directory and image caching, private ETag revalidation, session-restored list pages and verified-fingerprint static caching.
+- Text-response compression without compressing video/JPEG payloads.
+
 - Current-folder duration sorting across pages, duration dividers and labelled topic recommendations with external JSON overrides.
 
 - Persistent browser-local video queue, sequential playback and recoverable playback controls.

@@ -15,6 +15,7 @@ import jakarta.servlet.http.*;
 
 @Configuration
 public class WebConfiguration implements WebMvcConfigurer {
+    private final StaticAssets assets=new StaticAssets();
     private final Settings settings;
     public WebConfiguration(Settings settings){this.settings=settings;}
     @Bean public ThreadPoolTaskExecutor streamingExecutor(){ThreadPoolTaskExecutor e=new ThreadPoolTaskExecutor();e.setCorePoolSize(settings.maxStreams());e.setMaxPoolSize(settings.maxStreams());e.setQueueCapacity(settings.maxStreams());e.setThreadNamePrefix("video-stream-");e.setAwaitTerminationSeconds(5);return e;}
@@ -28,10 +29,12 @@ public class WebConfiguration implements WebMvcConfigurer {
         private final Semaphore fileRequests=new Semaphore(8);
         @Override protected void doFilterInternal(HttpServletRequest req,HttpServletResponse res,FilterChain chain)throws ServletException,IOException{
             res.setHeader("X-Content-Type-Options","nosniff");res.setHeader("Referrer-Policy","no-referrer");
+            res.setHeader("X-Robots-Tag","noindex, nofollow, noimageindex");
             res.setHeader("Content-Security-Policy","default-src 'self'; img-src 'self' data:; media-src 'self'; script-src 'self'; style-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'");
             if(req.getRequestURI().startsWith("/api/")&&!req.getRequestURI().equals("/api/media/thumbnail"))res.setHeader("Cache-Control","no-store");
+            if(assets.serve(req,res))return;
             boolean fileRequest=req.getRequestURI().startsWith("/api/media/");
-            if(fileRequest&&!fileRequests.tryAcquire()){res.setStatus(429);res.setContentType("application/json;charset=UTF-8");res.getWriter().write("{\"code\":\"BUSY\",\"message\":\"처리 중인 요청이 많습니다. 잠시 후 다시 시도해 주세요.\"}");return;}
+            if(fileRequest&&!fileRequests.tryAcquire()){res.setStatus(429);res.setHeader("Cache-Control","no-store");res.setContentType("application/json;charset=UTF-8");res.getWriter().write("{\"code\":\"BUSY\",\"message\":\"처리 중인 요청이 많습니다. 잠시 후 다시 시도해 주세요.\"}");return;}
             try{chain.doFilter(req,res);}finally{if(fileRequest)fileRequests.release();}
         }
     };}

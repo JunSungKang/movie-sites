@@ -19,7 +19,7 @@ class SortedDirectoryTests {
     @AfterEach void close() throws Exception {storage.close();}
     void video(String name) throws Exception {Files.writeString(settings.mediaRoot().resolve(name),"video");}
     SortedDirectoryBrowser.Page ready(SortedDirectoryBrowser browser,String path) throws Exception {
-        var page=browser.browse(path,null,null);long deadline=System.nanoTime()+TimeUnit.SECONDS.toNanos(5);
+        var page=browser.browse(path,null,null,true);long deadline=System.nanoTime()+TimeUnit.SECONDS.toNanos(5);
         while(page.state().equals("preparing")&&System.nanoTime()<deadline){Thread.sleep(5);page=browser.browse(path,null,page.query());}
         assertEquals("ready",page.state(),page.message());return page;
     }
@@ -62,10 +62,26 @@ class SortedDirectoryTests {
         video("clip.mp4");CountDownLatch gate=new CountDownLatch(1);
         var browser=new SortedDirectoryBrowser(settings,storage,topics,path->{try{gate.await();}catch(InterruptedException e){Thread.currentThread().interrupt();throw new IOException(e);}return 60.0;},null,2);
         try {
-            for(int i=0;i<4;i++){var page=browser.browse("",null,null);assertEquals("preparing",page.state());assertEquals("preparing",browser.browse("",null,page.query()).state());}
-            assertThrows(RejectedExecutionException.class,()->browser.browse("",null,null));
+            for(int i=0;i<4;i++){var page=browser.browse("",null,null,true);assertEquals("preparing",page.state());assertEquals("preparing",browser.browse("",null,page.query()).state());}
+            assertThrows(RejectedExecutionException.class,()->browser.browse("",null,null,true));
         }finally{browser.close();gate.countDown();}
         long deadline=System.nanoTime()+TimeUnit.SECONDS.toNanos(3);while(temporaryRuns()!=0&&System.nanoTime()<deadline)Thread.sleep(10);assertEquals(0,temporaryRuns());
+    }
+    @Test void coalescesPreparationAndReusesSnapshotsUntilFixedExpiryOrExplicitRefresh() throws Exception {
+        video("clip.mp4");CountDownLatch entered=new CountDownLatch(1),release=new CountDownLatch(1);
+        var time=new java.util.concurrent.atomic.AtomicLong();
+        try(var browser=new ClosingBrowser(new SortedDirectoryBrowser(settings,storage,topics,path->{entered.countDown();try{release.await();}catch(InterruptedException e){throw new IOException(e);}return 60.0;},null,2,64L*1024*1024,time::get))){
+            var first=browser.value.browse("",null,null);assertTrue(entered.await(2,TimeUnit.SECONDS));
+            for(int i=0;i<20;i++)assertEquals(first.query(),browser.value.browse("",null,null).query());
+            release.countDown();long deadline=System.nanoTime()+TimeUnit.SECONDS.toNanos(3);
+            while(!first.state().equals("ready")&&System.nanoTime()<deadline){Thread.sleep(5);first=browser.value.browse("",null,first.query());}
+            assertEquals("ready",first.state());assertEquals(120,browser.value.cacheSeconds(first));
+            video("new.mp4");time.set(TimeUnit.SECONDS.toNanos(119));
+            var cached=browser.value.browse("",null,null);assertEquals(first.query(),cached.query());assertEquals(1,cached.entries().size());assertEquals(1,browser.value.cacheSeconds(cached));
+            time.set(TimeUnit.SECONDS.toNanos(120));assertEquals(0,browser.value.cacheSeconds(first));
+            var expired=browser.value.browse("",null,null);assertNotEquals(first.query(),expired.query());
+            assertNotEquals(expired.query(),browser.value.browse("",null,null,true).query());
+        }finally{release.countDown();}
     }
     @Test void diskBudgetFailureIsExplicitAndCleansPartialResultsInsteadOfShowingAPartialSort() throws Exception {
         for(int i=0;i<8;i++)video("clip-"+i+".mp4");
