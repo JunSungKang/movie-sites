@@ -183,6 +183,7 @@ public class SortedDirectoryBrowser {
         try (var output = new DataOutputStream(new BufferedOutputStream(Files.newOutputStream(file, StandardOpenOption.WRITE, LinkOption.NOFOLLOW_LINKS)))) {
             for (Item entry : entries) write(q, output, entry);
         }
+        if (media != null) media.enforceCacheBudget();
         return file;
     }
     private void write(Query q, DataOutputStream output, Item item) throws IOException {
@@ -207,6 +208,7 @@ public class SortedDirectoryBrowser {
             while (!heads.isEmpty()) { Head head = heads.remove(); write(q, output, head.item()); if (head.channel().position() < head.channel().size()) heads.add(new Head(read(head.channel()), head.channel())); }
         } finally { for (var input : inputs) input.close(); }
         for (Path source : sources) { long size = Files.size(source); Files.delete(source); synchronized (q) { q.files.remove(source); } q.bytes -= size; }
+        if (media != null) media.enforceCacheBudget();
         return target;
     }
     private void deleteFiles(Query q) { for (Path file : q.files) try { Files.deleteIfExists(file); } catch (IOException ignored) {} q.files.clear(); }
