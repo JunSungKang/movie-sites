@@ -34,6 +34,8 @@ Labels affect presentation only. They do not rename files, change API paths or c
 
 The application also uses fixed bounds for directory sessions, reader/analysis queues and conversion workers. See [architecture](architecture.md). A cache-byte budget is not a total memory limit. FFmpeg, the JVM, browser decoders and GPU memory have different costs. Use container/host limits and test your workload; the documented defaults are not a capacity guarantee.
 
+The introduction and library use the same `MOVIESITES_THEME`: shared logo/header/footer, packaged theme stylesheet and illustration. The introduction resolves these at startup and renders visible HTML without JavaScript or catalog requests. Changing the runtime theme and restarting updates both pages. `css/about.css` owns introduction layout only; visual tokens and assets remain in the registered theme directory.
+
 ## Search visibility
 
 The public introduction is `/about`. It has server-rendered generic content, description, Open Graph/Twitter metadata and WebPage JSON-LD; it never loads the media catalog. `MOVIESITES_PUBLIC_URL` supplies its canonical, Open Graph URL and `/sitemap.xml` entries. Use the externally reachable origin, including a non-default port when needed. Request `Host`/forwarded headers never determine these links. Invalid settings fail startup; a blank value omits canonical URLs and makes the sitemap return 503 until configured. Restart after changing the setting.
