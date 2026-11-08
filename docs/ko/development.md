@@ -14,7 +14,7 @@ bash scripts/check.sh
 python3 -B scripts/check-docs.py
 ```
 
-실행 파일은 `build/libs/moviesites.jar`, Java 결과는 `build/test-results/test/`, HTML 보고서는 `build/reports/tests/test/`입니다. 서버만 검사하려면 `./gradlew test`, JavaScript는 `node --test scripts/cache.test.mjs scripts/playback.test.mjs scripts/player-ui.test.mjs`를 사용합니다. 패키지 검사는 최신 JAR가 필요합니다. [기여 안내](../../CONTRIBUTING.md)를 참고하세요.
+실행 파일은 `build/libs/moviesites.jar`, Java 결과는 `build/test-results/test/`, HTML 보고서는 `build/reports/tests/test/`입니다. 서버만 검사하려면 `./gradlew test`, JavaScript는 `node --test scripts/cache.test.mjs scripts/playback.test.mjs scripts/player-ui.test.mjs scripts/library.test.mjs`를 사용합니다. 패키지 검사는 최신 JAR가 필요합니다. [기여 안내](../../CONTRIBUTING.md)를 참고하세요.
 
 ## 소스 구조
 

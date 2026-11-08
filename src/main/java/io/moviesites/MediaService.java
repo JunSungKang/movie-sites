@@ -130,6 +130,24 @@ public class MediaService {
     }
     private Path thumbnail(Job job){return settings.dataRoot().resolve("thumbnails").resolve(job.key+".jpg");}
     private Path playback(Job job){return settings.dataRoot().resolve("playback").resolve(job.key+".mp4");}
+    // Sorting needs duration only; do not generate every thumbnail before displaying a page.
+    Double probeDuration(String path) throws IOException {
+        Future<Double> task = analysis.submit(() -> {
+            try {
+                String result = run(List.of(settings.ffprobe(), "-v", "error", "-protocol_whitelist", "file,pipe", "-format_whitelist", FORMATS,
+                    "-probesize", "5000000", "-analyzeduration", "5000000", "-show_entries", "format=duration", "-of", "json", storage.processInput(path).toString()), null, 30);
+                double value = Double.parseDouble(json.readTree(result).path("format").path("duration").asText());
+                return Double.isFinite(value) && value > 0 ? value : null;
+            } catch (InterruptedException e) { Thread.currentThread().interrupt(); throw e; }
+            catch (Exception e) { return null; }
+        });
+        try {
+            return task.get(35, TimeUnit.SECONDS);
+        } catch (InterruptedException e) { task.cancel(true); Thread.currentThread().interrupt(); throw new java.io.InterruptedIOException(); }
+        catch (TimeoutException e) { task.cancel(true); throw new RejectedExecutionException("Duration preparation is busy", e); }
+        catch (ExecutionException e) { return null; }
+    }
+    void enforceCacheBudget() throws IOException { budget.enforce(); }
     // An explicit sidecar travels with its video and is never evicted as generated cache.
     // Its own version must not change the video's stream token or playback cache key.
     String selectedThumbnailVersion(String path) {

@@ -4,10 +4,11 @@ import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 import {PlaybackQueue,PlaybackSession,MAX_QUEUE} from '../src/main/resources/static/js/playback.js';
 import {DirectoryCache,PageHistory} from '../src/main/resources/static/js/cache.js';
+import {durationGroups,topicLabels,waitForPreparation} from '../src/main/resources/static/js/library.js';
 const entry=name=>({path:`folder/${name}.mp4`,name:`${name}.mp4`,size:12});
 const flush=async()=>{for(let i=0;i<15;i++)await Promise.resolve();};
 // Run the actual app event wiring with a small DOM/media adapter. No duplicated player logic.
-async function app({inspect,play=()=>Promise.resolve()}={}) {
+async function app({inspect,play=()=>Promise.resolve(),entries=[]}={}) {
  let document;
  class Element extends EventTarget {
   constructor(tag='div'){super();this.tagName=tag;this.children=[];this.dataset={};this.attributes={};this.classList={add:()=>{}};this.hidden=false;this.isConnected=true;this.paused=true;this.open=false;this.ended=false;this.error=null;this.namespaceURI='svg';}
@@ -34,8 +35,8 @@ async function app({inspect,play=()=>Promise.resolve()}={}) {
  const ready={state:'ready',version:'video-v1',streamToken:'original.signature'};
  const context=vm.createContext({document,window,location:{href:'http://test/?path=folder',reload(){}},history:{pushState(){}},scrollX:0,scrollY:321,URL,URLSearchParams,AbortController,Event,queueMicrotask,
   setTimeout:(fn,ms)=>{if(ms<2000)queueMicrotask(fn);return 1;},clearTimeout:()=>{},IntersectionObserver:class{observe(){}disconnect(){}},PlaybackQueue,PlaybackSession,MAX_QUEUE,DirectoryCache,PageHistory,
-  applyTheme:async()=>({rootTitle:'Videos',rootCollection:'Collection'}),
-  fetch:async(url,options)=>url==='/api/config'?response({rootId:'r',cacheTtlSeconds:120,folderLabels:{},sourceUrl:'#'}):url.startsWith('/api/browse')?response({entries:[]}):inspect?inspect(url,options,response,ready):response(ready)});
+  durationGroups,topicLabels,waitForPreparation,applyTheme:async()=>({rootTitle:'Videos',rootCollection:'Collection'}),
+  fetch:async(url,options)=>url==='/api/config'?response({rootId:'r',cacheTtlSeconds:120,folderLabels:{},sourceUrl:'#'}):url.startsWith('/api/browse')?response({entries,state:'ready'}):inspect?inspect(url,options,response,ready):response(ready)});
  const source=readFileSync('src/main/resources/static/js/app.js','utf8').replace(/^import .*;$/gm,'');
  const exposed=await vm.runInContext(`(async()=>{${source}\nreturn {startPlayback,closePlayer,playback,state,playbackQueue,enrich,renderVideo};})()`,context);
  return {...exposed,ids,context,click:id=>ids.get(id).dispatchEvent(new Event('click')),end:()=>{ids.get('video-player').ended=true;ids.get('video-player').dispatchEvent(new Event('ended'));}};
@@ -70,4 +71,14 @@ test('early curated thumbnail does not stop metadata polling before duration is 
  const a=await app({inspect:async(url,options,response)=>response({state:++requests===1?'analyzing':'ready',thumbnailState:'ready',thumbnailVersion:'selected-v1',version:'video-v1',duration:requests===1?null:3,width:requests===1?null:640,height:requests===1?null:360})});
  const row=a.renderVideo(entry('first'));await a.enrich({entry:entry('first'),row,generation:a.state.generation});
  assert.equal(requests,2);assert.equal(row._time.textContent,'0:03');assert.match(row._image.src,/v=selected-v1/);
+});
+test('actual list renders duration separators, initial duration badges and honest topic chips',async()=>{
+ const a=await app({entries:[{...entry('short'),kind:'video',duration:90,tags:['식습관교육'],tagSource:'filename'},{...entry('exact-five'),kind:'video',duration:300,tags:['<custom topic>'],tagSource:'metadata'},{...entry('broken'),kind:'video',duration:null,tags:[],tagSource:'none'}]});
+ const children=a.ids.get('video-list').children;
+ assert.deepEqual(children.filter(e=>e.className==='duration-divider').map(e=>e.textContent),['5분 미만','5분 이상 · 10분 미만','길이를 확인하지 못한 영상']);
+ const rows=children.filter(e=>e.className==='video-entry');assert.equal(rows.length,3);assert.equal(rows[0]._time.textContent,'1:30');assert.equal(rows[1]._time.textContent,'5:00');
+ const tags=rows.map(row=>row.children[1].children.find(e=>e.className==='topic-tags'));
+ assert.equal(tags[0].attributes['aria-label'],'파일명 기반 추천 주제');assert.equal(tags[0].children[1].textContent,'식습관교육');
+ assert.equal(tags[1].children[0].textContent,'<custom topic>');assert.equal(tags[1].children[0].children.length,0);
+ assert.equal(tags[2].children[0].textContent,'주제 미지정');
 });

@@ -6,6 +6,8 @@ Release notes will be grouped by published version. The source build currently u
 
 ### Added
 
+- Current-folder duration sorting across pages, duration dividers and labelled topic recommendations with external JSON overrides.
+
 - Persistent browser-local video queue, sequential playback and recoverable playback controls.
 - Explicit per-video JPEG thumbnails with automatic fallback.
 - Standard Gradle Wrapper, Kotlin DSL build and wrapper validation in CI.
