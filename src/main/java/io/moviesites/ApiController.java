@@ -7,8 +7,7 @@ import java.nio.file.*;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.TimeUnit;
-import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
@@ -26,9 +25,8 @@ public class ApiController {
         return ResponseEntity.ok().cacheControl(CacheControl.noStore()).contentType(MediaType.IMAGE_JPEG).body(covers.read(path));
     }
     @GetMapping("/media/info") public MediaService.Info info(@RequestParam String path,@RequestParam(defaultValue="false")boolean play,@RequestParam(defaultValue="false")boolean retry)throws IOException{return media.inspect(path,play,retry);}
-    @GetMapping("/media/thumbnail") public ResponseEntity<FileSystemResource> thumbnail(@RequestParam String path,@RequestParam String v)throws IOException{
-        Path file=media.thumbnailPath(path,v);
-        return ResponseEntity.ok().cacheControl(CacheControl.maxAge(1,TimeUnit.HOURS).cachePrivate()).contentType(MediaType.IMAGE_JPEG).body(new FileSystemResource(file));
+    @GetMapping("/media/thumbnail") public ResponseEntity<Resource> thumbnail(@RequestParam String path,@RequestParam String v)throws IOException{
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).contentType(MediaType.IMAGE_JPEG).body(media.thumbnailResource(path,v));
     }
     @RequestMapping(value="/media/stream",method={RequestMethod.GET,RequestMethod.HEAD})
     public ResponseEntity<StreamingResponseBody> stream(@RequestParam String path,@RequestParam String v,@RequestParam String token,@RequestHeader(value="Range",required=false)String header,HttpServletRequest request)throws IOException{

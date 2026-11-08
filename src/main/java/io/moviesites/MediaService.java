@@ -13,12 +13,15 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.springframework.stereotype.Service;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.FileSystemResource;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
 @Service
 public class MediaService {
-    public record Info(String version,String state,String thumbnailState,Double duration,Integer width,Integer height,String codec,String playback,String message,String streamToken) {}
+    public record Info(String version,String state,String thumbnailState,Double duration,Integer width,Integer height,String codec,String playback,String message,String streamToken,String thumbnailVersion) {}
     private static final String FORMATS="mov,matroska,webm,avi,mpeg,mpegts,ogg,asf,flv";
     private final Settings settings; private final Storage storage;
     private final SecretKey playbackKey=createPlaybackKey();
@@ -34,7 +37,7 @@ public class MediaService {
         final String key,path; volatile String state="queued",thumbnailState="queued",codec="",audio="",pixel="",transfer="",message="";
         volatile Double duration;volatile Integer width,height;volatile boolean direct,copyCompatible;int videoIndex,audioIndex=-1,videoCount,audioCount;
         Job(String key,String path){this.key=key;this.path=path;}
-        Info info(String token){return new Info(key,state,thumbnailState,duration,width,height,codec,direct?"original":"converted",message,token);}
+        Info info(String token,String selected){return new Info(key,state,selected==null?thumbnailState:"ready",duration,width,height,codec,direct?"original":"converted",message,token,selected==null?key:selected);}
     }
     public MediaService(Settings settings,Storage storage)throws IOException{this.settings=settings;this.storage=storage;this.budget=new CacheBudget(settings);}
     public Info inspect(String input,boolean play,boolean retry) throws IOException {
@@ -55,7 +58,7 @@ public class MediaService {
                 else {job.state="preparing";Job submitted=job;try{conversion.execute(()->convert(submitted));}catch(RejectedExecutionException e){job.state="inspected";throw e;}}
             }
             if(job.state.equals("ready") && !job.direct && !Files.isRegularFile(playback(job)))job.state="inspected";
-            return job.info(job.state.equals("ready")?playbackToken(path,key,job.direct):"");
+            return job.info(job.state.equals("ready")?playbackToken(path,key,job.direct):"",selectedThumbnailVersion(path));
         }
     }
     private void analyze(Job job){
@@ -127,10 +130,18 @@ public class MediaService {
     }
     private Path thumbnail(Job job){return settings.dataRoot().resolve("thumbnails").resolve(job.key+".jpg");}
     private Path playback(Job job){return settings.dataRoot().resolve("playback").resolve(job.key+".mp4");}
-    public Path thumbnailPath(String path,String version) throws IOException {
-        if(!storage.version(path).equals(version))throw new NoSuchFileException("Thumbnail version changed");
+    // An explicit sidecar travels with its video and is never evicted as generated cache.
+    // Its own version must not change the video's stream token or playback cache key.
+    String selectedThumbnailVersion(String path) {
+        try { new FolderCoverService(storage).readImage(storage.normalize(path)+".jpg");return storage.version(path+".jpg"); }
+        catch(IOException|IllegalArgumentException e){return null;}
+    }
+    public Resource thumbnailResource(String path,String version) throws IOException {
+        String videoVersion=storage.version(path);
+        if(version.equals(selectedThumbnailVersion(path)))return new ByteArrayResource(new FolderCoverService(storage).readImage(path+".jpg"));
+        if(!videoVersion.equals(version))throw new NoSuchFileException("Thumbnail version changed");
         Path p=settings.dataRoot().resolve("thumbnails").resolve(version+".jpg");
-        if(!Files.isRegularFile(p,LinkOption.NOFOLLOW_LINKS))throw new NoSuchFileException("Thumbnail is not ready");return p;
+        if(!Files.isRegularFile(p,LinkOption.NOFOLLOW_LINKS))throw new NoSuchFileException("Thumbnail is not ready");return new FileSystemResource(p);
     }
     private static SecretKey createPlaybackKey(){try{return KeyGenerator.getInstance("HmacSHA256").generateKey();}catch(GeneralSecurityException e){throw new IllegalStateException(e);}}
     String playbackToken(String path,String version,boolean original){

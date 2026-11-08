@@ -19,6 +19,10 @@ public class FolderCoverService {
     public byte[] read(String folder) throws IOException {
         String path = storage.normalize(folder);
         String file = path.isEmpty() ? ".folder.jpg" : path + "/.folder.jpg";
+        return readImage(file);
+    }
+
+    byte[] readImage(String file) throws IOException {
         byte[] bytes;
         try (var channel = storage.open(file); var input = Channels.newInputStream(channel)) {
             if (channel.size() > MAX_BYTES) throw new IllegalArgumentException("Folder cover is too large");
