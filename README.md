@@ -15,6 +15,7 @@ Layout illustration of the Midnight Stream theme. Collection covers come from yo
 - Browse the folder you open, including nested collections on mounted local or network storage.
 - Play videos with native HTML video controls and prepare compatible playback copies with FFmpeg when needed.
 - Use folder covers and per-video JPEG thumbnails, with automatic video-thumbnail fallback.
+- Browse videos shortest first with exact duration dividers and suggested or custom topic tags.
 - Keep one browser-local playback queue, reorder it, and play the queue in sequence.
 - Select from 19 bundled themes through an environment variable; contribute additional presets through the theme catalog.
 - Run a single executable JAR or Docker container. The frontend is static HTML, CSS and JavaScript.

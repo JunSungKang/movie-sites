@@ -14,7 +14,7 @@ bash scripts/check.sh
 python3 -B scripts/check-docs.py
 ```
 
-`build/libs/moviesites.jar` is the executable artifact. Java test results are under `build/test-results/test/` and the HTML report under `build/reports/tests/test/`. `./gradlew test` runs server tests; `node --test scripts/cache.test.mjs scripts/playback.test.mjs scripts/player-ui.test.mjs` runs the JavaScript tests. Package checks require a freshly built JAR. See [CONTRIBUTING](../CONTRIBUTING.md) for the PR workflow.
+`build/libs/moviesites.jar` is the executable artifact. Java test results are under `build/test-results/test/` and the HTML report under `build/reports/tests/test/`. `./gradlew test` runs server tests; `node --test scripts/cache.test.mjs scripts/playback.test.mjs scripts/player-ui.test.mjs scripts/library.test.mjs` runs the JavaScript tests. Package checks require a freshly built JAR. See [CONTRIBUTING](../CONTRIBUTING.md) for the PR workflow.
 
 ## Source layout
 

@@ -2,6 +2,16 @@
 
 [한국어](ko/verification.md) · [Documentation index](../README.md#documentation)
 
+## Duration ordering and topic tags — 2026-11-09
+
+- Gradle clean build and the multi-stage Docker build passed. All 40 JUnit tests passed without failures/errors/skips, and 20 JavaScript tests passed. Existing 19-theme/package/hash/media-exclusion checks remained enabled.
+- Server tests cover global order across continuation pages and more than one merge pass, unknown durations, signed/path-bound cursors, source-version and sidecar refresh, bounded queues, disk-limit failure/cleanup, slow-storage preparation and shared analysis capacity during playback work.
+- The actual list-rendering adapter verifies visible duration headings, initial time badges, recommended/manual/unspecified topics and literal-text rendering. Boundary checks include exactly 300, 600 and 1200 seconds, fractions just below them, invalid durations and cancellation of preparation waits.
+- A non-root/read-only-root candidate was tested through HTTP. Six synthetic H.264 clips at 299/300/599/600/1199/1200 seconds and one invalid input were globally ordered over four pages at page size two, with the invalid input last. Explicit tags, empty overrides and metadata refresh passed. Prepared playback returned a correct 32-byte range with 206; a forged stream token was rejected with 403.
+- Representative external folders returned increasing real durations, and all 89 static resources matched the source. English/Korean documentation links and environment/build references passed.
+
+Direct browser control was unavailable in this turn. New screenshot/mobile-layout/native-player visual observations were therefore **not performed**; actual app event-wiring adapters and HTTP checks are not represented as real browser QA. Earlier browser evidence below remains historical. NAS outage/load testing and physical browser/device certification remain outside this change's measured coverage.
+
 ## Gradle and documentation migration — 2026-11-08
 
 The pre-migration working tree's queue, per-video thumbnail and mobile-player improvements were preserved in a separate baseline commit. The migration then changed the build/packaging and public documentation; it did not replace those runtime sources or original media.

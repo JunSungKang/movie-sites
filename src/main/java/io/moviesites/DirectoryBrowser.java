@@ -14,6 +14,7 @@ public class DirectoryBrowser {
     public record Entry(String name,String path,String kind,long size,String modified){}
     public record Listing(String path,String parent,List<Entry> entries,String nextCursor,int warnings){}
     private static final Set<String> EXTENSIONS=Set.of("mp4","m4v","mov","mkv","webm","avi","mpeg","mpg","mts","m2ts","ts","ogv","wmv","flv","3gp","3g2","mxf","vob","av1");
+    static boolean isVideo(String name) { int dot = name.lastIndexOf('.'); return dot >= 0 && EXTENSIONS.contains(name.substring(dot + 1).toLowerCase(Locale.ROOT)); }
     private final Settings settings;private final Storage storage;
     private final Map<String,Session> sessions=new LinkedHashMap<>();
     private final ThreadPoolExecutor readers=new ThreadPoolExecutor(2,2,0,TimeUnit.SECONDS,new ArrayBlockingQueue<>(4),r->{Thread t=new Thread(r,"directory-reader");t.setDaemon(true);return t;});
