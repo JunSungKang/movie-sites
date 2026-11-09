@@ -27,6 +27,9 @@ services:
         format: raw
         required: true
     environment:
+      # Also protect deployments using an externally built image with no locale.
+      LANG: C.UTF-8
+      LC_ALL: C.UTF-8
       MOVIESITES_MEDIA_ROOT: /media
       MOVIESITES_DATA_ROOT: /data
       PORT: "8080"

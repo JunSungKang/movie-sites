@@ -19,6 +19,8 @@ Release notes will be grouped by published version. The source build currently u
 
 ### Changed
 
+- Explicit UTF-8 locale in the application image and Compose service, with Korean/decomposed-path and environment-label regression checks across restart.
+
 - Ubuntu 26.04 / Temurin 25 project-owned fallback bases, overridable Java image ARGs, Compose and Bake deployment with isolated verification and locked migration/rollback tooling.
 
 - Build, tests and executable packaging use Gradle with JDK 25 and Spring Boot 4.1.2.

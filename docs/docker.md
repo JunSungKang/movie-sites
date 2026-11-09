@@ -15,6 +15,8 @@ The fallback targets create **project-owned** `movie-kids-java-build:25-ubuntu26
 
 FFmpeg, curl and certificates are installed in the project application image, leaving Java bases reusable. The image default remains `10001:10001`; the investigated Compose deployment uses `501:20`. Set the Compose UID/GID to match the existing host ownership. Do not recursively chown original media or grant world-write permissions.
 
+The application image and Compose service explicitly set `LANG=C.UTF-8` and `LC_ALL=C.UTF-8`. Java's native filename/environment decoding depends on the OS locale even when `file.encoding` is UTF-8. A base with no UTF-8 locale can corrupt non-ASCII folder names, paths and configured labels. Preserve these settings when adapting the deployment; check both `native.encoding` and `sun.jnu.encoding` with `java -XshowSettings:properties -version`.
+
 ## Compose
 
 Use Docker Compose 2.30+ (raw environment-file support) and Buildx/Bake:
@@ -52,6 +54,8 @@ python3 -B scripts/verify-platform.py --image movie-kids:ubuntu26.04
 ```
 
 This generates synthetic media and a disposable data root under `.codex-work/platform-release/`, with a unique QA Compose project and only a reserved loopback web port. It tests direct/converted playback, thumbnails, navigation, FFmpeg, traversal/symlink rejection, private stream tokens, read-only roots/media, exclusive data locking, graceful stop and restart. `--keep` retains that QA instance for browser inspection; its `qa-state.json` records the exact isolated Compose command for cleanup. Production data is never mounted by this verification script.
+
+Fixtures include Korean names, decomposed Hangul, spaces and Korean environment labels; their exact paths and labels must round-trip before and after restart. If production already uses 20010, select an unused reserved QA port with `--port 20011`.
 
 The production migration tool requires a passing report for the exact candidate image and Compose hash, acquires a real advisory deployment lock, preserves the old container/configuration and rolls back on failure. Read the [migration/rollback guide](platform-migration.md) before invoking it. Test actual NAS secure-directory support and outages separately; a healthy HTTP endpoint is not a full storage audit.
 

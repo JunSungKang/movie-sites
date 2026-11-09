@@ -15,6 +15,8 @@ docker buildx bake -f docker-bake.hcl --load movie-kids
 
 FFmpeg·curl·인증서는 프로젝트 앱 이미지에서 설치합니다. 이미지 기본 UID/GID는 기존 `10001:10001`, 조사한 Compose 운영 설정은 `501:20`입니다. 호스트 소유권에 맞는 숫자를 사용하고 원본을 재귀 chown하거나 전체 쓰기를 허용하지 마세요.
 
+앱 이미지와 Compose 서비스 모두 `LANG=C.UTF-8`·`LC_ALL=C.UTF-8`을 명시합니다. Java는 `file.encoding`이 UTF-8이어도 파일명·환경변수 해석에 OS 로케일을 사용하므로, UTF-8 설정이 없는 베이스에서는 한글 폴더명·경로·설정 문구가 깨질 수 있습니다. 배포 구성을 바꿀 때도 이 설정을 유지하고 `java -XshowSettings:properties -version`의 `native.encoding`·`sun.jnu.encoding`이 모두 UTF-8인지 확인하세요.
+
 ## Compose
 
 Compose 2.30 이상(raw 환경 파일 지원)과 Buildx/Bake를 사용합니다.
@@ -52,6 +54,8 @@ python3 -B scripts/verify-platform.py --image movie-kids:ubuntu26.04
 ```
 
 `.codex-work/platform-release/` 아래 합성 영상·별도 데이터와 고유 QA Compose 프로젝트를 만들고 예약 루프백 웹 포트 하나만 사용합니다. 원본/변환 재생·썸네일·탐색·FFmpeg·경로 탈출/심볼릭 링크 거부·재생 토큰·미디어/루트 읽기 전용·쓰기 잠금·정상 종료/재시작을 검사합니다. `--keep`은 브라우저 검수를 위해 QA를 남기며 `qa-state.json`에 해당 환경만 정리할 명령을 기록합니다. 검증 스크립트는 운영 데이터를 마운트하지 않습니다.
+
+합성 데이터에는 한글·분해형 한글·공백이 있는 경로와 한글 환경변수 문구가 포함되며, 재시작 전후 경로·문구가 정확히 일치해야 통과합니다. 운영에서 이미 20010을 사용한다면 `--port 20011`처럼 비어 있는 예약 포트를 선택하세요.
 
 운영 전환은 동일 이미지·Compose 해시의 통과 보고서를 요구하고 실제 배포 파일 잠금을 잡은 상태에서 기존 컨테이너·설정을 보존하며 실패 시 복구합니다. 실행 전 [전환·복구 안내](platform-migration.md)를 읽으세요. NAS 보안 디렉토리 지원·장애는 별도로 시험해야 하며 HTTP 정상 상태가 전체 저장소 검사는 아닙니다.
 

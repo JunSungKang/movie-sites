@@ -2,6 +2,12 @@
 
 [한국어](ko/verification.md) · [Documentation index](../README.md#documentation)
 
+## Native UTF-8 locale regression — 2026-11-09
+
+- The affected running image had no UTF-8 locale: Java reported `file.encoding=UTF-8` but `native.encoding` and `sun.jnu.encoding` were `ANSI_X3.4-1968`. The mounted directories were correct; API folder paths and Korean environment labels contained replacement characters. Checking only health and ASCII fixtures had not covered this deployment condition.
+- The project Dockerfile and Compose now explicitly set `LANG`/`LC_ALL` to `C.UTF-8`. Isolated verification covers Korean/decomposed/spaced nested paths, exact Korean environment labels, native/converted playback, thumbnails, range/token boundaries, FFmpeg, exclusive locking and restart. The existing operating image passed these checks with the corrected Compose environment on a separate reserved loopback port.
+- Under the shared deployment flock, only the affected service was recreated with its existing image, network, numeric user and media/data mounts preserved. All three Korean collections, nested listings and labels matched; actual-media thumbnail/range playback and FFmpeg passed before and after restart. Original hashes/metadata for 88 files matched. Previous configuration/image and a stopped recovery container were retained; operations files and other services were not modified.
+
 ## Ubuntu 26.04 and Compose migration — 2026-11-09
 
 - Project-owned fallback JDK/JRE images and the application image built from pinned official Temurin Ubuntu 26.04 sources. The actual engine was Docker Desktop Linux/arm64. The runtime reported Ubuntu 26.04, Temurin 25.0.5 and FFmpeg 8; Python, Node and javac were absent from the application image. Python 3.14.10 and Node 24.18.0 ran operational/repository tooling. JUnit 51 tests and JavaScript 24 tests passed; package/media/theme/hash/documentation checks passed.
