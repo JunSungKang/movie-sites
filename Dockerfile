@@ -16,6 +16,8 @@ RUN --mount=type=cache,target=/build/.cache/gradle mkdir -p .cache/tmp && ./grad
 
 FROM ${JAVA_RUNTIME_IMAGE} AS runtime
 USER root
+# Java's native path/environment decoding follows the OS locale, not file.encoding.
+ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
 RUN . /etc/os-release && test "$ID" = ubuntu && test "$VERSION_ID" = 26.04 \
     && java -version 2>&1 | grep -E 'Temurin-25([.+-]|$)'
 RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg curl ca-certificates \

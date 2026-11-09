@@ -5,9 +5,11 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import shlex
 import subprocess
 import sys
 import time
+import unicodedata
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -15,6 +17,12 @@ import uuid
 
 ROOT = Path(__file__).resolve().parents[1]
 SERVICE = 'movie-kids-web'
+# Decomposed Hangul and spaces exercise the actual filesystem path bytes on macOS.
+COLLECTION = unicodedata.normalize('NFD', '한글 모음')
+NESTED = COLLECTION + '/' + unicodedata.normalize('NFD', '하위 폴더')
+DIRECT = NESTED + '/' + unicodedata.normalize('NFD', '첫 이야기.mp4')
+CONVERTED = COLLECTION + '/' + unicodedata.normalize('NFD', '변환 영상.avi')
+FOLDER_LABELS = {'중편': '중편 (약11분)'}
 
 def command(args, *, check=True, timeout=90, env=None):
     result = subprocess.run(args, text=True, capture_output=True, timeout=timeout, env=env)
@@ -110,15 +118,15 @@ def main():
     assert work.resolve().is_relative_to(ROOT) and not work.exists()
     work.mkdir()
     media, data = work / 'media', work / 'data'
-    (media / 'Collection/Nested').mkdir(parents=True)
+    (media / NESTED).mkdir(parents=True)
     data.mkdir()
     (data / 'preserve.txt').write_text('restart marker')
-    (media / 'Collection/Nested/direct.mp4.json').write_text('{"tags":["Fixture topic"]}')
+    (media / (DIRECT + '.json')).write_text('{"tags":["Fixture topic"]}')
     (media / 'linked.mp4').symlink_to('/etc/passwd')
     env = {k: v for k, v in os.environ.items() if not k.startswith(('MOVIESITES_', 'JAVA_BUILD_IMAGE', 'JAVA_RUNTIME_IMAGE', 'COMPOSE_'))}
     project = 'movie-kids-qa-' + uuid.uuid4().hex[:8]
     appenv = work / 'application.env'
-    appenv.write_text('MOVIESITES_THEME=child-toy\nMOVIESITES_MIN_FREE_BYTES=0\nMOVIESITES_PAGE_SIZE=2\nMOVIESITES_PUBLIC_URL=http://127.0.0.1:' + str(args.port) + '\n')
+    appenv.write_text('MOVIESITES_THEME=child-toy\nMOVIESITES_MIN_FREE_BYTES=0\nMOVIESITES_PAGE_SIZE=2\nMOVIESITES_PUBLIC_URL=http://127.0.0.1:' + str(args.port) + '\nMOVIESITES_FOLDER_LABELS=' + json.dumps(FOLDER_LABELS, ensure_ascii=False) + '\n')
     composeenv = work / 'compose.env'
     values = {'MOVIESITES_IMAGE': image, 'MOVIESITES_UID': '501', 'MOVIESITES_GID': '20', 'MOVIESITES_BIND_ADDRESS': '127.0.0.1', 'MOVIESITES_WEB_PORT': str(args.port), 'MOVIESITES_MEDIA_PATH': str(media), 'MOVIESITES_DATA_PATH': str(data), 'MOVIESITES_ENV_FILE': str(appenv)}
     composeenv.write_text(''.join(k + '=' + v + '\n' for k, v in values.items()))
@@ -133,8 +141,8 @@ def main():
     passed = False
     try:
         print('Preparing synthetic direct and converted media...', flush=True)
-        fixture = '''ffmpeg -v error -f lavfi -i testsrc=size=160x90:rate=10 -f lavfi -i sine=frequency=440:sample_rate=44100 -t 2 -c:v libx264 -pix_fmt yuv420p -threads 1 -c:a aac /fixtures/Collection/Nested/direct.mp4
-ffmpeg -v error -f lavfi -i testsrc=size=160x90:rate=10 -f lavfi -i sine=frequency=330:sample_rate=44100 -t 2 -c:v mpeg4 -pix_fmt yuv420p -threads 1 -c:a pcm_s16le /fixtures/Collection/convert.avi'''
+        fixture = 'ffmpeg -v error -f lavfi -i testsrc=size=160x90:rate=10 -f lavfi -i sine=frequency=440:sample_rate=44100 -t 2 -c:v libx264 -pix_fmt yuv420p -threads 1 -c:a aac ' + shlex.quote('/fixtures/' + DIRECT) + '\n'
+        fixture += 'ffmpeg -v error -f lavfi -i testsrc=size=160x90:rate=10 -f lavfi -i sine=frequency=330:sample_rate=44100 -t 2 -c:v mpeg4 -pix_fmt yuv420p -threads 1 -c:a pcm_s16le ' + shlex.quote('/fixtures/' + CONVERTED)
         docker('run', '--rm', '--read-only', '--network', 'none', '--user', '501:20', '--mount', f'type=bind,source={media},target=/fixtures', '--entrypoint', 'sh', image, '-ec', fixture)
         originals = {p.relative_to(media).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest() for p in media.rglob('*') if p.is_file() and not p.is_symlink()}
         model = json.loads(compose('config', '--format', 'json').stdout)
@@ -156,16 +164,21 @@ ffmpeg -v error -f lavfi -i testsrc=size=160x90:rate=10 -f lavfi -i sine=frequen
         assert {(m['Destination'], m['RW']) for m in details['Mounts']} == {('/media', False), ('/data', True)}
         runtime = docker('exec', container, 'sh', '-ec', '. /etc/os-release\ntest "$VERSION_ID" = 26.04\njava -version\nffmpeg -version\ntest -s /etc/ssl/certs/ca-certificates.crt\n! command -v python3\n! command -v node\n! command -v javac').stdout
         assert 'ffmpeg version' in runtime
+        encoding = docker('exec', container, 'java', '-XshowSettings:properties', '-version')
+        properties = encoding.stdout + encoding.stderr
+        assert 'native.encoding = UTF-8' in properties and 'sun.jnu.encoding = UTF-8' in properties
+        assert api(base, '/api/config')[0]['folderLabels'] == FOLDER_LABELS
         assert request(base, '/')[0] == 200 and request(base, '/about')[0] == 200
-        assert listing(base)['entries'][0]['path'] == 'Collection'
-        assert {x['name'] for x in listing(base, 'Collection')['entries']} == {'Nested', 'convert.avi'}
-        assert listing(base, 'Collection/Nested')['parent'] == 'Collection'
-        direct = media_ready(base, 'Collection/Nested/direct.mp4')
-        converted = media_ready(base, 'Collection/convert.avi')
+        assert listing(base)['entries'][0]['path'] == COLLECTION
+        assert {x['path'] for x in listing(base, COLLECTION)['entries']} == {NESTED, CONVERTED}
+        assert listing(base, NESTED)['parent'] == COLLECTION
+        assert listing(base, NESTED)['entries'][0]['path'] == DIRECT
+        direct = media_ready(base, DIRECT)
+        converted = media_ready(base, CONVERTED)
         assert direct['playback'] == 'original' and converted['playback'] == 'converted'
-        report['direct'] = verify_stream(base, 'Collection/Nested/direct.mp4', direct)
-        report['converted'] = verify_stream(base, 'Collection/convert.avi', converted)
-        ffmpeg_file_check(container, 'Collection/Nested/direct.mp4')
+        report['direct'] = verify_stream(base, DIRECT, direct)
+        report['converted'] = verify_stream(base, CONVERTED, converted)
+        ffmpeg_file_check(container, DIRECT)
         for invalid in ['../outside.mp4', '/etc/passwd', 'linked.mp4']:
             status, _, body = request(base, '/api/media/info?' + urllib.parse.urlencode({'path': invalid}))
             assert status in (400, 403, 404, 503) and b'/Users/' not in body
@@ -190,10 +203,12 @@ ffmpeg -v error -f lavfi -i testsrc=size=160x90:rate=10 -f lavfi -i sine=frequen
         compose('start', SERVICE)
         wait_health(base)
         assert (data / 'preserve.txt').read_text() == 'restart marker'
-        verify_stream(base, 'Collection/Nested/direct.mp4', media_ready(base, 'Collection/Nested/direct.mp4'))
+        assert api(base, '/api/config')[0]['folderLabels'] == FOLDER_LABELS
+        assert listing(base, NESTED)['entries'][0]['path'] == DIRECT
+        verify_stream(base, DIRECT, media_ready(base, DIRECT))
         current = {p.relative_to(media).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest() for p in media.rglob('*') if p.is_file() and not p.is_symlink()}
         assert originals == current
-        report.update(status='pass', ubuntu='26.04', uidGid='501:20', webPort=args.port, browsing=True, traversalBlocked=True, mediaReadOnly=True, rootReadOnly=True, exclusiveWriter=True, gracefulShutdown=True, restart=True, mediaHashesUnchanged=True, container=container, base=base)
+        report.update(status='pass', ubuntu='26.04', uidGid='501:20', webPort=args.port, browsing=True, utf8NativePaths=True, unicodeEnvironment=True, traversalBlocked=True, mediaReadOnly=True, rootReadOnly=True, exclusiveWriter=True, gracefulShutdown=True, restart=True, mediaHashesUnchanged=True, container=container, base=base)
         passed = True
         print(json.dumps(report, indent=2), flush=True)
     finally:
