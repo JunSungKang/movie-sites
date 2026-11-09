@@ -27,13 +27,14 @@ Midnight Stream 테마의 배치 도식입니다. 실제 컬렉션 표지는 사
 
 ### Docker
 
-이미지에는 Java, FFmpeg, ffprobe가 포함됩니다. 아래는 POSIX 셸에서 비루트 호스트 사용자가 소유한 디렉토리를 사용하는 예입니다.
+Ubuntu 26.04 이미지에는 Temurin 25·FFmpeg·ffprobe가 포함됩니다. 먼저 프로젝트 전용 Java 베이스를 빌드합니다. 호환 공통 이미지가 있으면 `JAVA_BUILD_IMAGE`·`JAVA_RUNTIME_IMAGE`로 지정할 수 있습니다. 아래는 POSIX 셸에서 비루트 호스트 사용자가 소유한 디렉토리를 사용하는 예입니다.
 
 ```bash
 git clone https://github.com/JunSungKang/movie-sites.git
 cd movie-sites
 mkdir -p movie runtime
-docker build -t moviesites:local .
+docker buildx bake -f docker-bake.hcl --load fallback-bases
+MOVIESITES_IMAGE=moviesites:local docker buildx bake -f docker-bake.hcl --load movie-kids
 docker run --rm --init --name moviesites \
   --user "$(id -u):$(id -g)" \
   -p 127.0.0.1:8080:8080 \
@@ -57,6 +58,8 @@ java -jar build/libs/moviesites.jar
 ```
 
 플랫폼 조건은 [시작하기](docs/ko/getting-started.md)에 정리했습니다. Node.js와 Python은 추가 저장소 검사에 사용하며 서비스 실행에는 필요하지 않습니다.
+
+단일 서비스 Compose(`platform` / `movie-kids-web`, 웹 20010)는 [Docker](docs/ko/docker.md)와 [전환·복구 안내](docs/ko/platform-migration.md)를 참고하세요.
 
 ## 설정
 

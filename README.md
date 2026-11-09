@@ -27,13 +27,14 @@ Layout illustration of the Midnight Stream theme. Collection covers come from yo
 
 ### Docker
 
-The image includes Java, FFmpeg and ffprobe. These commands use a POSIX shell and directories owned by your non-root host user:
+The Ubuntu 26.04 image includes Temurin 25, FFmpeg and ffprobe. Build the project-owned Java bases first, or supply `JAVA_BUILD_IMAGE` and `JAVA_RUNTIME_IMAGE` for compatible shared bases. These commands use a POSIX shell and directories owned by your non-root host user:
 
 ```bash
 git clone https://github.com/JunSungKang/movie-sites.git
 cd movie-sites
 mkdir -p movie runtime
-docker build -t moviesites:local .
+docker buildx bake -f docker-bake.hcl --load fallback-bases
+MOVIESITES_IMAGE=moviesites:local docker buildx bake -f docker-bake.hcl --load movie-kids
 docker run --rm --init --name moviesites \
   --user "$(id -u):$(id -g)" \
   -p 127.0.0.1:8080:8080 \
@@ -57,6 +58,8 @@ java -jar build/libs/moviesites.jar
 ```
 
 See [Getting started](docs/getting-started.md) for prerequisites and platform requirements. Node.js and Python are used for additional repository checks, not for running the application.
+
+For the single-service Compose deployment (`platform` / `movie-kids-web`, web port 20010), read [Docker](docs/docker.md) and the [migration and rollback guide](docs/platform-migration.md).
 
 ## Configuration
 

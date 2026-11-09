@@ -1,5 +1,10 @@
 # syntax=docker/dockerfile:1
-FROM eclipse-temurin:25-jdk-noble@sha256:95e350ad1eb738f943e141640f7e3d797e483359a3b33c3864255bfd1ad71f8a AS build
+ARG JAVA_BUILD_IMAGE=movie-kids-java-build:25-ubuntu26.04
+ARG JAVA_RUNTIME_IMAGE=movie-kids-java-runtime:25-ubuntu26.04
+FROM ${JAVA_BUILD_IMAGE} AS build
+USER root
+RUN . /etc/os-release && test "$ID" = ubuntu && test "$VERSION_ID" = 26.04 \
+    && javac -version 2>&1 | grep -E '^javac 25([. ]|$)'
 WORKDIR /build
 ENV GRADLE_USER_HOME=/build/.cache/gradle
 ENV JAVA_TOOL_OPTIONS="-XX:-UsePerfData -Djava.io.tmpdir=/build/.cache/tmp"
@@ -9,7 +14,10 @@ COPY --chmod=755 gradlew ./
 COPY src ./src
 RUN --mount=type=cache,target=/build/.cache/gradle mkdir -p .cache/tmp && ./gradlew --no-daemon build
 
-FROM eclipse-temurin:25-jre-noble@sha256:a98128a57de944a72bd31fbc79b898edd5a5864d3652071d5bbd2160ab7d7dce
+FROM ${JAVA_RUNTIME_IMAGE} AS runtime
+USER root
+RUN . /etc/os-release && test "$ID" = ubuntu && test "$VERSION_ID" = 26.04 \
+    && java -version 2>&1 | grep -E 'Temurin-25([.+-]|$)'
 RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg curl ca-certificates \
     && rm -rf /var/lib/apt/lists/* \
     && groupadd --gid 10001 moviesites && useradd --uid 10001 --gid 10001 --no-create-home moviesites \
