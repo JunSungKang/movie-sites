@@ -21,20 +21,35 @@ public class Storage implements AutoCloseable {
     private final Path dataRootReal;
     private final FileChannel lockChannel;
     private final FileLock dataLock;
+    private final Path directoryLock, ownerMarker;
+    private boolean directoryOwned;
     public Storage(Settings settings) throws IOException {
         this.settings = settings;
         Files.createDirectories(settings.dataRoot());
         dataRootReal = settings.dataRoot().toRealPath();
+        directoryLock=dataRootReal.resolve(".moviesites.owner");
+        ownerMarker=directoryLock.resolve(java.util.UUID.randomUUID().toString());
         lockChannel=FileChannel.open(dataRootReal.resolve(".moviesites.lock"),StandardOpenOption.CREATE,StandardOpenOption.WRITE,LinkOption.NOFOLLOW_LINKS);
         try{FileLock lock=lockChannel.tryLock();if(lock==null)throw new IOException("Data root is already in use");dataLock=lock;}
         catch(IOException|RuntimeException e){lockChannel.close();throw new IOException("Data root is already in use or cannot be locked",e);}
-        try { for (String name : new String[]{"thumbnails", "playback", "work"}) {
+        try {
+            // Some Docker Desktop bind mounts do not share advisory locks across containers.
+            // Atomic directory creation adds a fail-closed cross-mount ownership guard.
+            try { Files.createDirectory(directoryLock); }
+            catch(FileAlreadyExistsException e){throw new IOException("Data root is already in use or needs ownership-lock recovery",e);}
+            directoryOwned=true;
+            Files.writeString(ownerMarker,"pid="+ProcessHandle.current().pid()+"\n",StandardOpenOption.CREATE_NEW);
+            for (String name : new String[]{"thumbnails", "playback", "work"}) {
             Path p = settings.dataRoot().resolve(name);
             if (Files.isSymbolicLink(p)) throw new IllegalArgumentException("Data subdirectories must not be symbolic links");
             Files.createDirectories(p);
         }} catch(IOException|RuntimeException e){close();throw e;}
     }
-    @PreDestroy public void close()throws IOException{if(dataLock.isValid())dataLock.release();lockChannel.close();}
+    @PreDestroy public synchronized void close()throws IOException{
+        try {
+            if(directoryOwned){Files.deleteIfExists(ownerMarker);Files.deleteIfExists(directoryLock);directoryOwned=false;}
+        } finally {try{if(dataLock.isValid())dataLock.release();}finally{lockChannel.close();}}
+    }
     public String normalize(String input) {
         if (input == null || input.isEmpty()) return "";
         if (input.length() > 4096 || input.indexOf('\0') >= 0 || input.contains("\\")) throw new IllegalArgumentException("Invalid path");

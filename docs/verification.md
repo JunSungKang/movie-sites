@@ -2,6 +2,16 @@
 
 [한국어](ko/verification.md) · [Documentation index](../README.md#documentation)
 
+## Ubuntu 26.04 and Compose migration — 2026-11-09
+
+- Project-owned fallback JDK/JRE images and the application image built from pinned official Temurin Ubuntu 26.04 sources. The actual engine was Docker Desktop Linux/arm64. The runtime reported Ubuntu 26.04, Temurin 25.0.5 and FFmpeg 8; Python, Node and javac were absent from the application image. Python 3.14.10 and Node 24.18.0 ran operational/repository tooling. JUnit 51 tests and JavaScript 24 tests passed; package/media/theme/hash/documentation checks passed.
+- Synthetic direct H.264/AAC and converted MPEG4/PCM media, nested listing, JPEG thumbnails, 206 byte ranges, forged-token rejection, traversal/symlink rejection, read-only media/root, graceful stop and restart passed in an isolated Compose project/data root. Native Chrome played the converted fixture with readyState 4, advancing time, controls enabled and no media error.
+- A real duplicate-writer test exposed that the existing advisory FileLock alone was insufficient across these Docker Desktop bind mounts. Atomic directory ownership was added alongside the original lock. Repeated cross-container rejection and normal shutdown/restart then passed. Unclean exits deliberately retain ownership evidence and require verified operator recovery; the Docker guide documents the limit.
+- Under the shared macOS-compatible deployment flock, the previous image/container/configuration and actual bind sources were preserved. A first production validation command used an invalid FFmpeg duration spelling; automatic rollback restored the previous service. The command was corrected and shared with isolated verification, which passed before retry. The successful switch used project `platform`, service `movie-kids-web`, only host web port 20010, UID/GID 501:20 and the original read-only media/writable data mounts.
+- Production HTTP listing/navigation, actual-media thumbnail/range playback and FFmpeg decode/encode passed before and after a controlled service restart; health became healthy. Original hashes/metadata for 88 external files matched. A competing process failed to acquire the held deployment lock. Actual macOS Chrome played a representative production video with readyState 4, advancing time and no video error. Previous images/containers and private recovery evidence were retained, without stopping other projects or deleting data volumes.
+
+These are target-environment checks, not comprehensive physical Safari/Edge/mobile, huge-NAS outage/load, or independent external-network certification. The web port change creates a different browser origin: existing browser-local queues remain in the old origin's storage rather than being silently migrated or erased.
+
 ## Shared introduction theme — 2026-11-09
 
 - The introduction now reuses the configured service theme CSS, logo, header/footer and packaged illustration. Its small layout stylesheet has no independent palette/font family; server-rendered HTML is visible without app JavaScript or catalog requests.

@@ -4,7 +4,7 @@
 
 ## Prerequisites and setup
 
-Use JDK 25, Node.js 24 and Python 3.9 or later for the full repository checks. Install FFmpeg/ffprobe to exercise local media processing, or use the Docker image. A global Gradle installation, frontend development server and database are not required.
+Use JDK 25, Node.js 24 and Python 3.14.9 or later for the full repository checks. Install FFmpeg/ffprobe to exercise local media processing, or use the Docker image. A global Gradle installation, frontend development server and database are not required.
 
 Fork/clone the repository, create a focused branch and run:
 
@@ -51,3 +51,5 @@ Gradle uses its normal user cache unless `GRADLE_USER_HOME` is set. For workspac
 ## Themes and documentation
 
 Use [the theme guide](themes.md#adding-a-theme) for preset contributions. English is the documentation source, `README.ko.md` is the root Korean translation, and `docs/ko/` mirrors guide filenames. Keep both languages updated in the same PR. Actual UI copy is currently Korean and is separate from documentation translation. Historical SDD metadata is explained in [maintainer notes](maintainers.md).
+
+Use Python 3.14 for operational/verification scripts and Node 24 for JavaScript checks. Neither Python nor Node is added to the application runtime image.

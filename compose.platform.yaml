@@ -1,0 +1,55 @@
+name: platform
+
+services:
+  movie-kids-web:
+    image: ${MOVIESITES_IMAGE:-movie-kids:ubuntu26.04}
+    pull_policy: never
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+      args:
+        JAVA_BUILD_IMAGE: ${JAVA_BUILD_IMAGE:-movie-kids-java-build:25-ubuntu26.04}
+        JAVA_RUNTIME_IMAGE: ${JAVA_RUNTIME_IMAGE:-movie-kids-java-runtime:25-ubuntu26.04}
+    user: "${MOVIESITES_UID:-501}:${MOVIESITES_GID:-20}"
+    init: true
+    restart: unless-stopped
+    read_only: true
+    mem_limit: 2g
+    cpus: 2
+    pids_limit: 128
+    stop_signal: SIGTERM
+    stop_grace_period: 30s
+    logging:
+      driver: local
+    env_file:
+      - path: ${MOVIESITES_ENV_FILE:-.env.example}
+        format: raw
+        required: true
+    environment:
+      MOVIESITES_MEDIA_ROOT: /media
+      MOVIESITES_DATA_ROOT: /data
+      PORT: "8080"
+    ports:
+      - name: web
+        target: 8080
+        published: "${MOVIESITES_WEB_PORT:-20010}"
+        host_ip: ${MOVIESITES_BIND_ADDRESS:-127.0.0.1}
+        protocol: tcp
+    volumes:
+      - type: bind
+        source: ${MOVIESITES_MEDIA_PATH:-./movie}
+        target: /media
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${MOVIESITES_DATA_PATH:-./runtime}
+        target: /data
+        bind:
+          create_host_path: false
+
+# UI and API share one application; no cross-project dependency is required.
+networks:
+  default:
+    driver: bridge
