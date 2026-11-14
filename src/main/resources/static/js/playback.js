@@ -66,23 +66,18 @@ export class PlaybackSession {
 
 // Request from the original click, before media inspection consumes user activation.
 // A dialog itself cannot be fullscreen; its non-dialog player wrapper can.
+// Viewport expansion lasts until close; delayed OS notifications never resize a new session.
 export class PlaybackFullscreen {
   constructor(document, container, video, changed = () => {}) {
     this.document = document; this.container = container; this.video = video;
-    this.changed = changed; this.enabled = false; this.nativePending = false; this.expanded = false; this.wasActive = false; this.exitRequested = false;
+    this.changed = changed; this.enabled = false; this.nativePending = false; this.expanded = false;
     const update = () => {
-      const active = this.active;
-      if (!this.enabled && active) { this.exit(); return; }
-      const intentionalExit = this.exitRequested;
-      if (!active) this.exitRequested = false;
-      if (this.wasActive && !active && !intentionalExit) this.expanded = false;
-      this.wasActive = active; changed();
-      if (intentionalExit && !active && this.enabled) this.request();
+      if (!this.enabled && this.active) this.exit();
+      changed();
     };
-    this.update = update;
     for (const name of ['fullscreenchange', 'webkitfullscreenchange']) document.addEventListener?.(name, update);
     video.addEventListener('webkitbeginfullscreen', update);
-    video.addEventListener('webkitendfullscreen', () => { if (!this.exitRequested) { this.nativePending = false; this.expanded = false; } update(); });
+    video.addEventListener('webkitendfullscreen', update);
   }
   get standardRequest() { return this.container.requestFullscreen || this.container.webkitRequestFullscreen; }
   get supported() { return Boolean(this.standardRequest || this.video.webkitEnterFullscreen); }
@@ -94,7 +89,8 @@ export class PlaybackFullscreen {
   request() {
     if (!this.enabled) return;
     this.expanded = true; this.changed();
-    if (this.active || this.pending) return;
+    if (this.active) { this.nativePending = false; return; }
+    if (this.pending) return;
     const request = this.standardRequest;
     if (request) {
       try {
@@ -118,17 +114,20 @@ export class PlaybackFullscreen {
   exit() {
     const element = this.document.fullscreenElement || this.document.webkitFullscreenElement;
     const exit = this.document.exitFullscreen || this.document.webkitExitFullscreen;
-    if (element && (element === this.container || this.container.contains(element)) && exit && !this.exiting && !this.exitRequested) {
+    if (element && (element === this.container || this.container.contains(element)) && exit && !this.exiting) {
       try {
-        this.exitRequested = true;
-        this.exiting = Promise.resolve(exit.call(this.document)).then(
-          () => { this.exiting = null; this.update(); },
-          () => { this.exiting = null; this.exitRequested = false; this.changed(); });
-      } catch { this.exitRequested = false; this.changed(); }
+        // Set the guard before calling: fullscreenchange can fire synchronously.
+        this.exiting = true;
+        Promise.resolve(exit.call(this.document)).then(
+          () => { this.exiting = false; this.changed(); },
+          () => { this.exiting = false; this.changed(); });
+      } catch { this.exiting = false; this.changed(); }
     }
-    if (this.video.webkitDisplayingFullscreen && this.video.webkitExitFullscreen && !this.exitRequested) {
-      this.exitRequested = true;
-      try { this.video.webkitExitFullscreen(); this.update(); } catch { this.exitRequested = false; this.changed(); }
+    if (this.video.webkitDisplayingFullscreen && this.video.webkitExitFullscreen && !this.nativeExiting) {
+      // WebKit's void call may be ignored during transition; a late begin event retries it.
+      try { this.nativeExiting = true; this.video.webkitExitFullscreen(); }
+      catch { /* Native controls remain available if the platform refuses exit. */ }
+      finally { this.nativeExiting = false; }
     }
   }
   close() { this.enabled = false; this.nativePending = false; this.expanded = false; this.exit(); this.changed(); }

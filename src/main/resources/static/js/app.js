@@ -1,5 +1,5 @@
 import {applyTheme} from '../themes/runtime.js?v=8dad06ab9ac9f4d3';
-import {PlaybackQueue,PlaybackSession,PlaybackFullscreen,MAX_QUEUE} from './playback.js?v=1729ca0f0f010b9f';
+import {PlaybackQueue,PlaybackSession,PlaybackFullscreen,MAX_QUEUE} from './playback.js?v=afae23a0f0fb290b';
 import {DirectoryCache,PageHistory} from './cache.js?v=cb07f2467980d05a';
 import {durationGroups,topicLabels,waitForPreparation} from './library.js?v=9b9ec7046b3559fb';
 

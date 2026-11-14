@@ -69,10 +69,10 @@ test('fullscreen denial keeps playback working and a manual retry can succeed wi
  a.click('player-fullscreen-button');await flush();assert.equal(a.document.fullscreenElement,a.ids.get('player-fullscreen'));assert.equal(a.ids.get('video-player').paused,false);
  a.end();await flush();assert.equal(a.document.fullscreenElement,null);assert.equal(a.ids.get('player-dialog').open,false);
 });
-test('explicit fullscreen exit restores the popup size and playing does not force re-entry',async()=>{
+test('explicit OS fullscreen exit keeps the viewport expanded and playing does not force re-entry',async()=>{
  const a=await app();a.startPlayback([entry('first')]);await flush();
  a.document.fullscreenElement=null;a.document.dispatchEvent(new Event('fullscreenchange'));
- assert.equal(a.ids.get('player-dialog').dataset.expanded,'false');
+ assert.equal(a.ids.get('player-dialog').dataset.expanded,'true');
  a.ids.get('video-player').dispatchEvent(new Event('playing'));assert.equal(a.fullscreenCalls.enter,1);
  a.closePlayer();
 });
@@ -81,7 +81,7 @@ test('a previous asynchronous fullscreen exit does not shrink a newly started vi
  a.document.exitFullscreen=()=>new Promise(resolve=>{finishExit=()=>{a.document.fullscreenElement=null;a.document.dispatchEvent(new Event('fullscreenchange'));resolve();};});
  a.closePlayer();a.startPlayback([entry('second')]);finishExit();await flush();
  assert.equal(a.ids.get('player-dialog').open,true);assert.equal(a.ids.get('video-player').paused,false);assert.match(a.ids.get('player-title').textContent,/second/);
- assert.equal(a.ids.get('player-dialog').dataset.expanded,'true');assert.equal(a.document.fullscreenElement,a.ids.get('player-fullscreen'));assert.equal(a.fullscreenCalls.enter,2);
+ assert.equal(a.ids.get('player-dialog').dataset.expanded,'true');assert.equal(a.document.fullscreenElement,null);assert.equal(a.fullscreenCalls.enter,1);
  a.closePlayer();finishExit();await flush();
 });
 test('autoplay denial exposes a working resume button',async()=>{
