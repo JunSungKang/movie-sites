@@ -194,7 +194,7 @@ def main():
             if leftover.returncode == 0:
                 owned = json.loads(leftover.stdout)[0]
                 assert owned['Config']['Labels']['com.docker.compose.project'] == project
-                docker('stop', '--timeout', str(os.getgid()), owned['Id'], check=False)
+                docker('stop', '--timeout', '20', owned['Id'], check=False)
                 docker('rm', owned['Id'], check=False)
         assert duplicate.returncode != 0 and 'already in use' in duplicate.stdout + duplicate.stderr
         wait_health(base)

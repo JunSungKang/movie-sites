@@ -4,7 +4,7 @@
 
 ## Prerequisites and setup
 
-Use JDK 25, Node.js 24 and Python 3.14.9 or later for the full repository checks. Install FFmpeg/ffprobe to exercise local media processing, or use the Docker image. A global Gradle installation, frontend development server and database are not required.
+Use JDK 25, Node.js 24 and Python 3.14.x (3.14.9 or newer within that series) for the full repository checks. Install FFmpeg/ffprobe to exercise local media processing, or use the Docker image. A global Gradle installation, frontend development server and database are not required.
 
 Fork/clone the repository, create a focused branch and run:
 
