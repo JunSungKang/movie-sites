@@ -5,8 +5,8 @@
   <meta name="robots" content="noindex,nofollow,noimageindex">
   <meta name="theme-color" content="#f5f7f6"><meta name="description" content="폴더 구조 그대로 탐색하고 감상하는 셀프 호스팅 영상 플랫폼, MovieSites">
   <title>MovieSites — 영상 라이브러리</title>
-  <link rel="icon" href="data:,"><link rel="stylesheet" href="/css/app.css?v=b9ad1c88957e379d">
-  <script type="module" src="/js/app.js?v=9af298c5676fb39a"></script>
+  <link rel="icon" href="data:,"><link rel="stylesheet" href="/css/app.css?v=d9fec20cd6fe8230">
+  <script type="module" src="/js/app.js?v=3f124699500b58eb"></script>
 </head>
 <body>
 <section id="boot-state" class="boot-state" role="status"><p id="boot-message">영상 라이브러리를 준비하고 있습니다.</p><button id="boot-retry" type="button" hidden>다시 연결</button></section>
@@ -33,6 +33,12 @@
 <main id="content" class="main-content">
   <nav id="screen-navigation" class="navigation-actions" aria-label="화면 이동" hidden><button id="home-button" class="home-button" type="button"><svg class="icon" aria-hidden="true"><use href="#i-home"/></svg><span>처음으로</span></button><button id="parent-button" class="parent-button" type="button" hidden><svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg><span id="return-label"></span></button></nav>
   <div class="page-heading"><div><p id="location-caption" class="eyebrow">YOUR VIDEO COLLECTION</p><h1 id="folder-title">나의 영상 라이브러리</h1><p class="page-description" id="folder-description">컬렉션을 열고 영상을 선택해 주세요.</p></div><img id="heading-art" class="heading-art" alt="" width="280" height="190"></div>
+  <section class="random-panel" aria-labelledby="random-heading">
+    <div class="random-heading"><span class="random-symbol" aria-hidden="true">✦</span><div><h2 id="random-heading">얼마나 볼까요?</h2><p id="random-scope">모든 카테고리에서 무작위로 골라드려요.</p></div></div>
+    <div class="random-times" role="group" aria-label="랜덤 재생 시간 선택"><button id="random-10" type="button" disabled aria-label="최대 10분 랜덤 재생">10분</button><button id="random-20" type="button" disabled aria-label="최대 20분 랜덤 재생">20분</button><button id="random-30" type="button" disabled aria-label="최대 30분 랜덤 재생">30분</button><button id="random-40" type="button" disabled aria-label="최대 40분 랜덤 재생">40분</button><button id="random-50" type="button" disabled aria-label="최대 50분 랜덤 재생">50분</button></div>
+    <p class="random-note">선택한 시간을 넘기지 않고, 영상은 끝까지 봐요. 영상 수와 길이에 따라 더 짧을 수 있어요.</p>
+    <details id="random-playlist" class="random-playlist" hidden><summary id="random-summary"></summary><p id="random-note"></p><ol id="random-results"></ol><button id="random-replay" class="queue-button" type="button">이 목록 다시 재생</button></details>
+  </section>
   <div class="listing-toolbar"><p id="listing-status" class="listing-status" role="status" aria-live="polite"></p><button id="refresh-button" class="refresh-button" type="button"><svg class="icon" aria-hidden="true"><use href="#i-refresh"/></svg><span>새로고침</span></button></div>
   <section id="notice" class="notice" role="alert" hidden></section>
   <section id="folder-section" class="folder-section" aria-labelledby="folders-heading" hidden><h2 id="folders-heading" class="section-caption">컬렉션</h2><div id="folder-list" class="folder-list"></div></section>

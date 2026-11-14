@@ -6,6 +6,8 @@ Release notes will be grouped by published version. The source build currently u
 
 ### Added
 
+- Scoped 10/20/30/40/50-minute random whole-video playback, with bounded on-demand subtree sampling, cancellation and a separate temporary playlist.
+
 - Automatic fullscreen on user-initiated playback, with native/manual fallback and preserved final-popup closing.
 
 - Introduction-only SEO with configured canonical origin, Open Graph, JSON-LD, robots and a single-page sitemap.

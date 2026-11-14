@@ -8,7 +8,7 @@ import {durationGroups,topicLabels,waitForPreparation} from '../src/main/resourc
 const entry=name=>({path:`folder/${name}.mp4`,name:`${name}.mp4`,size:12});
 const flush=async()=>{for(let i=0;i<15;i++)await Promise.resolve();};
 // Run the actual app event wiring with a small DOM/media adapter. No duplicated player logic.
-async function app({inspect,play=()=>Promise.resolve(),entries=[],denyFullscreen=false}={}) {
+async function app({inspect,random,initialPath='folder',play=()=>Promise.resolve(),entries=[],denyFullscreen=false}={}) {
  let document;
  const fullscreenCalls={enter:0,exit:0};
  class Element extends EventTarget {
@@ -37,12 +37,12 @@ async function app({inspect,play=()=>Promise.resolve(),entries=[],denyFullscreen
  const window={localStorage,addEventListener:()=>{},scrollTo:(x,y)=>{if(typeof x==='object'){context.scrollY=x.top;}else{context.scrollX=x;context.scrollY=y;}}};
  const response=data=>({ok:true,json:async()=>data});
  const ready={state:'ready',version:'video-v1',streamToken:'original.signature'};
- const context=vm.createContext({document,window,location:{href:'http://test/?path=folder',reload(){}},history:{pushState(){}},scrollX:0,scrollY:321,URL,URLSearchParams,AbortController,Event,queueMicrotask,
+ const context=vm.createContext({document,window,location:{href:'http://test/'+(initialPath?'?path='+encodeURIComponent(initialPath):''),reload(){}},history:{pushState(){}},scrollX:0,scrollY:321,URL,URLSearchParams,AbortController,Event,queueMicrotask,
   setTimeout:(fn,ms)=>{if(ms<2000)queueMicrotask(fn);return 1;},clearTimeout:()=>{},IntersectionObserver:class{observe(){}disconnect(){}},PlaybackQueue,PlaybackSession,PlaybackFullscreen,MAX_QUEUE,DirectoryCache,PageHistory,
   durationGroups,topicLabels,waitForPreparation,applyTheme:async()=>({rootTitle:'Videos',rootCollection:'Collection'}),
-  fetch:async(url,options)=>url==='/api/config'?response({rootId:'r',cacheTtlSeconds:120,folderLabels:{},sourceUrl:'#'}):url.startsWith('/api/browse')?response({entries,state:'ready'}):inspect?inspect(url,options,response,ready):response(ready)});
+  fetch:async(url,options)=>url==='/api/config'?response({rootId:'r',cacheTtlSeconds:120,folderLabels:{},sourceUrl:'#'}):url.startsWith('/api/browse')?response({entries,state:'ready'}):url.startsWith('/api/random-playback')&&random?random(url,options,response):inspect?inspect(url,options,response,ready):response(ready)});
  const source=readFileSync('src/main/resources/static/js/app.js','utf8').replace(/^import .*;$/gm,'');
- const exposed=await vm.runInContext(`(async()=>{${source}\nreturn {startPlayback,closePlayer,playback,state,playbackQueue,enrich,renderVideo};})()`,context);
+ const exposed=await vm.runInContext(`(async()=>{${source}\nreturn {startPlayback,startRandom,loadFolder,closePlayer,playback,state,playbackQueue,enrich,renderVideo};})()`,context);
  return {...exposed,ids,context,document,fullscreenCalls,click:id=>ids.get(id).dispatchEvent(new Event('click')),end:()=>{ids.get('video-player').ended=true;ids.get('video-player').dispatchEvent(new Event('ended'));}};
 }
 test('actual player wiring advances on ended, closes final popup and preserves selection, scroll and saved queue',async()=>{
@@ -131,4 +131,66 @@ test('actual list renders duration separators, initial duration badges and hones
  assert.equal(tags[0].attributes['aria-label'],'파일명 기반 추천 주제');assert.equal(tags[0].children[1].textContent,'식습관교육');
  assert.equal(tags[1].children[0].textContent,'<custom topic>');assert.equal(tags[1].children[0].children.length,0);
  assert.equal(tags[2].children[0].textContent,'주제 미지정');
+});
+
+const randomPage=(url,items,extra={})=>{const p=new URL(url,'http://test').searchParams;return {state:'ready',query:'random-id',path:p.get('path'),minutes:Number(p.get('minutes')),entries:items.map(e=>({...e,version:e.version??'video-v1'})),...extra};};
+test('all five home duration buttons request the entire tree and leave the saved queue intact',async()=>{
+ for(const minutes of [10,20,30,40,50]){
+  const calls=[];const a=await app({initialPath:'',random:async(url,options,response)=>{calls.push([url,options]);return response(randomPage(url,[{...entry('chosen'),duration:61}]));}});
+  a.playbackQueue.add([entry('saved')]);a.click('random-'+minutes);assert.equal(a.ids.get('player-dialog').open,true);assert.equal(a.fullscreenCalls.enter,1);await flush();
+  const params=new URL(calls[0][0],'http://test').searchParams;assert.equal(params.get('path'),'');assert.equal(params.get('minutes'),String(minutes));
+  assert.equal(a.playback.items.length,1);assert.equal(a.playback.items[0].name,'chosen.mp4');assert.equal(a.playbackQueue.items[0].name,'saved.mp4');
+  assert.match(a.ids.get('random-summary').textContent,/1편/);a.end();await flush();assert.equal(a.ids.get('player-dialog').open,false);
+ }
+});
+test('category random playback includes descendants and closes after its final item without changing saved order',async()=>{
+ const items=[{path:'folder/deep/first.mp4',name:'first.mp4',size:12,duration:60},{...entry('second'),duration:60}];
+ const a=await app({random:async(url,options,response)=>response(randomPage(url,items))});a.playbackQueue.add([entry('saved')]);a.click('random-10');await flush();
+ assert.match(a.ids.get('random-scope').textContent,/folder/);assert.equal(a.playback.items[0].path,'folder/deep/first.mp4');
+ a.end();await flush();assert.match(a.ids.get('player-title').textContent,/second/);a.end();await flush();
+ assert.equal(a.ids.get('player-dialog').open,false);assert.equal(a.playbackQueue.items[0].name,'saved.mp4');assert.equal(a.context.scrollY,321);
+});
+test('wrong-category siblings, duplicate paths and over-budget server responses never start playback',async()=>{
+ for(const items of [[{path:'folder-other/a.mp4',name:'a.mp4',duration:60}],[{...entry('a'),duration:60},{...entry('a'),duration:60}],[{...entry('a'),duration:600.0001}]]){
+  const a=await app({random:async(url,options,response)=>response(randomPage(url,items))});a.click('random-10');await flush();
+  assert.equal(a.playback.active,false);assert.equal(a.ids.get('retry-player').hidden,false);assert.equal(a.ids.get('video-player').src,'');a.closePlayer();
+ }
+});
+test('close aborts a pending random response and never reopens the player when it arrives late',async()=>{
+ let resolve,signal;const gate=new Promise(r=>resolve=r);
+ const a=await app({random:async(url,options,response)=>{signal=options.signal;await gate;return response(randomPage(url,[{...entry('late'),duration:60}]));}});
+ a.click('random-20');a.closePlayer();assert.equal(signal.aborted,true);resolve();await flush();
+ assert.equal(a.playback.active,false);assert.equal(a.ids.get('player-dialog').open,false);assert.equal(a.ids.get('video-player').src,'');
+});
+test('navigation cancels a preparing scope-bound query and sends its matching cancellation request',async()=>{
+ const calls=[];const a=await app({random:async(url,options,response)=>{calls.push([url,options]);return response(randomPage(url,[],{state:'preparing',videos:15}));}});
+ a.click('random-30');await flush();await a.loadFolder('other');await flush();
+ assert.equal(a.ids.get('player-dialog').open,false);assert.equal(a.playback.active,false);
+ const deletion=calls.find(([,options])=>options.method==='DELETE');assert.ok(deletion);
+ const p=new URL(deletion[0],'http://test').searchParams;assert.equal(p.get('path'),'folder');assert.equal(p.get('minutes'),'30');assert.equal(p.get('query'),'random-id');
+});
+test('an empty random result shows recovery and retry can build a new playable list',async()=>{
+ let attempt=0;const a=await app({random:async(url,options,response)=>response(randomPage(url,options.method==='DELETE'||++attempt===1?[]:[{...entry('retry'),duration:60}],{message:'다른 시간으로 골라 주세요.'}))});
+ a.click('random-40');await flush();assert.equal(a.playback.active,false);assert.equal(a.ids.get('retry-player').textContent,'다시 고르기');
+ a.click('retry-player');await flush();assert.equal(a.playback.active,true);assert.match(a.ids.get('player-title').textContent,/retry/);a.closePlayer();
+});
+test('a selected random source replaced by a different video is blocked instead of exceeding the chosen budget',async()=>{
+ const a=await app({random:async(url,options,response)=>response(randomPage(url,[{...entry('changed'),duration:60,version:'selected-old-version'}]))});
+ a.click('random-10');await flush();assert.equal(a.ids.get('video-player').src,'');assert.match(a.ids.get('player-state').textContent,/파일이 바뀌었/);assert.equal(a.ids.get('retry-player').hidden,true);a.closePlayer();
+});
+test('refresh remains bound to its category across navigation and is consumed only by a completed selection',async()=>{
+ const calls=[];const a=await app({random:async(url,options,response)=>{calls.push([url,options]);const path=new URL(url,'http://test').searchParams.get('path');return response(randomPage(url,[{path:path+'/clip.mp4',name:'clip.mp4',duration:60}]));}});
+ await a.loadFolder('folder',{force:true});await a.loadFolder('other');await a.startRandom(10);a.closePlayer();await flush();
+ const other=new URL(calls.find(([u,o])=>o.method!=='DELETE'&&new URL(u,'http://test').searchParams.get('path')==='other')[0],'http://test').searchParams;assert.equal(other.has('refresh'),false);
+ await a.loadFolder('folder');await a.startRandom(10);a.closePlayer();await flush();
+ const folderCalls=calls.filter(([u,o])=>o.method!=='DELETE'&&new URL(u,'http://test').searchParams.get('path')==='folder');assert.equal(new URL(folderCalls[0][0],'http://test').searchParams.get('refresh'),'true');
+ await a.startRandom(10);a.closePlayer();await flush();
+ const last=calls.filter(([u,o])=>o.method!=='DELETE'&&new URL(u,'http://test').searchParams.get('path')==='folder').at(-1);assert.equal(new URL(last[0],'http://test').searchParams.has('refresh'),false);
+});
+test('leaving OS fullscreen during random preparation is respected when its list becomes ready',async()=>{
+ let release;const gate=new Promise(resolve=>release=resolve);
+ const a=await app({random:async(url,options,response)=>{await gate;return response(randomPage(url,[{...entry('chosen'),duration:60}]));}});
+ a.click('random-10');assert.equal(a.fullscreenCalls.enter,1);
+ a.document.fullscreenElement=null;a.document.dispatchEvent(new Event('fullscreenchange'));release();await flush();
+ assert.equal(a.playback.active,true);assert.equal(a.ids.get('video-player').paused,false);assert.equal(a.ids.get('player-dialog').dataset.expanded,'true');assert.equal(a.fullscreenCalls.enter,1);a.closePlayer();
 });
