@@ -2,6 +2,13 @@
 
 [한국어](ko/verification.md) · [Documentation index](../README.md#documentation)
 
+
+## Automatic fullscreen playback — 2026-11-14
+
+Playback requests fullscreen from the original play interaction, before asynchronous media inspection. A non-dialog wrapper keeps the player controls available and remains fullscreen across queue items. Final completion exits fullscreen and closes the popup; manual close cancels pending playback/fullscreen work and restores the selected folder, scroll and queue. Native WebKit video fullscreen is attempted when playable media is available. Browsers that reject automatic fullscreen keep playing in a maximized viewport and expose a manual fullscreen control. Explicit user exit is respected; native-device behavior remains subject to browser policy.
+
+Player adapter/unit regressions verify synchronous request timing, permission denial/manual recovery, native/prefixed support, late fullscreen completion after close, sequential completion, saved queue and existing playback cancellation. Actual macOS Chrome tests observed a player rectangle equal to the viewport, two real H.264 clips advancing to the second item with the expanded state retained, and final completion closing the popup, clearing the video source and preserving the two saved queue entries. At320×568 and812×375, the player filled the viewport and close/next controls remained inside it. The controlled browser rejected native fullscreen with TypeError not granted despite active user input, so native OS fullscreen is not claimed as verified; the maximized fallback was verified. Native iOS/Edge device testing remains outstanding.
+
 ## Native UTF-8 locale regression — 2026-11-09
 
 - The affected running image had no UTF-8 locale: Java reported `file.encoding=UTF-8` but `native.encoding` and `sun.jnu.encoding` were `ANSI_X3.4-1968`. The mounted directories were correct; API folder paths and Korean environment labels contained replacement characters. Checking only health and ASCII fixtures had not covered this deployment condition.

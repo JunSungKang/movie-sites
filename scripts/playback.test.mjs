@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {PlaybackQueue,PlaybackSession,MAX_QUEUE} from '../src/main/resources/static/js/playback.js';
+import {PlaybackQueue,PlaybackSession,PlaybackFullscreen,MAX_QUEUE} from '../src/main/resources/static/js/playback.js';
 const entry=(id)=>({path:`folder/${id}.mp4`,name:`${id}.mp4`,size:12});
 function storage(){const map=new Map();return {getItem:key=>map.get(key),setItem:(key,value)=>map.set(key,value)};}
 test('one queue survives reload, isolates media roots, deduplicates and preserves chosen order',()=>{
@@ -48,4 +48,45 @@ test('editing saved queue during playback leaves the active snapshot stable and 
  const selected=[],s=new PlaybackSession(e=>selected.push(e.name),()=>{});s.start(q.items);
  q.clear();q.add([entry('c')]);s.ended(s.token);assert.equal(selected.at(-1),'b.mp4');
  s.start(q.items);assert.equal(selected.at(-1),'c.mp4');assert.equal(s.items.length,1);
+});
+
+const settle=async()=>{for(let i=0;i<12;i++)await Promise.resolve();};
+function fullscreenFixture() {
+ const document=Object.assign(new EventTarget(),{fullscreenElement:null});
+ const video=Object.assign(new EventTarget(),{readyState:0,webkitDisplayingFullscreen:false});
+ const target={contains:element=>element===video};let exits=0;
+ document.exitFullscreen=()=>{exits++;document.fullscreenElement=null;return Promise.resolve();};
+ return {document,video,target,exits:()=>exits};
+}
+test('late fullscreen completion after close exits only the owned player, without reopening it',async()=>{
+ const f=fullscreenFixture();let resolve;
+ f.target.requestFullscreen=()=>new Promise(r=>resolve=r);
+ const fullscreen=new PlaybackFullscreen(f.document,f.target,f.video);
+ fullscreen.start();fullscreen.close();f.document.fullscreenElement=f.target;resolve();await settle();
+ assert.equal(f.document.fullscreenElement,null);assert.equal(f.exits(),1);assert.equal(fullscreen.enabled,false);
+});
+test('native WebKit waits for playable media, exits before reset and never re-enters after closing',()=>{
+ const f=fullscreenFixture(),calls=[];
+ f.video.webkitEnterFullscreen=()=>{calls.push('enter');f.video.webkitDisplayingFullscreen=true;};
+ f.video.webkitExitFullscreen=()=>{calls.push('exit');f.video.webkitDisplayingFullscreen=false;};
+ const fullscreen=new PlaybackFullscreen(f.document,f.target,f.video);
+ fullscreen.start();assert.deepEqual(calls,[]);f.video.readyState=4;fullscreen.playing();assert.equal(fullscreen.active,true);
+ fullscreen.close();fullscreen.playing();assert.deepEqual(calls,['enter','exit']);assert.equal(fullscreen.active,false);
+});
+test('prefixed fullscreen is supported and closing does not exit another element',async()=>{
+ const f=fullscreenFixture();let entered=0,exited=0;
+ f.target.webkitRequestFullscreen=()=>{entered++;f.document.webkitFullscreenElement=f.target;};
+ delete f.document.exitFullscreen;f.document.webkitExitFullscreen=()=>{exited++;f.document.webkitFullscreenElement=null;};
+ const fullscreen=new PlaybackFullscreen(f.document,f.target,f.video);
+ fullscreen.start();await settle();assert.equal(fullscreen.active,true);assert.equal(entered,1);
+ fullscreen.close();await settle();assert.equal(exited,1);
+ f.document.webkitFullscreenElement={};fullscreen.close();assert.equal(exited,1);
+});
+test('unsupported/rejected native fullscreen is non-fatal and user exit is not undone by playing events',()=>{
+ const f=fullscreenFixture(),fullscreen=new PlaybackFullscreen(f.document,f.target,f.video);
+ assert.equal(fullscreen.supported,false);fullscreen.start();fullscreen.close();
+ let entered=0;f.video.readyState=4;f.video.webkitEnterFullscreen=()=>{entered++;throw new Error('user gesture required');};
+ fullscreen.start();fullscreen.playing();assert.equal(entered,1);assert.equal(fullscreen.active,false);
+ f.video.webkitEnterFullscreen=()=>{entered++;f.video.webkitDisplayingFullscreen=true;};fullscreen.request();
+ f.video.webkitDisplayingFullscreen=false;f.video.dispatchEvent(new Event('webkitendfullscreen'));fullscreen.playing();assert.equal(entered,2);
 });

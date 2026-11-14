@@ -5,8 +5,8 @@
   <meta name="robots" content="noindex,nofollow,noimageindex">
   <meta name="theme-color" content="#f5f7f6"><meta name="description" content="폴더 구조 그대로 탐색하고 감상하는 셀프 호스팅 영상 플랫폼, MovieSites">
   <title>MovieSites — 영상 라이브러리</title>
-  <link rel="icon" href="data:,"><link rel="stylesheet" href="/css/app.css?v=80730371d1c6aa9b">
-  <script type="module" src="/js/app.js?v=67737cfc02f7340f"></script>
+  <link rel="icon" href="data:,"><link rel="stylesheet" href="/css/app.css?v=b9ad1c88957e379d">
+  <script type="module" src="/js/app.js?v=fb4405d8c7fb9de8"></script>
 </head>
 <body>
 <section id="boot-state" class="boot-state" role="status"><p id="boot-message">영상 라이브러리를 준비하고 있습니다.</p><button id="boot-retry" type="button" hidden>다시 연결</button></section>
@@ -49,10 +49,12 @@
   <footer class="page-footer"><span id="footer-label">당신의 영상, 당신의 공간</span><a href="/about">MovieSites 소개</a><a id="source-link" href="https://github.com/JunSungKang/movie-sites" target="_blank" rel="noopener noreferrer">오픈소스 · AGPL-3.0</a></footer>
 </main>
 <dialog id="player-dialog" class="player-dialog" aria-labelledby="player-title">
+  <div id="player-fullscreen" class="player-fullscreen">
   <header class="player-heading"><div><p id="player-folder" class="eyebrow"></p><h2 id="player-title"></h2></div><button id="close-player" class="icon-button" type="button" aria-label="재생 화면 닫기"><svg class="icon"><use href="#i-close"/></svg></button></header>
   <div class="player-surface"><video id="video-player" controls playsinline preload="metadata" hidden></video><div id="player-preparing" class="player-preparing"><svg class="icon"><use href="#i-film"/></svg><p id="player-state" role="status" aria-live="polite">영상을 확인하고 있습니다.</p><progress id="player-progress" aria-label="영상 준비 중"></progress></div></div>
-  <div class="player-controls"><button id="player-previous" class="queue-button" type="button">이전 영상</button><p id="player-position" role="status" aria-live="polite"></p><button id="player-resume" class="queue-button queue-primary" type="button" hidden>재생 시작</button><button id="player-next" class="queue-button" type="button">다음 영상</button></div>
+  <div class="player-controls"><button id="player-previous" class="queue-button" type="button">이전 영상</button><p id="player-position" role="status" aria-live="polite"></p><button id="player-fullscreen-button" class="queue-button" type="button" hidden>전체화면</button><button id="player-resume" class="queue-button queue-primary" type="button" hidden>재생 시작</button><button id="player-next" class="queue-button" type="button">다음 영상</button></div>
   <div class="player-bottom"><p id="player-file"></p><button id="retry-player" class="text-button" type="button" hidden>다시 확인</button></div>
+  </div>
 </dialog>
 <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 </body></html>

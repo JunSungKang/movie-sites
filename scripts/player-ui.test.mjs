@@ -2,14 +2,15 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
-import {PlaybackQueue,PlaybackSession,MAX_QUEUE} from '../src/main/resources/static/js/playback.js';
+import {PlaybackQueue,PlaybackSession,PlaybackFullscreen,MAX_QUEUE} from '../src/main/resources/static/js/playback.js';
 import {DirectoryCache,PageHistory} from '../src/main/resources/static/js/cache.js';
 import {durationGroups,topicLabels,waitForPreparation} from '../src/main/resources/static/js/library.js';
 const entry=name=>({path:`folder/${name}.mp4`,name:`${name}.mp4`,size:12});
 const flush=async()=>{for(let i=0;i<15;i++)await Promise.resolve();};
 // Run the actual app event wiring with a small DOM/media adapter. No duplicated player logic.
-async function app({inspect,play=()=>Promise.resolve(),entries=[]}={}) {
+async function app({inspect,play=()=>Promise.resolve(),entries=[],denyFullscreen=false}={}) {
  let document;
+ const fullscreenCalls={enter:0,exit:0};
  class Element extends EventTarget {
   constructor(tag='div'){super();this.tagName=tag;this.children=[];this.dataset={};this.attributes={};this.classList={add:()=>{}};this.hidden=false;this.isConnected=true;this.paused=true;this.open=false;this.ended=false;this.error=null;this.namespaceURI='svg';}
   append(...children){this.children.push(...children);for(const c of children)c.parent=this;}
@@ -25,27 +26,55 @@ async function app({inspect,play=()=>Promise.resolve(),entries=[]}={}) {
   close(){this.open=false;queueMicrotask(()=>this.dispatchEvent(new Event('close')));}
   pause(){this.paused=true;}
   load(){this.ended=false;this.error=null;this.currentTime=0;}
-  async play(){await play();this.paused=false;}
+  async play(){await play();this.paused=false;this.readyState=4;this.dispatchEvent(new Event('playing'));}
  }
  const ids=new Map([...readFileSync('src/main/resources/static/index.html','utf8').matchAll(/id="([^"]+)"/g)].map(m=>[m[1],new Element()]));
- document={activeElement:new Element('button'),getElementById:id=>ids.get(id),createElement:tag=>new Element(tag),createElementNS:(ns,tag)=>new Element(tag),querySelectorAll:()=>[]};
+ document=Object.assign(new EventTarget(),{fullscreenElement:null,activeElement:new Element('button'),getElementById:id=>ids.get(id),createElement:tag=>new Element(tag),createElementNS:(ns,tag)=>new Element(tag),querySelectorAll:()=>[]});
+ ids.get('player-fullscreen').append(ids.get('video-player'));ids.get('player-dialog').append(ids.get('player-fullscreen'));
+ ids.get('player-fullscreen').requestFullscreen=()=>{fullscreenCalls.enter++;if(denyFullscreen)return Promise.reject(new Error('permission denied'));document.fullscreenElement=ids.get('player-fullscreen');document.dispatchEvent(new Event('fullscreenchange'));return Promise.resolve();};
+ document.exitFullscreen=()=>{fullscreenCalls.exit++;document.fullscreenElement=null;document.dispatchEvent(new Event('fullscreenchange'));return Promise.resolve();};
  const disk=new Map(),localStorage={getItem:key=>disk.get(key),setItem:(key,value)=>disk.set(key,value)};
  const window={localStorage,addEventListener:()=>{},scrollTo:(x,y)=>{if(typeof x==='object'){context.scrollY=x.top;}else{context.scrollX=x;context.scrollY=y;}}};
  const response=data=>({ok:true,json:async()=>data});
  const ready={state:'ready',version:'video-v1',streamToken:'original.signature'};
  const context=vm.createContext({document,window,location:{href:'http://test/?path=folder',reload(){}},history:{pushState(){}},scrollX:0,scrollY:321,URL,URLSearchParams,AbortController,Event,queueMicrotask,
-  setTimeout:(fn,ms)=>{if(ms<2000)queueMicrotask(fn);return 1;},clearTimeout:()=>{},IntersectionObserver:class{observe(){}disconnect(){}},PlaybackQueue,PlaybackSession,MAX_QUEUE,DirectoryCache,PageHistory,
+  setTimeout:(fn,ms)=>{if(ms<2000)queueMicrotask(fn);return 1;},clearTimeout:()=>{},IntersectionObserver:class{observe(){}disconnect(){}},PlaybackQueue,PlaybackSession,PlaybackFullscreen,MAX_QUEUE,DirectoryCache,PageHistory,
   durationGroups,topicLabels,waitForPreparation,applyTheme:async()=>({rootTitle:'Videos',rootCollection:'Collection'}),
   fetch:async(url,options)=>url==='/api/config'?response({rootId:'r',cacheTtlSeconds:120,folderLabels:{},sourceUrl:'#'}):url.startsWith('/api/browse')?response({entries,state:'ready'}):inspect?inspect(url,options,response,ready):response(ready)});
  const source=readFileSync('src/main/resources/static/js/app.js','utf8').replace(/^import .*;$/gm,'');
  const exposed=await vm.runInContext(`(async()=>{${source}\nreturn {startPlayback,closePlayer,playback,state,playbackQueue,enrich,renderVideo};})()`,context);
- return {...exposed,ids,context,click:id=>ids.get(id).dispatchEvent(new Event('click')),end:()=>{ids.get('video-player').ended=true;ids.get('video-player').dispatchEvent(new Event('ended'));}};
+ return {...exposed,ids,context,document,fullscreenCalls,click:id=>ids.get(id).dispatchEvent(new Event('click')),end:()=>{ids.get('video-player').ended=true;ids.get('video-player').dispatchEvent(new Event('ended'));}};
 }
 test('actual player wiring advances on ended, closes final popup and preserves selection, scroll and saved queue',async()=>{
  const a=await app();a.playbackQueue.add([entry('first'),entry('second')]);a.startPlayback(a.playbackQueue.items);await flush();
  assert.equal(a.ids.get('player-dialog').open,true);assert.equal(a.ids.get('video-player').paused,false);assert.match(a.ids.get('player-title').textContent,/first/);
+ assert.equal(a.document.fullscreenElement,a.ids.get('player-fullscreen'));assert.equal(a.fullscreenCalls.enter,1);
  a.end();await flush();assert.match(a.ids.get('player-title').textContent,/second/);assert.equal(a.ids.get('player-dialog').open,true);
+ assert.equal(a.document.fullscreenElement,a.ids.get('player-fullscreen'));assert.equal(a.fullscreenCalls.enter,1);
  a.context.scrollY=0;a.end();await flush();assert.equal(a.ids.get('player-dialog').open,false);assert.equal(a.context.scrollY,321);assert.equal(a.context.location.href,'http://test/?path=folder');assert.equal(a.playbackQueue.items.length,2);assert.equal(a.ids.get('video-player').src,'');
+ assert.equal(a.document.fullscreenElement,null);assert.equal(a.fullscreenCalls.exit,1);
+ assert.equal(a.ids.get('player-dialog').dataset.expanded,'false');
+});
+test('fullscreen request happens synchronously while media inspection is still waiting',async()=>{
+ let release;const pending=new Promise(r=>release=r);
+ const a=await app({inspect:async(url,options,response,ready)=>{await pending;return response(ready);}});
+ a.startPlayback([entry('first')]);assert.equal(a.fullscreenCalls.enter,1);assert.equal(a.ids.get('video-player').paused,true);
+ a.closePlayer();release();await flush();assert.equal(a.document.fullscreenElement,null);assert.equal(a.ids.get('player-dialog').open,false);
+});
+test('fullscreen denial keeps playback working and a manual retry can succeed without replaying media',async()=>{
+ const a=await app({denyFullscreen:true});a.startPlayback([entry('first')]);await flush();
+ assert.equal(a.ids.get('video-player').paused,false);assert.equal(a.ids.get('player-fullscreen-button').hidden,false);
+ assert.equal(a.ids.get('player-dialog').dataset.expanded,'true');
+ a.ids.get('player-fullscreen').requestFullscreen=()=>{a.fullscreenCalls.enter++;a.document.fullscreenElement=a.ids.get('player-fullscreen');a.document.dispatchEvent(new Event('fullscreenchange'));return Promise.resolve();};
+ a.click('player-fullscreen-button');await flush();assert.equal(a.document.fullscreenElement,a.ids.get('player-fullscreen'));assert.equal(a.ids.get('video-player').paused,false);
+ a.end();await flush();assert.equal(a.document.fullscreenElement,null);assert.equal(a.ids.get('player-dialog').open,false);
+});
+test('explicit fullscreen exit restores the popup size and playing does not force re-entry',async()=>{
+ const a=await app();a.startPlayback([entry('first')]);await flush();
+ a.document.fullscreenElement=null;a.document.dispatchEvent(new Event('fullscreenchange'));
+ assert.equal(a.ids.get('player-dialog').dataset.expanded,'false');
+ a.ids.get('video-player').dispatchEvent(new Event('playing'));assert.equal(a.fullscreenCalls.enter,1);
+ a.closePlayer();
 });
 test('autoplay denial exposes a working resume button',async()=>{
  let allowed=false;const a=await app({play:()=>allowed?Promise.resolve():Promise.reject(Object.assign(new Error(),{name:'NotAllowedError'}))});
