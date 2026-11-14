@@ -6,6 +6,8 @@ Release notes will be grouped by published version. The source build currently u
 
 ### Added
 
+- Automatic fullscreen on user-initiated playback, with native/manual fallback and preserved final-popup closing.
+
 - Introduction-only SEO with configured canonical origin, Open Graph, JSON-LD, robots and a single-page sitemap.
 - Bounded/coalesced server directory and image caching, private ETag revalidation, session-restored list pages and verified-fingerprint static caching.
 - Text-response compression without compressing video/JPEG payloads.

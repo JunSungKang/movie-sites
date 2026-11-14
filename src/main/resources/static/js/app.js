@@ -1,5 +1,5 @@
 import {applyTheme} from '../themes/runtime.js?v=8dad06ab9ac9f4d3';
-import {PlaybackQueue,PlaybackSession,MAX_QUEUE} from './playback.js?v=a8c901a9938d717f';
+import {PlaybackQueue,PlaybackSession,PlaybackFullscreen,MAX_QUEUE} from './playback.js?v=49e8362b12bf6210';
 import {DirectoryCache,PageHistory} from './cache.js?v=cb07f2467980d05a';
 import {durationGroups,topicLabels,waitForPreparation} from './library.js?v=9b9ec7046b3559fb';
 
@@ -8,6 +8,9 @@ const cache=new DirectoryCache();
 const state={config:null,path:'',history:new PageHistory(),listing:null,generation:0,requests:new Map(),metadata:new Map(),queue:[],workers:0,player:null,playerTimer:null};
 let observer, playbackQueue;
 const playback = new PlaybackSession(showPlayer, () => { closePlayer(); toast('모든 영상의 재생이 끝났습니다.'); });
+const fullscreen = new PlaybackFullscreen(document, $('player-fullscreen'), $('video-player'), updateFullscreenButton);
+function updateFullscreenButton() { $('player-fullscreen-button').hidden = !fullscreen.supported || fullscreen.active; $('player-dialog').dataset.expanded = String(fullscreen.expanded); }
+updateFullscreenButton();
 let selectionPosition;
 function queueChanged() { renderQueue(); $('queue-warning').hidden=!playbackQueue.warning; if (playbackQueue.warning) { $('queue-warning').textContent=playbackQueue.warning; $('queue-warning').hidden=false; } }
 function enqueue(entries) {
@@ -45,7 +48,7 @@ function renderQueue() {
 function startPlayback(entries) {
   if(!entries.length)return;
   if(!$('player-dialog').open)selectionPosition={x:scrollX,y:scrollY,focus:document.activeElement};
-  playback.start(entries);
+  if(playback.start(entries))fullscreen.start();
 }
 function icon(name){const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.classList.add('icon');svg.setAttribute('aria-hidden','true');const use=document.createElementNS(svg.namespaceURI,'use');use.setAttribute('href','#i-'+name);svg.append(use);return svg;}
 function node(tag,className,text){const el=document.createElement(tag);if(className)el.className=className;if(text!==undefined)el.textContent=text;return el;}
@@ -215,10 +218,7 @@ async function pollPlayer(token,retry) {
   }
 }
 function closePlayer(closeDialog=true) {
-  playback.close();resetVideo();
-  const video=$('video-player');
-  if(document.fullscreenElement&&$('player-dialog').contains(document.fullscreenElement))document.exitFullscreen().catch(()=>{});
-  if(video.webkitDisplayingFullscreen&&video.webkitExitFullscreen)video.webkitExitFullscreen();
+  fullscreen.close();playback.close();resetVideo();
   if(closeDialog&&$('player-dialog').open)$('player-dialog').close();
   renderQueue();
   if(selectionPosition){selectionPosition.focus?.isConnected&&selectionPosition.focus.focus({preventScroll:true});window.scrollTo(selectionPosition.x,selectionPosition.y);selectionPosition=null;}
@@ -228,7 +228,9 @@ $('queue-clear').addEventListener('click',()=>{playbackQueue.clear();queueChange
 $('queue-add-page').addEventListener('click',()=>enqueue(state.listing.entries.filter(e=>e.kind==='video')));
 $('player-previous').addEventListener('click',()=>playback.previous());
 $('player-next').addEventListener('click',()=>playback.next());
-$('player-resume').addEventListener('click',()=>resumePlayer(playback.token));
+$('player-resume').addEventListener('click',()=>{fullscreen.request();resumePlayer(playback.token);});
+$('player-fullscreen-button').addEventListener('click',()=>fullscreen.request());
+$('video-player').addEventListener('playing',()=>fullscreen.playing());
 $('video-player').addEventListener('ended',()=>{if(state.player?.loaded&&$('video-player').ended)playback.ended(state.player.token);});
 $('player-dialog').addEventListener('cancel',event=>{event.preventDefault();closePlayer();});
 $('home-button').addEventListener('click',()=>navigate(''));
