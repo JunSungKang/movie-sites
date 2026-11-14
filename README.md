@@ -1,5 +1,7 @@
 # MovieSites
 
+> **Movie Kids operating branch.** The application source, Docker build and portable Compose definition stay identical to `main`. This branch adds the optional [Movie Kids preset](movie-kids.env.example): `child-toy`, Korean UI and education-topic suggestions. For a new portable deployment, select it explicitly with `MOVIESITES_ENV_FILE=movie-kids.env.example docker compose up -d --no-build` after building the image, or pass `--env-file movie-kids.env.example` to `docker run`. Existing deployments must keep their own service identity, ports and mounts; the preset contains no private host configuration. Common changes arrive through reviewed feature PRs, and `movie-kids` remains a permanent PR base.
+
 [한국어](README.ko.md) · [Contributing](CONTRIBUTING.md) · [Build checks](https://github.com/JunSungKang/movie-sites/actions/workflows/quality.yml)
 
 An open-source, self-hosted video platform that turns your folders into a browsable media library. Run one Java application, keep videos in external storage, and choose a presentation theme that fits your collection.
