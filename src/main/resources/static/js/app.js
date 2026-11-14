@@ -49,12 +49,12 @@ function renderQueue() {
   }
   document.querySelectorAll('.enqueue-button').forEach(b=>{ const added=items.some(e=>e.path===b.dataset.path); b.textContent=added?'대기열에 담김':'대기열에 담기';b.setAttribute('aria-pressed',String(added)); });
 }
-function startPlayback(entries,label='') {
+function startPlayback(entries,label='',keepFullscreen=false) {
   if(!entries.length)return;
   cancelRandom();randomRetry=null;sessionLabel=label;
   selectedVersions=new Map(entries.filter(entry=>typeof entry.version==='string').map(entry=>[entry.path,entry.version]));
   if(!$('player-dialog').open)selectionPosition={x:scrollX,y:scrollY,focus:document.activeElement};
-  if(playback.start(entries))fullscreen.start();
+  if(playback.start(entries)&&!keepFullscreen)fullscreen.start();
 }
 function releaseRandom(request) {
   if(request?.query)fetch('/api/random-playback?'+new URLSearchParams({path:request.path,minutes:request.minutes,query:request.query}),{method:'DELETE',cache:'no-store'}).catch(()=>{});
@@ -102,7 +102,7 @@ async function startRandom(minutes) {
       $('random-summary').textContent=`이번에 고른 ${data.entries.length}편 · 약 ${duration(millis/1000)} · 목록 보기`;
       $('random-note').textContent=[data.sampled||data.limited?'많은 영상 중 일부를 무작위로 살펴 골랐어요.':'',data.skipped?'확인할 수 없는 영상은 제외했어요.':'','저장한 재생 대기열은 그대로 유지해요.'].filter(Boolean).join(' ');
       $('random-playlist').hidden=false;randomRequest=null;releaseRandom(request);
-      startPlayback(randomPlaylist.entries,randomPlaylist.label);return;
+      startPlayback(randomPlaylist.entries,randomPlaylist.label,true);return;
     }
   }catch(error){
     if(randomRequest!==request||error.name==='AbortError')return;

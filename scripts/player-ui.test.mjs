@@ -187,3 +187,10 @@ test('refresh remains bound to its category across navigation and is consumed on
  await a.startRandom(10);a.closePlayer();await flush();
  const last=calls.filter(([u,o])=>o.method!=='DELETE'&&new URL(u,'http://test').searchParams.get('path')==='folder').at(-1);assert.equal(new URL(last[0],'http://test').searchParams.has('refresh'),false);
 });
+test('leaving OS fullscreen during random preparation is respected when its list becomes ready',async()=>{
+ let release;const gate=new Promise(resolve=>release=resolve);
+ const a=await app({random:async(url,options,response)=>{await gate;return response(randomPage(url,[{...entry('chosen'),duration:60}]));}});
+ a.click('random-10');assert.equal(a.fullscreenCalls.enter,1);
+ a.document.fullscreenElement=null;a.document.dispatchEvent(new Event('fullscreenchange'));release();await flush();
+ assert.equal(a.playback.active,true);assert.equal(a.ids.get('video-player').paused,false);assert.equal(a.ids.get('player-dialog').dataset.expanded,'true');assert.equal(a.fullscreenCalls.enter,1);a.closePlayer();
+});
