@@ -97,6 +97,33 @@ test('legacy void fullscreen calls that enter after close are exited on their la
  native.video.dispatchEvent(new Event('webkitbeginfullscreen'));
  assert.equal(native.video.webkitDisplayingFullscreen,false);
 });
+test('legacy void exit notifications preserve a new playback request after immediate reopening',async()=>{
+ const f=fullscreenFixture();let enters=0;
+ f.target.webkitRequestFullscreen=()=>{enters++;f.document.webkitFullscreenElement=f.target;f.document.dispatchEvent(new Event('webkitfullscreenchange'));};
+ delete f.document.exitFullscreen;f.document.webkitExitFullscreen=()=>{};
+ const fullscreen=new PlaybackFullscreen(f.document,f.target,f.video);
+ fullscreen.start();await settle();fullscreen.close();await settle();fullscreen.start();
+ f.document.webkitFullscreenElement=null;f.document.dispatchEvent(new Event('webkitfullscreenchange'));await settle();
+ assert.equal(fullscreen.expanded,true);assert.equal(fullscreen.active,true);assert.equal(enters,2);
+});
+test('failed exit does not turn a later explicit user exit into another fullscreen request',async()=>{
+ const f=fullscreenFixture();let enters=0;
+ f.target.requestFullscreen=()=>{enters++;f.document.fullscreenElement=f.target;f.document.dispatchEvent(new Event('fullscreenchange'));return Promise.resolve();};
+ f.document.exitFullscreen=()=>Promise.reject(new Error('inactive document'));
+ const fullscreen=new PlaybackFullscreen(f.document,f.target,f.video);
+ fullscreen.start();await settle();fullscreen.close();await settle();fullscreen.start();
+ f.document.fullscreenElement=null;f.document.dispatchEvent(new Event('fullscreenchange'));await settle();
+ assert.equal(fullscreen.expanded,false);assert.equal(enters,1);
+});
+test('a delayed native exit keeps a reopened video pending until its metadata is available',()=>{
+ const f=fullscreenFixture();let enters=0;f.video.readyState=4;
+ f.video.webkitEnterFullscreen=()=>{enters++;f.video.webkitDisplayingFullscreen=true;f.video.dispatchEvent(new Event('webkitbeginfullscreen'));};
+ f.video.webkitExitFullscreen=()=>{};
+ const fullscreen=new PlaybackFullscreen(f.document,f.target,f.video);
+ fullscreen.start();fullscreen.close();f.video.readyState=0;fullscreen.start();
+ f.video.webkitDisplayingFullscreen=false;f.video.dispatchEvent(new Event('webkitendfullscreen'));
+ assert.equal(fullscreen.expanded,true);f.video.readyState=4;fullscreen.playing();assert.equal(enters,2);
+});
 test('unsupported/rejected native fullscreen is non-fatal and user exit is not undone by playing events',()=>{
  const f=fullscreenFixture(),fullscreen=new PlaybackFullscreen(f.document,f.target,f.video);
  assert.equal(fullscreen.supported,false);fullscreen.start();fullscreen.close();

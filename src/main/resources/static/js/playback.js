@@ -69,16 +69,20 @@ export class PlaybackSession {
 export class PlaybackFullscreen {
   constructor(document, container, video, changed = () => {}) {
     this.document = document; this.container = container; this.video = video;
-    this.changed = changed; this.enabled = false; this.nativePending = false; this.expanded = false; this.wasActive = false;
+    this.changed = changed; this.enabled = false; this.nativePending = false; this.expanded = false; this.wasActive = false; this.exitRequested = false;
     const update = () => {
       const active = this.active;
       if (!this.enabled && active) { this.exit(); return; }
-      if (this.wasActive && !active) this.expanded = false;
+      const intentionalExit = this.exitRequested;
+      if (!active) this.exitRequested = false;
+      if (this.wasActive && !active && !intentionalExit) this.expanded = false;
       this.wasActive = active; changed();
+      if (intentionalExit && !active && this.enabled) this.request();
     };
+    this.update = update;
     for (const name of ['fullscreenchange', 'webkitfullscreenchange']) document.addEventListener?.(name, update);
     video.addEventListener('webkitbeginfullscreen', update);
-    video.addEventListener('webkitendfullscreen', () => { this.nativePending = false; this.expanded = false; update(); });
+    video.addEventListener('webkitendfullscreen', () => { if (!this.exitRequested) { this.nativePending = false; this.expanded = false; } update(); });
   }
   get standardRequest() { return this.container.requestFullscreen || this.container.webkitRequestFullscreen; }
   get supported() { return Boolean(this.standardRequest || this.video.webkitEnterFullscreen); }
@@ -114,13 +118,17 @@ export class PlaybackFullscreen {
   exit() {
     const element = this.document.fullscreenElement || this.document.webkitFullscreenElement;
     const exit = this.document.exitFullscreen || this.document.webkitExitFullscreen;
-    if (element && (element === this.container || this.container.contains(element)) && exit && !this.exiting) {
+    if (element && (element === this.container || this.container.contains(element)) && exit && !this.exiting && !this.exitRequested) {
       try {
-        this.exiting = Promise.resolve(exit.call(this.document)).catch(() => {}).then(() => { this.exiting = null; this.changed(); });
-      } catch { this.changed(); }
+        this.exitRequested = true;
+        this.exiting = Promise.resolve(exit.call(this.document)).then(
+          () => { this.exiting = null; this.update(); },
+          () => { this.exiting = null; this.exitRequested = false; this.changed(); });
+      } catch { this.exitRequested = false; this.changed(); }
     }
-    if (this.video.webkitDisplayingFullscreen && this.video.webkitExitFullscreen) {
-      try { this.video.webkitExitFullscreen(); } catch { /* Closing playback must still finish. */ }
+    if (this.video.webkitDisplayingFullscreen && this.video.webkitExitFullscreen && !this.exitRequested) {
+      this.exitRequested = true;
+      try { this.video.webkitExitFullscreen(); this.update(); } catch { this.exitRequested = false; this.changed(); }
     }
   }
   close() { this.enabled = false; this.nativePending = false; this.expanded = false; this.exit(); this.changed(); }
