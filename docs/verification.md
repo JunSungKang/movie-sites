@@ -1,82 +1,80 @@
-# Verification
+# Testing and compatibility
 
 [한국어](ko/verification.md) · [Documentation index](../README.md#documentation)
 
-## Automatic fullscreen playback — 2026-11-14
+This guide describes reproducible checks and their limits. It is not an operating diary, a capacity guarantee or a claim that every browser, NAS and device has been tested. Record results against the exact commit/image and target environment; do not reuse a previous release's result as evidence for changed files.
 
-Playback requests fullscreen from the original play interaction, before asynchronous media inspection. A non-dialog wrapper keeps the player controls available and remains fullscreen across queue items. Final completion exits fullscreen and closes the popup; manual close cancels pending playback/fullscreen work and restores the selected folder, scroll and queue. Native WebKit video fullscreen is attempted when playable media is available. Browsers that reject automatic fullscreen keep playing in a maximized viewport and expose a manual fullscreen control. Exiting OS fullscreen does not force re-entry; the player continues to fill the browser viewport until the popup closes. Delayed native exit notifications cannot shrink a reopened player, and a late native entry after close is exited again. Native-device behavior remains subject to browser policy.
+## Repository checks
 
-Player adapter/unit regressions verify synchronous request timing, permission denial/manual recovery, native/prefixed support, late fullscreen completion after close, sequential completion, saved queue and existing playback cancellation. Actual macOS Chrome tests observed a player rectangle equal to the viewport, two real H.264 clips advancing to the second item with the expanded state retained, and final completion closing the popup, clearing the video source and preserving the two saved queue entries. At 320×568 and 812×375, the player filled the viewport and close/next controls remained inside it. The controlled browser rejected native fullscreen with TypeError not granted despite active user input, so native OS fullscreen is not claimed as verified; the maximized fallback was verified. Native iOS/Edge device testing remains outstanding.
+Install the prerequisites in [development](development.md), then run:
 
-## Native UTF-8 locale regression — 2026-11-09
+```bash
+./gradlew clean build
+bash scripts/check.sh
+python3 -B scripts/check-docs.py
+```
 
-- The affected running image had no UTF-8 locale: Java reported `file.encoding=UTF-8` but `native.encoding` and `sun.jnu.encoding` were `ANSI_X3.4-1968`. The mounted directories were correct; API folder paths and Korean environment labels contained replacement characters. Checking only health and ASCII fixtures had not covered this deployment condition.
-- The project Dockerfile and Compose now explicitly set `LANG`/`LC_ALL` to `C.UTF-8`. Isolated verification covers Korean/decomposed/spaced nested paths, exact Korean environment labels, native/converted playback, thumbnails, range/token boundaries, FFmpeg, exclusive locking and restart. The existing operating image passed these checks with the corrected Compose environment on a separate reserved loopback port.
-- Under the shared deployment flock, only the affected service was recreated with its existing image, network, numeric user and media/data mounts preserved. All three Korean collections, nested listings and labels matched; actual-media thumbnail/range playback and FFmpeg passed before and after restart. Original hashes/metadata for 88 files matched. Previous configuration/image and a stopped recovery container were retained; operations files and other services were not modified.
+| Check | Expected coverage |
+|---|---|
+| Gradle build/tests | Java compilation, storage boundaries, paging/sorting, metadata, resource budgets, HTTP/media behavior and packaged application |
+| `scripts/check.sh` | JavaScript syntax and regressions, theme/catalog validation, content hashes, PWA cache boundaries, Git exclusions and JAR/media separation |
+| `scripts/check-docs.py` | Local links/anchors, English/Korean guide pairs, documented environment settings, public examples and build references |
 
-## Ubuntu 26.04 and Compose migration — 2026-11-09
+Inspect the actual test output and failures. Unit/adapter tests do not establish real native-player, installation, filesystem or network behavior. Test counts change with the codebase and are not a compatibility certification. Public images or download commands should be documented only after the corresponding artifact exists.
 
-- Project-owned fallback JDK/JRE images and the application image built from pinned official Temurin Ubuntu 26.04 sources. The actual engine was Docker Desktop Linux/arm64. The runtime reported Ubuntu 26.04, Temurin 25.0.5 and FFmpeg 8; Python, Node and javac were absent from the application image. Python 3.14.10 and Node 24.18.0 ran operational/repository tooling. JUnit 51 tests and JavaScript 24 tests passed; package/media/theme/hash/documentation checks passed.
-- Synthetic direct H.264/AAC and converted MPEG4/PCM media, nested listing, JPEG thumbnails, 206 byte ranges, forged-token rejection, traversal/symlink rejection, read-only media/root, graceful stop and restart passed in an isolated Compose project/data root. Native Chrome played the converted fixture with readyState 4, advancing time, controls enabled and no media error.
-- A real duplicate-writer test exposed that the existing advisory FileLock alone was insufficient across these Docker Desktop bind mounts. Atomic directory ownership was added alongside the original lock. Repeated cross-container rejection and normal shutdown/restart then passed. Unclean exits deliberately retain ownership evidence and require verified operator recovery; the Docker guide documents the limit.
-- Under the shared macOS-compatible deployment flock, the previous image/container/configuration and actual bind sources were preserved. A first production validation command used an invalid FFmpeg duration spelling; automatic rollback restored the previous service. The command was corrected and shared with isolated verification, which passed before retry. The successful switch used project `platform`, service `movie-kids-web`, only host web port 20010, UID/GID 501:20 and the original read-only media/writable data mounts.
-- Production HTTP listing/navigation, actual-media thumbnail/range playback and FFmpeg decode/encode passed before and after a controlled service restart; health became healthy. Original hashes/metadata for 88 external files matched. A competing process failed to acquire the held deployment lock. Actual macOS Chrome played a representative production video with readyState 4, advancing time and no video error. Previous images/containers and private recovery evidence were retained, without stopping other projects or deleting data volumes.
+## Isolated runtime checks
 
-These are target-environment checks, not comprehensive physical Safari/Edge/mobile, huge-NAS outage/load, or independent external-network certification. The web port change creates a different browser origin: existing browser-local queues remain in the old origin's storage rather than being silently migrated or erased.
+Use synthetic media and an otherwise disposable generated-data directory. Never run smoke tests against production `/data` or modify an original collection to make a test pass. Build/run the candidate using the [Docker guide](docker.md) or [JAR setup](getting-started.md), on an unused loopback port:
 
-## Shared introduction theme — 2026-11-09
+```bash
+python3 -B scripts/verify-runtime.py http://127.0.0.1:8080
+```
 
-- The introduction now reuses the configured service theme CSS, logo, header/footer and packaged illustration. Its small layout stylesheet has no independent palette/font family; server-rendered HTML is visible without app JavaScript or catalog requests.
-- Gradle and multi-stage Docker builds passed with 49 JUnit and 24 JavaScript tests. The new integration assertion checks child-toy and Midnight Stream selection, current asset fingerprints and absence of unresolved placeholders/catalog scripts. Existing SEO/CSP/Host/304 boundaries, package/theme and bilingual-documentation checks passed.
-- Actual Docker HTTP checks passed for both runtime themes: four fingerprinted presentation assets each, immutable/304 behavior, gzip, canonical/JSON-LD/CSP and application/API noindex. Actual macOS Chrome matched the library's child-toy font, background token and header appearance; the introduction rendered without horizontal overflow at 390×844 and 320×568, with a 48-pixel primary link. The dark alternate theme also loaded its illustration and rendered without overflow at 320×568. Desktop and mobile screenshots remain local.
+The smoke tool checks the running endpoint; review its output rather than assuming every item below is automated. Verify the following for a candidate on its intended host:
 
-These are targeted layout/runtime checks, not exhaustive visual certification of every theme/browser/device.
+- Application health/configuration and current-folder navigation, including non-ASCII/decomposed names, spaces, empty directories and unsupported files.
+- Duration-sorted preparation/pages, fixed-expiry cache reuse, explicit refresh, invalid/expired cursors and accurate duration boundaries.
+- A direct H.264/AAC MP4 and a decodable source that needs complete playback preparation; inspect the generated result with FFmpeg/ffprobe.
+- Folder/video JPEG validation, explicit sidecars and thumbnail fallback, metadata limits and optional topic-profile selection.
+- GET/HEAD and valid/invalid single byte ranges; changed-source and forged playback-token rejection. Tokens are consistency checks, not login credentials.
+- Path traversal/symlink rejection, separate media/data roots, read-only media/container roots and refusal of a competing data writer.
+- Graceful stop/restart, generated-work recovery and original-media preservation. Use a separate test data root when exercising unclean-exit recovery.
 
-## Introduction SEO and caching — 2026-11-09
+Keep fixture media, screenshots, detailed reports, deployment state and private paths outside Git. Retain private rollback evidence separately from public release notes. `/api/health` reports application response status, not storage-wide health or codec readiness.
 
-- Gradle clean build and multi-stage Docker build passed: 48 JUnit tests and 24 JavaScript tests, without failures/skips. Theme, content-fingerprint, package/media exclusion and bilingual documentation checks passed.
-- Tests cover fixed expiry, remaining freshness, weighted/entry LRU eviction, coalesced concurrent reads, in-flight limits, failed-load retry, bounded image reads, version changes and private ETag/304 responses. Sorted-query tests cover preparation reuse, ready-snapshot reuse, expiry and forced refresh. Session tests cover unchanged expiry, root/instance isolation and denied/quota storage fallback.
-- Actual Docker HTTP checks verified introduction-only canonical/Open Graph/JSON-LD/CSP, Host-header independence, robots/sitemap scope and noindex headers on app/API/images/video. Lists and images returned body-free 304 responses; explicit refresh produced a different query ID. All 90 static resources matched the source; matching fingerprints received immutable caching, mismatches revalidated. Byte-range playback returned 206 and a forged token returned 403.
-- In that local test, the app module was 25,024 bytes before compression and 7,938 bytes over negotiated gzip. These are payload sizes for this build, not a load-time/ranking guarantee. JPEG/video compression is excluded.
-- Actual Chrome on macOS displayed folder covers, restored a recent list after reload, requested a fresh list with the refresh button, and rendered a duration-grouped video page. A representative video reached readyState 4 with native controls, advancing playback and no video error. The public introduction rendered without console warnings/errors. Screenshots and private media/configuration evidence remain local.
+For an isolated container test with Python 3.14 and an already built image:
 
-Search exclusion relies on compliant crawlers and is not access control. Search ranking/indexing delay, Core Web Vitals field data, hostile crawlers, large-NAS latency/load and physical Safari/Edge/iOS/Android certification were not measured.
+```bash
+python3 -B scripts/verify-platform.py --image moviesites:ubuntu26.04 --port 8081
+```
 
-## Duration ordering and topic tags — 2026-11-09
+The helper creates synthetic media and a separate data root, uses the non-root host UID/GID and a unique Compose project, and checks its candidate without mounting production data. Choose an unused port. Its generated reports and any `--keep` recovery details are local operator artifacts, not public documentation.
 
-- Gradle clean build and the multi-stage Docker build passed. All 40 JUnit tests passed without failures/errors/skips, and 20 JavaScript tests passed. Existing 19-theme/package/hash/media-exclusion checks remained enabled.
-- Server tests cover global order across continuation pages and more than one merge pass, unknown durations, signed/path-bound cursors, source-version and sidecar refresh, bounded queues, disk-limit failure/cleanup, slow-storage preparation and shared analysis capacity during playback work.
-- The actual list-rendering adapter verifies visible duration headings, initial time badges, recommended/manual/unspecified topics and literal-text rendering. Boundary checks include exactly 300, 600 and 1200 seconds, fractions just below them, invalid durations and cancellation of preparation waits.
-- A non-root/read-only-root candidate was tested through HTTP. Six synthetic H.264 clips at 299/300/599/600/1199/1200 seconds and one invalid input were globally ordered over four pages at page size two, with the invalid input last. Explicit tags, empty overrides and metadata refresh passed. Prepared playback returned a correct 32-byte range with 206; a forged stream token was rejected with 403.
-- Representative external folders returned increasing real durations, and all 89 static resources matched the source. English/Korean documentation links and environment/build references passed.
+## Browser and PWA checks
 
-Direct browser control was unavailable in this turn. New screenshot/mobile-layout/native-player visual observations were therefore **not performed**; actual app event-wiring adapters and HTTP checks are not represented as real browser QA. Earlier browser evidence below remains historical. NAS outage/load testing and physical browser/device certification remain outside this change's measured coverage.
+Use real target browsers/devices as well as automated regressions:
 
-## Gradle and documentation migration — 2026-11-08
+| Area | Manual acceptance |
+|---|---|
+| Browsing | Desktop/narrow/short landscape layouts, long names, keyboard focus, notices, theme selection and no clipped controls |
+| Native playback | Audible output where present, advancing playback time, seek/range behavior, original aspect ratio and supported fullscreen controls |
+| Queue/random playback | Preserve the saved queue, advance on natural completion, close after the last item, cancel late preparation and respect autoplay denial |
+| Browser storage | Denied/quota storage falls back without losing current-tab controls; origin/root changes isolate saved data |
+| PWA installation | Test platform-specific promotion/manual installation on a browser-trusted HTTPS origin or eligible localhost |
+| Connection loss | Navigate offline after the service worker is active and confirm the bounded connection-lost fallback; reconnect and retry |
+| Private response exclusion | Confirm service-worker storage does not retain catalog/API responses, images from private media, video, signed stream URLs or Range responses |
 
-The pre-migration working tree's queue, per-video thumbnail and mobile-player improvements were preserved in a separate baseline commit. The migration then changed the build/packaging and public documentation; it did not replace those runtime sources or original media.
+The PWA does not provide offline video or an offline catalog. A public HTTP IP address and a browser warning bypass do not establish production installation eligibility. Native fullscreen/autoplay and codec support depend on OS/browser policy. A maximized in-page player is not proof that OS fullscreen succeeded. The supported UI selections are English and Korean; do not infer additional complete locales from theme names or documentation.
 
-- JDK 25 and the standard Gradle 9.9.0 Wrapper built the executable JAR successfully. The distribution checksum and official wrapper JAR checksum were verified before use. Spring Boot remains 4.1.2.
-- The 29 JUnit tests passed without failures, errors or skips. Coverage includes path/symlink boundaries, bounded browsing/cursors, byte ranges, generated-cache budgets, startup settings, folder covers and explicit-thumbnail selection/fallback.
-- All 34 packaged runtime dependency JAR filenames matched the pre-migration baseline. The single-JAR/static-frontend architecture was retained.
-- The 16 JavaScript checks passed for cache TTL/LRU/size and cursor history, queue persistence/limits, sequential playback, cancellation, autoplay recovery and mobile player wiring. These adapter checks do not certify every browser policy.
-- Theme, content-hash, Git exclusions and JAR separation checks passed. Actual videos, collection images and generated data stay outside the source package. The 19 bundled theme IDs are a compatibility baseline, not a maximum catalog size.
-- The Gradle multi-stage Docker image built and a non-root, read-only-root candidate started with separate external media/data mounts and an environment-selected theme. Health, config, browsing, path rejection and static-resource revalidation smoke checks passed.
+## Support boundaries
 
-The documentation checker passed for 29 Markdown files and 155 local links, including heading targets, English/Korean guide counterparts, environment names/examples and active Gradle build references. The final container matched all 88 static source files, loaded the public environment-file defaults, and played representative H.264/AAC media in the in-app Chromium browser with readyState 4, advancing time, native controls and no video error. Command, container and service checks are repeated against the final tree before integration. Repository checks and App approval gate the current head; a historical successful run is not approval of a new head.
+- Native-server targets are Linux/macOS with a media provider supporting Java secure directory streams; Windows users can use Linux containers and must validate path sharing.
+- NAS/network mounts require target-specific permission, filename and secure-directory tests. Blocking OS calls can outlive application timeout/cancellation. Neither paging nor bounded memory guarantees huge-folder latency.
+- Test sustained concurrent playback, a large single directory, slow/disconnected storage, processing saturation and disk exhaustion before relying on a deployment's capacity.
+- Listed file extensions do not certify every codec. Damaged/encrypted sources can fail. FFmpeg prepares complete compatible files; it is not an editor or live HLS service.
+- Anonymous read-only HTTP access and noindex headers do not restrict who can view reachable media. Validate the deployment's own access/TLS boundary separately.
+- Browser/device matrices, accessibility certification and load targets need their own results. These commands alone do not certify Safari/iOS, Edge/Android, all themes or arbitrary hardware.
 
-## Inherited UI evidence
+## Reporting results
 
-The preserved runtime baseline was previously inspected in the macOS in-app Chromium browser: 19 themes at 320×568 and 812×375 playback viewports, queue ordering/restoration, sequential completion, late-response cancellation and native video controls. Real H.264/AAC media reached readyState 4 with advancing playback and no video error. Earlier detailed reports remain in Git history rather than advertising obsolete build commands here.
-
-Those observations apply to that baseline and environment. Gradle changes do not expand them into new browser/device certification. Real media frames, private paths, deployment configuration and detailed local evidence are not published in the repository.
-
-## Limits
-
-Safari/iOS and Edge/Android device combinations, accessibility certification, prolonged load, huge-directory capacity, actual NAS stalls/disconnections and disk exhaustion were not comprehensively exercised by this migration. Native secure-directory support must be checked on the target filesystem. Container example limits are not a service-capacity guarantee. Public-host verification from the development environment is not an independent external-network measurement.
-
-## Scoped timed random playback — 2026-11-15
-
-Unit/HTTP and real app-adapter regressions cover all five time budgets, exact subtree boundaries and similarly named siblings, whole-video millisecond accounting, unique entries, source replacement, symlink rejection, scan/depth/probe/queue/deadline bounds, cached-file revalidation, explicit refresh, cancellation, late responses, navigation, recovery and unchanged saved queues. Isolated API checks exercised 15 scope/time combinations with three real H.264 fixtures: home selected all three, one category selected its direct and nested clips, and its similarly named sibling selected only its own clip. Cancellation returned 204 and subsequent lookup 410; unsupported times and traversal returned 400.
-
-Actual macOS Chrome observed fullscreen preparation, root/category-specific generated lists, sequential playback and natural final-popup closure with the saved queue retained. Mobile layout was checked at 320px; native OS fullscreen and iOS/Edge hardware are not newly claimed as verified. Large NAS blocking-I/O behavior remains limited as documented in the architecture. Original media and pending unrelated PWA work are excluded from the release artifact.
+For a public bug or release note, include the commit/image reference, relevant component versions, OS/browser and filesystem type, reproduction steps, expected/observed behavior and known limits. Redact media identities, tokens, personal paths and deployment topology. Use [SECURITY.md](../SECURITY.md) for sensitive reports and [maintainer procedures](maintainers.md) for releases. Historical operation logs and task approvals are not public project documentation.

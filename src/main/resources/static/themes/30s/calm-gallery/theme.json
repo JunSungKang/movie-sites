@@ -21,5 +21,23 @@
     "loadingText": "영상 목록을 불러오고 있습니다."
   },
   "hero": "assets/hero.svg",
-  "color": "#edf1e9"
+  "color": "#edf1e9",
+  "copyEn": {
+    "rootTitle": "Moments, thoughtfully kept",
+    "rootDescription": "Browse at your own pace and choose a moment to revisit.",
+    "nestedDescription": "Choose a video from this collection.",
+    "rootCaption": "A QUIETER WAY TO BROWSE",
+    "headerLabel": "Your moving-image gallery",
+    "rootFolders": "Collections",
+    "nestedFolders": "Subfolders",
+    "videosHeading": "Videos",
+    "folderTab": "Collection",
+    "openLabel": "Open",
+    "footer": "Take your time with a good moment",
+    "collectionSuffix": " collection",
+    "rootCollection": "Video library",
+    "emptyTitle": "No videos here yet.",
+    "emptyDescription": "Add videos to storage, then refresh this folder.",
+    "loadingText": "Loading videos..."
+  }
 }

@@ -1,3 +1,4 @@
+import {t, setLocale, localeTag} from './i18n.js';
 // One saved queue; playback uses a snapshot so edits apply to the next play-through.
 export const MAX_QUEUE = 200;
 function valid(entry) {
@@ -22,7 +23,7 @@ export class PlaybackQueue {
         if (saved.version !== 1 || !Array.isArray(saved.items)) throw new Error('Invalid queue');
         this.items = clean(saved.items);
       }
-    } catch { this.warning = '저장된 재생 대기열을 읽지 못했습니다. 이 화면에서는 계속 사용할 수 있습니다.'; }
+    } catch { this.warning = t('저장된 재생 대기열을 읽지 못했습니다. 이 화면에서는 계속 사용할 수 있습니다.'); }
   }
   save() {
     try {
@@ -30,7 +31,7 @@ export class PlaybackQueue {
       this.storage.setItem(this.key, JSON.stringify({version: 1, items: this.items}));
       this.warning = '';
       return true;
-    } catch { this.warning = '브라우저에 저장하지 못했습니다. 현재 대기열은 이 화면에서만 유지됩니다.'; return false; }
+    } catch { this.warning = t('브라우저에 저장하지 못했습니다. 현재 대기열은 이 화면에서만 유지됩니다.'); return false; }
   }
   add(entries) { const before = this.items.length; this.items = clean([...this.items, ...entries]); this.save(); return this.items.length - before; }
   remove(path) { this.items = this.items.filter(entry => entry.path !== path); this.save(); }

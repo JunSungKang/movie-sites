@@ -6,6 +6,17 @@ Release notes will be grouped by published version. The source build currently u
 
 ### Added
 
+- Optional PWA installation with a bounded, bilingual reconnect screen; media and catalog responses are never stored by the service worker.
+- English/Korean UI selection with `MOVIESITES_UI_LOCALE`, including all bundled themes, public introduction, install guidance and server messages.
+- Optional filename topic profiles (`none` by default, `kids-education` on request), independent of visual themes and manual metadata.
+
+### Changed
+
+- Use the neutral Midnight Stream theme by default and portable `compose.yaml` / `moviesites` Bake targets with configurable host identity and port.
+- Replace per-host migration notes and internal plans with bilingual installation, testing and maintainer guidance; existing Git history is preserved.
+
+### Existing features
+
 - Scoped 10/20/30/40/50-minute random whole-video playback, with bounded on-demand subtree sampling, cancellation and a separate temporary playlist.
 
 - Automatic fullscreen on user-initiated playback, with native/manual fallback and preserved final-popup closing.

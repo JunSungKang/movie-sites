@@ -28,6 +28,7 @@ public class SortedDirectoryBrowser {
     private final Settings settings;
     private final Storage storage;
     private final VideoTopics topics;
+    private final UiLocale locale;
     private final DurationReader durations;
     private final MediaService media;
     private final int chunkSize;
@@ -51,9 +52,12 @@ public class SortedDirectoryBrowser {
         int warnings; long bytes; Path result;
         Query(String path) { this.path = path; }
     }
-    @org.springframework.beans.factory.annotation.Autowired
     public SortedDirectoryBrowser(Settings settings, Storage storage, VideoTopics topics, MediaService media) throws IOException {
-        this(settings, storage, topics, media::probeDuration, media, 128);
+        this(settings, storage, topics, media, new UiLocale("en"));
+    }
+    @org.springframework.beans.factory.annotation.Autowired
+    public SortedDirectoryBrowser(Settings settings, Storage storage, VideoTopics topics, MediaService media, UiLocale locale) throws IOException {
+        this(settings, storage, topics, media::probeDuration, media, 128, MAX_BYTES, System::nanoTime, locale);
     }
     SortedDirectoryBrowser(Settings settings, Storage storage, VideoTopics topics, DurationReader durations, MediaService media, int chunkSize) throws IOException {
         this(settings, storage, topics, durations, media, chunkSize, MAX_BYTES);
@@ -62,6 +66,10 @@ public class SortedDirectoryBrowser {
         this(settings,storage,topics,durations,media,chunkSize,maxQueryBytes,System::nanoTime);
     }
     SortedDirectoryBrowser(Settings settings, Storage storage, VideoTopics topics, DurationReader durations, MediaService media, int chunkSize, long maxQueryBytes, java.util.function.LongSupplier clock) throws IOException {
+        this(settings, storage, topics, durations, media, chunkSize, maxQueryBytes, clock, new UiLocale("en"));
+    }
+    SortedDirectoryBrowser(Settings settings, Storage storage, VideoTopics topics, DurationReader durations, MediaService media, int chunkSize, long maxQueryBytes, java.util.function.LongSupplier clock, UiLocale locale) throws IOException {
+        this.locale = locale;
         this.settings = settings; this.storage = storage; this.topics = topics; this.durations = durations; this.media = media; this.chunkSize = chunkSize;
         this.maxQueryBytes = maxQueryBytes;
         this.clock=clock;
@@ -193,7 +201,7 @@ public class SortedDirectoryBrowser {
             }
             synchronized (q) { check(q); q.result = runs.getFirst(); q.readyAt=clock.getAsLong();q.state = "ready"; }
         } catch (IOException | RuntimeException e) {
-            q.message = e instanceof RejectedExecutionException ? "처리 중인 영상이 많습니다. 잠시 후 새로고침해 주세요." : "영상 목록을 정리하지 못했습니다. 저장소 연결·여유 공간을 확인한 뒤 새로고침해 주세요.";
+            q.message = e instanceof RejectedExecutionException ? locale.text("Video processing is busy. Refresh the list in a moment.","처리 중인 영상이 많습니다. 잠시 후 새로고침해 주세요.") : locale.text("Cannot prepare the video list. Check the storage connection and free space, then refresh.","영상 목록을 정리하지 못했습니다. 저장소 연결·여유 공간을 확인한 뒤 새로고침해 주세요.");
             q.state = "failed";
         }
         finally { synchronized (q) { q.building = false; if (q.cancelled || !q.state.equals("ready")) deleteFiles(q); } }

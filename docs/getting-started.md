@@ -33,4 +33,8 @@ H.264/yuv420p video with AAC audio in MP4 can play directly when the supported s
 
 ## Next steps
 
-Choose a theme and resource limits through the [configuration reference](configuration.md). The current service is anonymous and read-only; anyone who can reach it can browse/play supported media under the chosen root. Configure deployment access before making it public. The [verification report](verification.md) identifies what was actually tested.
+Choose a theme and resource limits through the [configuration reference](configuration.md). The current service is anonymous and read-only; anyone who can reach it can browse/play supported media under the chosen root. Configure deployment access before making it public. Use [testing and compatibility](verification.md) to reproduce checks and understand their limits. The default visual theme is `20s-midnight-stream`; UI language is selected independently with `MOVIESITES_UI_LOCALE=en` or `ko` (default `en`).
+
+## Install as an app
+
+On an eligible browser-trusted HTTPS origin or development localhost, use the browser's install action or the available app installation control. The installed app uses the same server, access policy and media source. Its offline screen reports a lost connection; videos and the catalog are not stored for offline use. Browser/platform installation and fullscreen behavior vary. See [PWA configuration](configuration.md#install-as-an-app-pwa).

@@ -1,18 +1,19 @@
 <!doctype html>
-<html lang="ko" data-theme="{{THEME_ID}}">
+<html lang="en" data-theme="{{THEME_ID}}">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>MovieSites — 나의 영상 라이브러리</title>
+  <title>MovieSites — Your video library</title>
   <meta name="description" content="{{DESCRIPTION}}"><meta name="robots" content="index,follow"><meta name="theme-color" content="{{THEME_COLOR}}">
-  <meta property="og:type" content="website"><meta property="og:locale" content="ko_KR"><meta property="og:site_name" content="MovieSites">
-  <meta property="og:title" content="MovieSites — 나의 영상 라이브러리"><meta property="og:description" content="{{DESCRIPTION}}">
-  <meta name="twitter:card" content="summary"><meta name="twitter:title" content="MovieSites — 나의 영상 라이브러리"><meta name="twitter:description" content="{{DESCRIPTION}}">
+  <meta property="og:type" content="website"><meta property="og:locale" content="en_US"><meta property="og:site_name" content="MovieSites">
+  <meta property="og:title" content="MovieSites — Your video library"><meta property="og:description" content="{{DESCRIPTION}}">
+  <meta name="twitter:card" content="summary"><meta name="twitter:title" content="MovieSites — Your video library"><meta name="twitter:description" content="{{DESCRIPTION}}">
   {{CANONICAL}}
-  <link rel="icon" href="data:,"><link rel="stylesheet" href="{{APP_STYLE}}"><link rel="stylesheet" href="{{THEME_STYLE}}"><link rel="stylesheet" href="{{ABOUT_STYLE}}">
+  <link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/pwa/apple-touch-icon.png">
+  <link rel="icon" href="/pwa/icon.svg" type="image/svg+xml"><link rel="stylesheet" href="{{APP_STYLE}}"><link rel="stylesheet" href="{{THEME_STYLE}}"><link rel="stylesheet" href="{{ABOUT_STYLE}}">
   <script type="application/ld+json">{{STRUCTURED_DATA}}</script>
 </head>
 <body data-ready="true" class="about-page">
-  <a class="skip-link" href="#content">소개 내용으로 바로 가기</a>
+  <a class="skip-link" href="#content">Skip to introduction</a>
   <svg class="icon-defs" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>
     <symbol id="about-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h5l2 3h7a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></symbol>
     <symbol id="about-play" viewBox="0 0 24 24"><path d="m8 5 11 7-11 7Z"/></symbol>
@@ -20,24 +21,24 @@
   </defs></svg>
   <div class="theme-decoration" aria-hidden="true"><i></i><i></i><i></i></div>
   <header class="site-header">
-    <a class="brand" href="/" rel="nofollow" aria-label="MovieSites 처음으로"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 40 40"><rect x="3" y="8" width="34" height="27" rx="10"/><path d="m15 3 5 5 5-5" class="brand-antenna" fill="none" stroke-width="3" stroke-linecap="round"/><path d="m17 16 10 6-10 6Z" class="brand-play"/></svg></span><span>MovieSites</span></a>
+    <a class="brand" href="/" rel="nofollow" aria-label="MovieSites home"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 40 40"><rect x="3" y="8" width="34" height="27" rx="10"/><path d="m15 3 5 5 5-5" class="brand-antenna" fill="none" stroke-width="3" stroke-linecap="round"/><path d="m17 16 10 6-10 6Z" class="brand-play"/></svg></span><span>MovieSites</span></a>
     <span class="header-label">{{HEADER_LABEL}}</span>
   </header>
   <main id="content" class="main-content about-content">
     <section class="page-heading about-heading">
-      <div><p class="eyebrow">MovieSites 소개</p><h1>보고 싶은 영상,<br>한곳에서 만나요.</h1><p class="page-description">폴더를 열고, 좋아하는 영상을 골라 보세요.<br>우리집 이야기 시간이 더 편해집니다.</p><a class="home-button about-open" href="/" rel="nofollow"><svg class="icon" aria-hidden="true"><use href="#about-play"/></svg>영상 보러 가기 <span aria-hidden="true">↗</span></a></div>
+      <div><p class="eyebrow">About MovieSites</p><h1>Your videos.<br>One place to watch.</h1><p class="page-description">Open a collection and choose what to watch.<br>Enjoy a library built around your videos.</p><a class="home-button about-open" href="/" rel="nofollow"><svg class="icon" aria-hidden="true"><use href="#about-play"/></svg>Open your library <span aria-hidden="true">↗</span></a></div>
       <img class="heading-art" src="{{THEME_HERO}}" alt="" decoding="async">
     </section>
     <section class="about-features" aria-labelledby="features-title">
-      <h2 id="features-title" class="section-caption">이렇게 즐겨 보세요</h2>
+      <h2 id="features-title" class="section-caption">Make yourself at home</h2>
       <div class="about-feature-list">
-        <article class="video-entry about-feature"><div class="entry-copy"><span class="about-feature-icon" aria-hidden="true"><svg class="icon"><use href="#about-folder"/></svg></span><h3 class="entry-title">폴더로 쉽게 찾아요</h3><p class="page-description">정리해 둔 폴더를 열면<br>보고 싶은 영상이 한눈에 보여요.</p></div></article>
-        <article class="video-entry about-feature"><div class="entry-copy"><span class="about-feature-icon" aria-hidden="true"><svg class="icon"><use href="#about-play"/></svg></span><h3 class="entry-title">길이와 주제로 골라요</h3><p class="page-description">짧은 영상부터 차례로 살펴보고<br>주제 태그로 이야기를 골라요.</p></div></article>
-        <article class="video-entry about-feature"><div class="entry-copy"><span class="about-feature-icon" aria-hidden="true"><svg class="icon"><use href="#about-library"/></svg></span><h3 class="entry-title">좋아하는 영상을 이어 봐요</h3><p class="page-description">재생 대기열에 담아 두면<br>원하는 순서로 편하게 볼 수 있어요.</p></div></article>
+        <article class="video-entry about-feature"><div class="entry-copy"><span class="about-feature-icon" aria-hidden="true"><svg class="icon"><use href="#about-folder"/></svg></span><h3 class="entry-title">Find videos by collection</h3><p class="page-description">Browse the folders you already use.<br>Your collections stay easy to explore.</p></div></article>
+        <article class="video-entry about-feature"><div class="entry-copy"><span class="about-feature-icon" aria-hidden="true"><svg class="icon"><use href="#about-play"/></svg></span><h3 class="entry-title">Choose by length and topic</h3><p class="page-description">Browse from shorter to longer videos.<br>Use optional topic tags to find a favorite.</p></div></article>
+        <article class="video-entry about-feature"><div class="entry-copy"><span class="about-feature-icon" aria-hidden="true"><svg class="icon"><use href="#about-library"/></svg></span><h3 class="entry-title">Keep your favorites playing</h3><p class="page-description">Add videos to your queue.<br>Watch them in the order you choose.</p></div></article>
       </div>
     </section>
-    <section class="about-platform" aria-labelledby="platform-title"><h2 id="platform-title" class="section-caption">나의 영상으로 만드는 우리집 라이브러리</h2><p class="page-description">MovieSites는 외부 저장소의 영상을 폴더 그대로 탐색하고 재생하는 오픈소스 영상 플랫폼입니다. 원본을 보관한 위치에서, 표준 HTML 플레이어로 감상하세요.</p><p class="about-search-note">검색에는 이 소개 페이지를 안내하고, 영상 화면과 목록은 검색 제외로 설정합니다.</p></section>
-    <footer class="page-footer"><span>{{FOOTER_COPY}}</span><a href="/" rel="nofollow">영상 보러 가기</a><a href="https://github.com/JunSungKang/movie-sites">오픈소스 · AGPL-3.0</a></footer>
+    <section class="about-platform" aria-labelledby="platform-title"><h2 id="platform-title" class="section-caption">A library built around your videos</h2><p class="page-description">MovieSites is an open-source video platform that browses and plays videos from your external storage. Keep your existing folders and enjoy your videos through a standard HTML player.</p><p class="about-search-note">Search engines are directed to this introduction. Video pages and listings request search exclusion.</p></section>
+    <footer class="page-footer"><span>{{FOOTER_COPY}}</span><a href="/" rel="nofollow">Open your library</a><a href="https://github.com/JunSungKang/movie-sites">Open source · AGPL-3.0</a></footer>
   </main>
 </body>
 </html>

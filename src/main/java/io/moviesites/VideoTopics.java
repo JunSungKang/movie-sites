@@ -5,6 +5,9 @@ import java.nio.channels.Channels;
 import java.nio.file.NoSuchFileException;
 import java.util.*;
 import java.util.regex.Pattern;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -13,24 +16,43 @@ import tools.jackson.databind.json.JsonMapper;
 public class VideoTopics {
     public record Topics(List<String> tags, String source, boolean invalidMetadata) {}
     private record Rule(String label, Pattern words) {}
-    private static Rule rule(String label, String words) { return new Rule(label, Pattern.compile(words, Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE)); }
-    private static final List<Rule> RULES = List.of(
-        rule("예절교육", "예절|인사|고마워|감사|미안|양보|차례|manners|please|thank"),
-        rule("식습관교육", "야채|채소|과일|음식|식사|요리|편식|빵|주스|nutrition|meal|vegetable"),
-        rule("배변교육", "응가|변기|화장실|배변|potty|toilet"),
-        rule("놀이교육", "놀이|스케이트|캠핑|물놀이|공놀이|play"),
-        rule("사교성교육", "친구|함께|나눠|서로|협동|friend|sharing"),
-        rule("안전교육", "구조|구급|안전|소방|헬기|rescue|safety"),
-        rule("생활습관교육", "아침|씻|양치|목욕|정리|생활|morning|brush"),
-        rule("건강교육", "병원|의사|doctor|hospital"),
-        rule("기초학습", "숫자|열 마리|색깔|알록달록|numbers|count"),
-        rule("동물·자연", "나비|동물|숲|상어|돼지|nature"),
-        rule("노래·율동", "뮤직비디오|노래|동요|오프닝|송$|song|dance")
-    );
     static final int MAX_BYTES = 8192;
     private final Storage storage;
+    private final List<Rule> rules;
     private final JsonMapper json = new JsonMapper();
-    public VideoTopics(Storage storage) { this.storage = storage; }
+    /** Programmatic callers use the same neutral profile as the default configuration. */
+    public VideoTopics(Storage storage) { this(storage, "none", new UiLocale("en")); }
+    public VideoTopics(Storage storage, String profile) { this(storage, profile, new UiLocale("en")); }
+
+    @Autowired
+    public VideoTopics(Storage storage, @Value("${moviesites.topic-profile:none}") String profile, UiLocale locale) {
+        this.storage = storage;
+        rules = loadProfile(profile, locale);
+    }
+
+    private List<Rule> loadProfile(String profile, UiLocale locale) {
+        if ("none".equals(profile)) return List.of();
+        if (!"kids-education".equals(profile))
+            throw new IllegalArgumentException("Unknown MOVIESITES_TOPIC_PROFILE: choose none or kids-education");
+        // Profile IDs are allowlisted before constructing a resource path; external paths are never loaded.
+        try (var input = new ClassPathResource("topic-profiles/kids-education.json").getInputStream()) {
+            var node = json.readTree(input);
+            if (node == null || !node.path("rules").isArray() || node.path("rules").isEmpty() || node.path("rules").size() > 32)
+                throw new IllegalArgumentException("Invalid packaged topic profile");
+            var parsed = new ArrayList<Rule>();
+            for (var item : node.path("rules")) {
+                var label = item.path(locale.isKorean() ? "labelKo" : "label"); var pattern = item.path("pattern");
+                if (!label.isString() || label.asText().isBlank() || label.asText().length() > 40
+                        || label.asText().codePoints().anyMatch(Character::isISOControl)
+                        || !pattern.isString() || pattern.asText().isBlank() || pattern.asText().length() > 512)
+                    throw new IllegalArgumentException("Invalid packaged topic rule");
+                parsed.add(new Rule(label.asText(), Pattern.compile(pattern.asText(), Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE)));
+            }
+            return List.copyOf(parsed);
+        } catch (IOException error) {
+            throw new IllegalStateException("Cannot load packaged topic profile", error);
+        }
+    }
 
     public Topics read(String path) {
         boolean invalid = false;
@@ -52,7 +74,7 @@ public class VideoTopics {
             // A missing optional sidecar is normal. Secure storage also refuses symlink targets.
         } catch (IOException | RuntimeException malformed) { invalid = true; }
         String name = path.substring(path.lastIndexOf('/') + 1).replaceFirst("\\.[^.]+$", "");
-        var tags = RULES.stream().filter(rule -> rule.words().matcher(name).find()).map(Rule::label).limit(3).toList();
+        var tags = rules.stream().filter(rule -> rule.words().matcher(name).find()).map(Rule::label).limit(3).toList();
         return new Topics(tags, tags.isEmpty() ? "none" : "filename", invalid);
     }
 }

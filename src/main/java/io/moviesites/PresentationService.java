@@ -3,6 +3,7 @@ package io.moviesites;
 import java.io.IOException;
 import java.util.*;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 import tools.jackson.databind.JsonNode;
@@ -13,10 +14,16 @@ import tools.jackson.databind.json.JsonMapper;
 public class PresentationService {
     public record Theme(String id, String name, String group, String directory) {}
     private final Theme theme;
+    private final UiLocale locale;
     private final Map<String, String> folderLabels;
 
+    public PresentationService(String selected, String labels) throws IOException {
+        this(selected, labels, new UiLocale("en"));
+    }
+    @Autowired
     public PresentationService(@Value("${moviesites.theme}") String selected,
-            @Value("${moviesites.folder-labels}") String labels) throws IOException {
+            @Value("${moviesites.folder-labels}") String labels, UiLocale locale) throws IOException {
+        this.locale = locale;
         var json = new JsonMapper();
         JsonNode catalog;
         try (var input = new ClassPathResource("static/themes/catalog.json").getInputStream()) {
@@ -52,5 +59,6 @@ public class PresentationService {
     }
 
     public Theme theme() { return theme; }
+    public UiLocale uiLocale() { return locale; }
     public Map<String, String> folderLabels() { return folderLabels; }
 }

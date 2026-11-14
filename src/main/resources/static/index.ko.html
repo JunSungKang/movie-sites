@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow,noimageindex">
+  <meta name="theme-color" content="#f5f7f6"><meta name="description" content="폴더 구조 그대로 탐색하고 감상하는 셀프 호스팅 영상 플랫폼, MovieSites">
+  <title>MovieSites — 영상 라이브러리</title>
+  <link rel="manifest" href="/manifest.webmanifest"><link rel="apple-touch-icon" href="/pwa/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="MovieSites">
+  <link rel="icon" href="/pwa/icon.svg" type="image/svg+xml"><link rel="stylesheet" href="/css/app.css?v=d9fec20cd6fe8230">
+  <link rel="stylesheet" href="/css/pwa.css?v=43bf60f55f8c598d">
+  <script type="module" src="/js/pwa.js?v=44eace1c1d096957"></script>
+  <script type="module" src="/js/app.js?v=671fc21951c995e5"></script>
+</head>
+<body>
+<section id="boot-state" class="boot-state" role="status"><p id="boot-message">영상 라이브러리를 준비하고 있습니다.</p><button id="boot-retry" type="button" hidden>다시 연결</button></section>
+<noscript><p>영상 목록과 재생을 이용하려면 브라우저에서 JavaScript를 켜 주세요.</p></noscript>
+<aside id="theme-preview" class="theme-preview" aria-label="테마 미리보기" hidden><span id="preview-label"></span><a href="/themes/preview.html">모든 테마 보기</a><a id="exit-preview" href="/">서비스 기본 화면으로</a></aside>
+<a class="skip-link" href="#content">목록으로 바로 가기</a>
+<svg class="icon-defs" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>
+<symbol id="i-film" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 3v18M17 3v18M3 8h4M3 16h4M17 8h4M17 16h4"/></symbol>
+<symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h5l2 3h7a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></symbol>
+<symbol id="i-chevron" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></symbol>
+<symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 8a8 8 0 1 0 1 6M20 3v5h-5"/></symbol>
+<symbol id="i-play" viewBox="0 0 24 24"><path d="m8 5 11 7-11 7Z"/></symbol>
+<symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+<symbol id="i-arrow" viewBox="0 0 24 24"><path d="m11 5-7 7 7 7M4 12h16"/></symbol>
+<symbol id="i-library" viewBox="0 0 24 24"><rect x="3" y="4" width="5" height="16" rx="1"/><rect x="10" y="4" width="5" height="16" rx="1"/><path d="m17 5 4 14"/></symbol>
+<symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+<symbol id="i-home" viewBox="0 0 24 24"><path d="m3 10 9-7 9 7M5 9v11h5v-6h4v6h5V9"/></symbol>
+</defs></svg>
+<div class="theme-decoration" aria-hidden="true"><i></i><i></i><i></i></div>
+<header class="site-header">
+  <a class="brand" href="/" aria-label="MovieSites 처음으로"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 40 40"><rect x="3" y="8" width="34" height="27" rx="10" /><path d="m15 3 5 5 5-5" class="brand-antenna" fill="none" stroke-width="3" stroke-linecap="round"/><path d="m17 16 10 6-10 6Z" class="brand-play"/></svg></span><span>MovieSites</span></a>
+  <span id="header-label" class="header-label">나의 영상 컬렉션</span>
+</header>
+<main id="content" class="main-content">
+  <nav id="screen-navigation" class="navigation-actions" aria-label="화면 이동" hidden><button id="home-button" class="home-button" type="button"><svg class="icon" aria-hidden="true"><use href="#i-home"/></svg><span>처음으로</span></button><button id="parent-button" class="parent-button" type="button" hidden><svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg><span id="return-label"></span></button></nav>
+  <div class="page-heading"><div><p id="location-caption" class="eyebrow">YOUR VIDEO COLLECTION</p><h1 id="folder-title">나의 영상 라이브러리</h1><p class="page-description" id="folder-description">컬렉션을 열고 영상을 선택해 주세요.</p></div><img id="heading-art" class="heading-art" alt="" width="280" height="190"></div>
+  <section class="random-panel" aria-labelledby="random-heading">
+    <div class="random-heading"><span class="random-symbol" aria-hidden="true">✦</span><div><h2 id="random-heading">얼마나 볼까요?</h2><p id="random-scope">모든 카테고리에서 무작위로 골라드려요.</p></div></div>
+    <div class="random-times" role="group" aria-label="랜덤 재생 시간 선택"><button id="random-10" type="button" disabled aria-label="최대 10분 랜덤 재생">10분</button><button id="random-20" type="button" disabled aria-label="최대 20분 랜덤 재생">20분</button><button id="random-30" type="button" disabled aria-label="최대 30분 랜덤 재생">30분</button><button id="random-40" type="button" disabled aria-label="최대 40분 랜덤 재생">40분</button><button id="random-50" type="button" disabled aria-label="최대 50분 랜덤 재생">50분</button></div>
+    <p class="random-note">선택한 시간을 넘기지 않고, 영상은 끝까지 봐요. 영상 수와 길이에 따라 더 짧을 수 있어요.</p>
+    <details id="random-playlist" class="random-playlist" hidden><summary id="random-summary"></summary><p id="random-note"></p><ol id="random-results"></ol><button id="random-replay" class="queue-button" type="button">이 목록 다시 재생</button></details>
+  </section>
+  <div class="listing-toolbar"><p id="listing-status" class="listing-status" role="status" aria-live="polite"></p><button id="install-app" class="install-button" type="button" hidden>앱으로 설치</button><button id="refresh-button" class="refresh-button" type="button"><svg class="icon" aria-hidden="true"><use href="#i-refresh"/></svg><span>새로고침</span></button></div>
+  <section id="notice" class="notice" role="alert" hidden></section>
+  <section id="folder-section" class="folder-section" aria-labelledby="folders-heading" hidden><h2 id="folders-heading" class="section-caption">컬렉션</h2><div id="folder-list" class="folder-list"></div></section>
+  <section id="queue-panel" class="queue-panel" aria-labelledby="queue-heading">
+    <div class="queue-heading"><div><h2 id="queue-heading">재생 대기열 <span id="queue-count">0개</span></h2><p id="queue-description">보고 싶은 영상을 담고 순서대로 재생하세요.</p></div><div class="queue-actions"><button id="queue-add-page" class="queue-button" type="button" hidden>이 화면 영상 모두 담기</button><button id="queue-play" class="queue-button queue-primary" type="button" aria-label="처음부터 전체 재생" disabled>전체 재생</button><button id="queue-clear" class="queue-button" type="button" disabled>비우기</button></div></div>
+    <p id="queue-empty" class="queue-empty">영상의 ‘대기열에 담기’ 버튼을 눌러 주세요.</p>
+    <ol id="queue-list" class="queue-list" aria-label="재생 순서"></ol>
+    <p id="queue-warning" class="queue-warning" role="status" hidden></p>
+  </section>
+  <section id="video-section" class="video-section" aria-labelledby="videos-heading" hidden><h2 id="videos-heading" class="section-caption">영상 목록</h2><div id="video-list" class="video-list" aria-busy="true"></div></section>
+  <section id="empty-state" class="empty-state" hidden><span class="empty-mark" aria-hidden="true">☆</span><h2 id="empty-title">아직 영상이 없습니다.</h2><p id="empty-description">저장소에 영상을 추가한 뒤 새로고침해 주세요.</p></section>
+  <div id="loading-state" class="loading-state" role="status"><span class="loading-dot"></span><span id="loading-text">영상 목록을 불러오고 있습니다.</span></div>
+  <nav id="pagination" class="pagination" aria-label="목록 이동" hidden><button id="first-button" class="text-button" type="button" hidden>처음 목록</button><button id="previous-button" class="text-button" type="button"><svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg>이전</button><span id="page-label"></span><button id="next-button" class="text-button" type="button">다음<svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></button></nav>
+  <footer class="page-footer"><span id="footer-label">당신의 영상, 당신의 공간</span><a href="/about">MovieSites 소개</a><a id="source-link" href="https://github.com/JunSungKang/movie-sites" target="_blank" rel="noopener noreferrer">오픈소스 · AGPL-3.0</a></footer>
+</main>
+<dialog id="player-dialog" class="player-dialog" aria-labelledby="player-title">
+  <div id="player-fullscreen" class="player-fullscreen">
+  <header class="player-heading"><div><p id="player-folder" class="eyebrow"></p><h2 id="player-title"></h2></div><button id="close-player" class="icon-button" type="button" aria-label="재생 화면 닫기"><svg class="icon"><use href="#i-close"/></svg></button></header>
+  <div class="player-surface"><video id="video-player" controls playsinline preload="metadata" hidden></video><div id="player-preparing" class="player-preparing"><svg class="icon"><use href="#i-film"/></svg><p id="player-state" role="status" aria-live="polite">영상을 확인하고 있습니다.</p><progress id="player-progress" aria-label="영상 준비 중"></progress></div></div>
+  <div class="player-controls"><button id="player-previous" class="queue-button" type="button">이전 영상</button><p id="player-position" role="status" aria-live="polite"></p><button id="player-fullscreen-button" class="queue-button" type="button" hidden>전체화면</button><button id="player-resume" class="queue-button queue-primary" type="button" hidden>재생 시작</button><button id="player-next" class="queue-button" type="button">다음 영상</button></div>
+  <div class="player-bottom"><p id="player-file"></p><button id="retry-player" class="text-button" type="button" hidden>다시 확인</button></div>
+  </div>
+</dialog>
+<dialog id="install-help" class="install-help" aria-labelledby="install-heading" aria-describedby="install-steps install-note"><h2 id="install-heading">앱처럼 편하게 만나요</h2><p id="install-steps"></p><p id="install-note" class="install-note">설치하면 홈 화면에서 바로 열 수 있어요. 영상 감상에는 인터넷과 영상 서버 연결이 필요하며, 영상을 기기에 자동으로 저장하지 않아요.</p><button id="close-install-help" class="install-button" type="button">알겠어요</button></dialog>
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+</body></html>

@@ -24,6 +24,7 @@ public class RandomPlayback implements AutoCloseable {
     }
     private static final Set<Integer> MINUTES = Set.of(10, 20, 30, 40, 50);
     private final Settings settings;
+    private final UiLocale locale;
     private final Storage storage;
     private final DurationReader durations;
     private final Limits limits;
@@ -50,11 +51,18 @@ public class RandomPlayback implements AutoCloseable {
             deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(timeoutMillis);
         }
     }
-    @org.springframework.beans.factory.annotation.Autowired
     public RandomPlayback(Settings settings, Storage storage, MediaService media) {
-        this(settings, storage, media::probeDuration, new Limits(512, 4, 250_000, 64, 128, 120_000));
+        this(settings, storage, media, new UiLocale("en"));
+    }
+    @org.springframework.beans.factory.annotation.Autowired
+    public RandomPlayback(Settings settings, Storage storage, MediaService media, UiLocale locale) {
+        this(settings, storage, media::probeDuration, new Limits(512, 4, 250_000, 64, 128, 120_000), locale);
     }
     RandomPlayback(Settings settings, Storage storage, DurationReader durations, Limits limits) {
+        this(settings, storage, durations, limits, new UiLocale("en"));
+    }
+    RandomPlayback(Settings settings, Storage storage, DurationReader durations, Limits limits, UiLocale locale) {
+        this.locale = locale;
         this.settings = settings; this.storage = storage; this.durations = durations; this.limits = limits;
         cleanup.scheduleWithFixedDelay(this::retire, 5, 5, TimeUnit.SECONDS);
     }
@@ -185,13 +193,13 @@ public class RandomPlayback implements AutoCloseable {
             synchronized (q) {
                 check(q); q.limited = visited < candidates.size() && remaining > 0;
                 q.items = List.copyOf(selected); q.totalMillis = q.minutes * 60_000L - remaining;
-                q.message = selected.isEmpty() ? "이번에는 이 시간 안에 끝까지 볼 수 있는 영상을 찾지 못했어요. 다른 시간으로 다시 골라 주세요." : "";
+                q.message = selected.isEmpty() ? locale.text("No whole videos fit this time budget. Try a different duration.","이번에는 이 시간 안에 끝까지 볼 수 있는 영상을 찾지 못했어요. 다른 시간으로 다시 골라 주세요.") : "";
                 q.state = "ready";
             }
         } catch (IOException | RuntimeException e) {
             synchronized (q) {
                 if (!q.cancelled && q.state.equals("preparing")) {
-                    q.message = e instanceof RejectedExecutionException ? "영상 처리가 몰려 있어요. 잠시 후 다시 골라 주세요." : "영상을 모두 확인하지 못했어요. 더 작은 카테고리에서 다시 시도하거나 저장소 연결을 확인해 주세요.";
+                    q.message = e instanceof RejectedExecutionException ? locale.text("Video processing is busy. Try again in a moment.","영상 처리가 몰려 있어요. 잠시 후 다시 골라 주세요.") : locale.text("Cannot check all videos. Try a smaller collection or check the storage connection.","영상을 모두 확인하지 못했어요. 더 작은 카테고리에서 다시 시도하거나 저장소 연결을 확인해 주세요.");
                     q.state = "failed";
                 }
             }
@@ -203,7 +211,7 @@ public class RandomPlayback implements AutoCloseable {
             while (it.hasNext()) {
                 Query q = it.next();
                 if (q.state.equals("preparing") && now > q.deadline) {
-                    synchronized (q) { q.state = "failed"; q.message = "목록을 준비하는 데 시간이 오래 걸려요. 더 작은 카테고리에서 다시 골라 주세요."; }
+                    synchronized (q) { q.state = "failed"; q.message = locale.text("Preparing this list is taking too long. Try a smaller collection.","목록을 준비하는 데 시간이 오래 걸려요. 더 작은 카테고리에서 다시 골라 주세요."); }
                     q.future.cancel(true);
                 }
                 long idle = q.state.equals("preparing") ? 15 : settings.browserCacheTtlSeconds();

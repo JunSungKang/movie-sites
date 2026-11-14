@@ -6,7 +6,7 @@ import {selectTheme,validateManifest} from '../src/main/resources/static/themes/
 
 const root=fileURLToPath(new URL('../src/main/resources/static/themes/',import.meta.url));
 const catalog=JSON.parse(await readFile(resolve(root,'catalog.json'),'utf8'));
-assert.equal(catalog.defaultTheme,'child-toy');
+assert.equal(catalog.defaultTheme,'20s-midnight-stream');
 const baseline=['child-toy','10s-neon-lab','10s-pop-sticker','10s-pixel-arcade','20s-midnight-stream','20s-soft-minimal','20s-color-block','30s-studio-grid','30s-calm-gallery','30s-home-cinema','40s-classic-library','40s-forest-view','40s-slate-dashboard','50s-paper-light','50s-navy-theater','50s-warm-lounge','60s-clear-blue','60s-warm-comfort','60s-bold-contrast'];
 for(const id of baseline) assert(catalog.themes.some(t=>t.id===id),'Preserve public theme ID: '+id);
 const groups=['child','10s','20s','30s','40s','50s','60s'];
@@ -18,7 +18,10 @@ for(const item of catalog.themes){
   const selected=selectTheme(catalog,'child-toy',item.id);assert.equal(selected.theme.id,item.id);assert.equal(selected.preview,true);
   const dir=resolve(root,item.directory);assert(!relative(root,dir).startsWith('..'));
   const manifest=validateManifest(JSON.parse(await readFile(resolve(dir,'theme.json'),'utf8')),item.id);
-  assert.equal(manifest.group,item.group);assert.equal(manifest.name,item.name);
+  assert.equal(manifest.group,item.group);
+  assert.equal(typeof item.nameEn,'string');assert.equal(typeof item.descriptionEn,'string');
+  assert.deepEqual(Object.keys(manifest.copyEn).sort(),Object.keys(manifest.copy).sort());
+  for(const value of Object.values(manifest.copyEn))assert.equal(typeof value,'string');assert.equal(manifest.name,item.name);
   const css=await readFile(resolve(dir,'theme.css'),'utf8');assert(!styles.has(css),'Distinct style definition: '+item.id);styles.add(css);
   for(const url of [...css.matchAll(/url\(["']?([^\)"']+)["']?\)/g)].map(m=>m[1])){
     assert(!url.includes(':')&&!url.startsWith('/'),'Local theme asset only');const asset=resolve(dir,url);assert(!relative(root,asset).startsWith('..'));assert((await stat(asset)).isFile());

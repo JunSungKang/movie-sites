@@ -1,17 +1,17 @@
-name: platform
+name: moviesites
 
 services:
-  movie-kids-web:
-    image: ${MOVIESITES_IMAGE:-movie-kids:ubuntu26.04}
+  moviesites:
+    image: ${MOVIESITES_IMAGE:-moviesites:ubuntu26.04}
     pull_policy: never
     build:
       context: .
       dockerfile: Dockerfile
       target: runtime
       args:
-        JAVA_BUILD_IMAGE: ${JAVA_BUILD_IMAGE:-movie-kids-java-build:25-ubuntu26.04}
-        JAVA_RUNTIME_IMAGE: ${JAVA_RUNTIME_IMAGE:-movie-kids-java-runtime:25-ubuntu26.04}
-    user: "${MOVIESITES_UID:-501}:${MOVIESITES_GID:-20}"
+        JAVA_BUILD_IMAGE: ${JAVA_BUILD_IMAGE:-moviesites-java-build:25-ubuntu26.04}
+        JAVA_RUNTIME_IMAGE: ${JAVA_RUNTIME_IMAGE:-moviesites-java-runtime:25-ubuntu26.04}
+    user: "${MOVIESITES_UID:-10001}:${MOVIESITES_GID:-10001}"
     init: true
     restart: unless-stopped
     read_only: true
@@ -36,7 +36,7 @@ services:
     ports:
       - name: web
         target: 8080
-        published: "${MOVIESITES_WEB_PORT:-20010}"
+        published: "${MOVIESITES_WEB_PORT:-8080}"
         host_ip: ${MOVIESITES_BIND_ADDRESS:-127.0.0.1}
         protocol: tcp
     volumes:

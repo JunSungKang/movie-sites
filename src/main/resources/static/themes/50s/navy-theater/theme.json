@@ -21,5 +21,23 @@
     "loadingText": "영상 목록을 불러오고 있습니다."
   },
   "hero": "assets/hero.svg",
-  "color": "#142338"
+  "color": "#142338",
+  "copyEn": {
+    "rootTitle": "A screen of your own",
+    "rootDescription": "Step into your collection and choose the next showing.",
+    "nestedDescription": "Choose a video from this collection.",
+    "rootCaption": "WELCOME TO YOUR COLLECTION",
+    "headerLabel": "Your video theater",
+    "rootFolders": "Collections",
+    "nestedFolders": "Subfolders",
+    "videosHeading": "Videos",
+    "folderTab": "Collection",
+    "openLabel": "Open",
+    "footer": "Your collection takes center stage",
+    "collectionSuffix": " collection",
+    "rootCollection": "Video library",
+    "emptyTitle": "No videos here yet.",
+    "emptyDescription": "Add videos to storage, then refresh this folder.",
+    "loadingText": "Loading videos..."
+  }
 }

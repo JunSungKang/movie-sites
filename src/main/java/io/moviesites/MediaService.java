@@ -23,7 +23,7 @@ import tools.jackson.databind.json.JsonMapper;
 public class MediaService {
     public record Info(String version,String state,String thumbnailState,Double duration,Integer width,Integer height,String codec,String playback,String message,String streamToken,String thumbnailVersion) {}
     private static final String FORMATS="mov,matroska,webm,avi,mpeg,mpegts,ogg,asf,flv";
-    private final Settings settings; private final Storage storage;
+    private final Settings settings; private final Storage storage; private final UiLocale locale;
     private final SecretKey playbackKey=createPlaybackKey();
     private final JsonMapper json=new JsonMapper();
     private final Map<String,Job> jobs=new LinkedHashMap<>(32,.75f,true);
@@ -40,7 +40,9 @@ public class MediaService {
         Job(String key,String path){this.key=key;this.path=path;}
         Info info(String token,String selected){return new Info(key,state,selected==null?thumbnailState:"ready",duration,width,height,codec,direct?"original":"converted",message,token,selected==null?key:selected);}
     }
-    public MediaService(Settings settings,Storage storage)throws IOException{this.settings=settings;this.storage=storage;this.budget=new CacheBudget(settings);}
+    public MediaService(Settings settings,Storage storage)throws IOException{this(settings,storage,new UiLocale("en"));}
+    @org.springframework.beans.factory.annotation.Autowired
+    public MediaService(Settings settings,Storage storage,UiLocale locale)throws IOException{this.settings=settings;this.storage=storage;this.locale=locale;this.budget=new CacheBudget(settings);}
     public Info inspect(String input,boolean play,boolean retry) throws IOException {
         String path=storage.normalize(input),key=storage.version(path);Job job;
         synchronized(jobs){
@@ -89,7 +91,7 @@ public class MediaService {
                 }catch(Exception e){job.thumbnailState="unavailable";Files.deleteIfExists(partial);}
             }
             if(Files.isRegularFile(thumb))job.thumbnailState="ready";
-        }catch(Exception e){job.state="failed";job.thumbnailState="unavailable";job.message="영상 정보를 읽을 수 없습니다. 형식, 저장소 연결과 FFmpeg 설치를 확인해 주세요.";}
+        }catch(Exception e){job.state="failed";job.thumbnailState="unavailable";job.message=locale.text("Cannot read the video information. Check the format, storage connection and FFmpeg installation.","영상 정보를 읽을 수 없습니다. 형식, 저장소 연결과 FFmpeg 설치를 확인해 주세요.");}
     }
     private void convert(Job job){
         Path partial=settings.dataRoot().resolve("work").resolve(job.key+".part.mp4");
@@ -108,7 +110,7 @@ public class MediaService {
             if(!storage.version(job.path).equals(job.key))throw new IOException("Source changed during conversion");
             Files.move(partial,playback(job),StandardCopyOption.REPLACE_EXISTING);
             job.state="ready";
-        }catch(Exception e){job.state="failed";job.message="재생용 영상을 준비하지 못했습니다. 저장 공간과 원본 상태를 확인해 주세요.";try{Files.deleteIfExists(partial);}catch(IOException ignored){}}
+        }catch(Exception e){job.state="failed";job.message=locale.text("Cannot prepare this video for playback. Check available storage and the original file.","재생용 영상을 준비하지 못했습니다. 저장 공간과 원본 상태를 확인해 주세요.");try{Files.deleteIfExists(partial);}catch(IOException ignored){}}
     }
     private String run(List<String> command,Path output,long timeoutSeconds) throws Exception {
         Path log=Files.createTempFile(settings.dataRoot().resolve("work"),"process-",".log");

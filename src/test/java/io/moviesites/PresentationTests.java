@@ -40,6 +40,7 @@ class PresentationTests {
         try (var storage = new Storage(settings)) {
             var mvc = MockMvcBuilders.standaloneSetup(new ApiController(settings, storage, null, null, null, presentation)).build();
             mvc.perform(get("/api/config")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.locale").value("en"))
                 .andExpect(jsonPath("$.theme.id").value("20s-soft-minimal"))
                 .andExpect(jsonPath("$.theme.directory").value("20s/soft-minimal"))
                 .andExpect(jsonPath("$.folderLabels.Shorts").value("Short videos (under 5 minutes)"));

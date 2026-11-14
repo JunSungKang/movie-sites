@@ -51,7 +51,7 @@ Videos are separated at exact, unrounded thresholds: **under 5 minutes**, **5 to
 
 Initial ordering must inspect all immediate video durations before the first correctly sorted page can be returned. It can take time on large or slow directories. Only duration probing runs at this stage; thumbnails are prepared for visible rows later. It does not recursively inspect another folder. See [resource bounds](architecture.md#duration-sorted-queries) before using very large NAS folders.
 
-Topic chips appear below each title. Filename keyword matches are explicitly marked as **recommended topics**, not verified recognition of the video content. Examples include manners, food habits, toilet training, play, social skills, safety and health; unmatched titles show an unspecified topic. Suggested labels currently follow the Korean UI. Any collection can supply its own labels using an external UTF-8 sidecar named after the full video filename:
+Topic chips appear below each title. Manual tags work in every theme and topic profile. By default `MOVIESITES_TOPIC_PROFILE=none` disables generated filename suggestions. The optional `kids-education` profile adds the bundled title-keyword rules for education collections; selecting a visual theme never enables this profile. Matches are explicitly **recommended topics**, not recognition of the video image or sound. Other collections can supply literal labels in any language through an external UTF-8 sidecar named after the full video filename:
 
 ```text
 Tutorial.mp4
@@ -62,7 +62,7 @@ Tutorial.mp4.json
 {"tags": ["Learning", "Practice"]}
 ```
 
-The `tags` array takes precedence over recommendations. An explicit empty array disables suggestions for that video. Use at most 8 labels, each 1–40 characters without control characters, in a JSON file no larger than 8192 bytes. Duplicates are removed. Invalid/oversized/unreadable metadata falls back to recommendations; symlinks are not followed. Labels are literal text. Sidecars remain external and untracked alongside original media, like covers; the app never writes them or modifies videos. Edit on the host/storage side and refresh the collection to apply changes. A read-only container media mount still permits the app to read these files.
+The `tags` array takes precedence over recommendations. An explicit empty array disables suggestions for that video. Use at most 8 labels, each 1–40 characters without control characters, in a JSON file no larger than 8192 bytes. Duplicates are removed. Invalid/oversized/unreadable metadata falls back to the selected recommendation profile, or no generated topics when the profile is `none`; symlinks are not followed. Labels are literal text. Sidecars remain external and untracked alongside original media, like covers; the app never writes them or modifies videos. Edit on the host/storage side and refresh the collection to apply changes. A read-only container media mount still permits the app to read these files.
 
 ## Timed random playback
 

@@ -9,7 +9,9 @@
 | `MOVIESITES_MEDIA_ROOT` | `./movie` | 미리 존재하는 원본 루트. 가능하면 읽기 전용 마운트 사용 |
 | `MOVIESITES_DATA_ROOT` | `./runtime` | 다른 인스턴스·원본과 분리된 쓰기 가능한 생성 데이터 루트 |
 | `MOVIESITES_PUBLIC_URL` | 빈 값 | 공개 HTTP(S) 출처(예: `https://media.example.org`), 사용자 정보·하위 경로·쿼리·fragment 제외 |
-| `MOVIESITES_THEME` | `child-toy` | 대소문자를 구분하는 등록 테마 ID. 미등록 값은 시작 거부 |
+| `MOVIESITES_THEME` | `20s-midnight-stream` | 대소문자를 구분하는 등록 테마 ID. 미등록 값은 시작 거부 |
+| `MOVIESITES_TOPIC_PROFILE` | `none` | 파일명 주제 추천: `none` 또는 `kids-education`. 테마와 독립적이며 직접 태그는 항상 적용합니다. |
+| `MOVIESITES_UI_LOCALE` | `en` | 화면 언어: `en` 또는 `ko`. 다른 값은 시작 시 거부합니다. OS 파일명 인코딩과 독립적입니다. |
 | `MOVIESITES_FOLDER_LABELS` | `{}` | 폴더 이름을 화면 표시 문구에 연결하는 JSON 객체 |
 | `MOVIESITES_BROWSER_CACHE_TTL_SECONDS` | `120` | 서버 스냅샷·브라우저 목록 캐시 최대 유효 시간. 60~180초 |
 | `MOVIESITES_PAGE_SIZE` | `48` | 페이지당 항목. 1~100개 |
@@ -58,3 +60,15 @@ export MOVIESITES_FOLDER_LABELS='{"Tutorials":"Learning","Interviews":"Conversat
 탭 메모리 캐시는 최대 20페이지·2000항목·직렬화 약 10 MiB입니다. 선택적 `sessionStorage` 복원은 약 2.8 MiB 예산의 단일 레코드로 제한하며 원래 만료 시각을 보존하고 루트·서버 인스턴스가 다르면 버립니다. 저장 거부·용량 오류는 메모리로 대체합니다. 영상·재생 권한 대신 제목·경로 등 목록 메타데이터를 해당 기기에 저장합니다. 사이트 저장 공간을 지우면 제거됩니다.
 
 새로고침 버튼은 현재 폴더의 브라우저 목록을 무효화하고 `refresh=true`로 새 서버 스냅샷을 요청합니다. 조회로 만료 시각을 늘리거나 만료 때문에 배경 조회하지 않습니다. 새 목록에는 현재 표지 버전을 넣으며 이미지 버전은 기존 파일 식별자·크기·수정 시각 기준입니다. 이전 버전 주소는 만료 전까지 이전 이미지 바이트를 반환할 수 있습니다. 1024바이트 이상 텍스트·JSON·SVG는 협상 시 gzip 압축하고 영상·JPEG는 제외합니다. 변경 없는 응답은 ETag로 304를 반환해 본문 전송을 줄입니다. [MDN Cache-Control](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Cache-Control)을 참고하세요.
+
+## 앱으로 설치 (PWA)
+
+웹 앱 manifest·일반/마스크/Apple 아이콘·선택적 설치 안내를 제공합니다. Chrome·Edge가 설치 이벤트를 전달하면 기본 설치 버튼을 표시합니다. 아이폰·아이패드는 Safari 공유 메뉴 → 홈 화면에 추가를 사용하고 ‘웹 앱으로 열기’가 보이면 켭니다. 지원하는 macOS Safari에서는 파일 → Dock에 추가를 사용합니다. 설치 후에도 기존 영상 목록·테마·표준 영상 플레이어를 이용합니다. 앱 스토어·별도 프론트 서버·새 애플리케이션 런타임은 필요하지 않습니다.
+
+운영에서는 라이브러리와 모든 API·미디어가 같은 출처의 브라우저 신뢰 HTTPS로 제공되어야 합니다. 개발용 `http://localhost`는 예외이며 공개 HTTP IP 주소는 정식 PWA 설치 조건을 충족하지 않습니다. `MOVIESITES_PUBLIC_URL`은 공개 메타데이터 주소만 지정하며 **TLS를 활성화하지 않습니다**. 배포의 리버스 프록시에서 TLS를 처리하고 영상 Range·206 응답을 보존하세요. `/manifest.webmanifest`와 `/service-worker.js`는 출처 루트에서 접근 가능해야 합니다. [MDN 설치 조건](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Guides/Making_PWAs_installable)을 참고하세요.
+
+도메인은 필수가 아닙니다. 공인 IP가 IP-address SAN에 포함된 신뢰 인증서를 사용할 수 있습니다. Let's Encrypt IP 인증서는 160시간 유효한 short-lived 프로필이므로 발급 검증·자동 갱신·인증서 재로딩을 함께 구성해야 합니다. 자체 서명 인증서나 브라우저 경고 우회는 공개 배포 대안이 아닙니다. [Let's Encrypt IP 인증서 안내](https://letsencrypt.org/2026/03/11/shorter-certs-certbot.html)를 참고하세요. 프로토콜·호스트/IP·포트가 바뀌면 설치 식별과 로컬 대기열·캐시를 포함한 브라우저 출처도 달라집니다. 안정적인 공개 주소를 사용하면 주소 변경으로 인한 재설치를 피할 수 있습니다.
+
+설치는 영상을 다운로드하지 않습니다. 서비스 워커의 Cache Storage에는 일반 안내용 `/offline.html`·`/pwa/offline.css`·`/pwa/icon-192.png` 세 자원만 저장합니다. 영상 화면·소개 화면의 네트워크 접속 실패 시 다시 연결 안내를 보여 줍니다. 목록 응답·경로/제목·재생 토큰·썸네일·영상 바이트를 이 캐시에 넣지 않습니다. 기존 HTTP·제한된 목록/이미지 캐시는 유지하며 모든 API·미디어·Range 요청은 서비스 워커가 가로채지 않습니다. 탐색·재생에는 서버 연결이 필요합니다. 사이트 데이터를 지우면 오프라인 캐시와 기존 브라우저 대기열·캐시도 제거됩니다.
+
+워커 스크립트는 재검증하고 일반 브라우저 수명 주기에 따라 갱신합니다. 재생 중 강제 새로고침을 하지 않습니다. 대기 중 버전은 해당 출처의 앱·브라우저 창을 모두 닫은 뒤 다시 열면 활성화됩니다. 설치 지원은 브라우저·기기마다 다르며 어댑터 테스트는 실제 기기 검사를 대신하지 않습니다.
