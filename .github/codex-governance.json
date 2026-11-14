@@ -4,7 +4,8 @@
   "assigneeLogin": "JunSungKang",
   "reviewerLogin": "junsung-bot[bot]",
   "protectedBranches": [
-    "main"
+    "main",
+    "movie-kids"
   ],
   "requiredChecks": [
     "quality",

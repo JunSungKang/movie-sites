@@ -1,5 +1,7 @@
 # MovieSites
 
+> **Movie Kids 운영 브랜치입니다.** 애플리케이션 소스·Docker 빌드·범용 Compose는 `main`과 동일합니다. 이 브랜치에는 `child-toy`·한국어·교육 주제 추천을 선택하는 [Movie Kids 실행 예제](movie-kids.env.example)만 추가합니다. 새 범용 배포에서는 이미지 빌드 후 `MOVIESITES_ENV_FILE=movie-kids.env.example docker compose up -d --no-build`로 명시적으로 선택하거나 `docker run`에 `--env-file movie-kids.env.example`을 전달하세요. 기존 운영 배포의 서비스 이름·포트·마운트는 유지해야 하며, 예제에는 실제 호스트 설정을 넣지 않습니다. 공통 변경은 검토된 기능 PR로 반영하고 `movie-kids`는 삭제하지 않는 PR 대상 브랜치로 유지합니다.
+
 [English](README.md) · [기여 안내](CONTRIBUTING.md) · [빌드 검사](https://github.com/JunSungKang/movie-sites/actions/workflows/quality.yml)
 
 폴더에 저장된 영상을 탐색하고 재생하는 오픈소스 셀프 호스팅 영상 플랫폼입니다. Java 애플리케이션 하나로 실행하고, 원본은 외부 저장소에 보관하며, 컬렉션에 맞는 테마를 선택합니다.
