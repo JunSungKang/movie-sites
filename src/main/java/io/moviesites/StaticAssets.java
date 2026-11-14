@@ -4,12 +4,24 @@ import java.io.IOException;
 import java.util.Map;
 import jakarta.servlet.http.*;
 import org.springframework.core.io.ClassPathResource;
+import tools.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.json.JsonMapper;
 
 /** Immutable only when the requested fingerprint matches the actual packaged bytes. */
 final class StaticAssets {
     private final UiLocale locale;
-    StaticAssets() { this(new UiLocale("en")); }
-    StaticAssets(UiLocale locale) { this.locale = locale; }
+    private final byte[] manifestBytes;
+    StaticAssets(UiLocale locale, String themeColor) {
+        this.locale = locale;
+        var resource = new ClassPathResource("static/manifest" + (locale.isKorean() ? ".ko" : "") + ".webmanifest");
+        try {
+            var json = new JsonMapper();
+            var node = json.readTree(ByteCache.read(resource.getInputStream(),1024*1024));
+            if (!(node instanceof ObjectNode manifest)) throw new IllegalStateException("Invalid packaged web manifest");
+            manifest.put("background_color",themeColor);manifest.put("theme_color",themeColor);
+            manifestBytes = json.writeValueAsBytes(manifest);
+        } catch (IOException e) { throw new IllegalStateException("Cannot load packaged web manifest",e); }
+    }
     private final ByteCache cache=new ByteCache(256,8*1024*1024,32);
     private static final Map<String,String> TYPES=Map.of("js","text/javascript;charset=UTF-8","css","text/css;charset=UTF-8","json","application/json;charset=UTF-8","svg","image/svg+xml","png","image/png","webmanifest","application/manifest+json;charset=UTF-8");
     boolean serve(HttpServletRequest request,HttpServletResponse response) throws IOException {
@@ -30,7 +42,7 @@ final class StaticAssets {
         if(!(worker||path.equals("/manifest.webmanifest")||path.matches("/(?:js|css|themes|seo|pwa)/[a-zA-Z0-9_./-]+\\.(?:js|css|json|svg|png)"))||path.contains("..")||path.contains("//"))return false;
         String selected=manifest&&locale.isKorean()?"/manifest.ko.webmanifest":path;
         var resource=new ClassPathResource("static"+selected);if(!resource.exists())return false;
-        ByteCache.Result result=cache.get(selected,31536000,()->ByteCache.read(resource.getInputStream(),1024*1024));
+        ByteCache.Result result=cache.get(selected,31536000,()->manifest?manifestBytes:ByteCache.read(resource.getInputStream(),1024*1024));
         String digest=result.value().etag(), version=request.getParameter("v");
         boolean fingerprint=!worker&&!manifest&&version!=null&&(version.equals(digest.substring(1,17))||version.equals(digest.substring(1,digest.length()-1)));
         if(worker)response.setHeader("Service-Worker-Allowed","/");

@@ -1,4 +1,4 @@
-/* A fixed generic fallback only. All catalog, image and video traffic uses normal HTTP. */
+/* Cache only the fixed reconnect page and its assets; catalog and media stay on the network. */
 const PREFIX = 'moviesites-offline-';
 const CACHE = PREFIX + 'd49960520ed6cd1a';
 const OFFLINE = '/offline.html';

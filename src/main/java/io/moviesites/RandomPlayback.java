@@ -167,11 +167,10 @@ public class RandomPlayback implements AutoCloseable {
             q.sampled = catalog.videos() > catalog.items().size();
             var candidates = new ArrayList<>(catalog.items()); Collections.shuffle(candidates);
             var selected = new ArrayList<Item>(); long remaining = q.minutes * 60_000L;
-            int visited = 0;
             for (Candidate candidate : candidates) {
                 check(q);
                 if (selected.size() >= 200 || q.checked >= limits.checks() || remaining == 0) break;
-                visited++; q.checked++;
+                q.checked++;
                 try {
                     if (!candidate.version().equals(storage.version(candidate.path()))) { q.skipped++; continue; }
                     Double length = durationCache.get(candidate.version());
@@ -191,7 +190,7 @@ public class RandomPlayback implements AutoCloseable {
                 } catch (IOException e) { check(q); q.skipped++; }
             }
             synchronized (q) {
-                check(q); q.limited = visited < candidates.size() && remaining > 0;
+                check(q); q.limited = q.checked < candidates.size() && remaining > 0;
                 q.items = List.copyOf(selected); q.totalMillis = q.minutes * 60_000L - remaining;
                 q.message = selected.isEmpty() ? locale.text("No whole videos fit this time budget. Try a different duration.","이번에는 이 시간 안에 끝까지 볼 수 있는 영상을 찾지 못했어요. 다른 시간으로 다시 골라 주세요.") : "";
                 q.state = "ready";

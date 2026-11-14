@@ -19,8 +19,10 @@ public class WebConfiguration implements WebMvcConfigurer {
     private final UiLocale locale;
     private final Settings settings;
     public WebConfiguration(Settings settings){this(settings,new UiLocale("en"));}
+    public WebConfiguration(Settings settings,UiLocale locale){this(settings,locale,"#101015");}
     @org.springframework.beans.factory.annotation.Autowired
-    public WebConfiguration(Settings settings,UiLocale locale){this.settings=settings;this.locale=locale;this.assets=new StaticAssets(locale);}
+    public WebConfiguration(Settings settings,UiLocale locale,PresentationService presentation){this(settings,locale,presentation.themeColor());}
+    private WebConfiguration(Settings settings,UiLocale locale,String themeColor){this.settings=settings;this.locale=locale;this.assets=new StaticAssets(locale,themeColor);}
     @Bean public ThreadPoolTaskExecutor streamingExecutor(){ThreadPoolTaskExecutor e=new ThreadPoolTaskExecutor();e.setCorePoolSize(settings.maxStreams());e.setMaxPoolSize(settings.maxStreams());e.setQueueCapacity(settings.maxStreams());e.setThreadNamePrefix("video-stream-");e.setAwaitTerminationSeconds(5);return e;}
     @Override public void addResourceHandlers(ResourceHandlerRegistry registry){
         // Reproducible JAR timestamps do not identify changed content across releases.

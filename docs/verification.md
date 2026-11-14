@@ -17,7 +17,7 @@ python3 -B scripts/check-docs.py
 | Check | Expected coverage |
 |---|---|
 | Gradle build/tests | Java compilation, storage boundaries, paging/sorting, metadata, resource budgets, HTTP/media behavior and packaged application |
-| `scripts/check.sh` | JavaScript syntax and regressions, theme/catalog validation, content hashes, PWA cache boundaries, Git exclusions and JAR/media separation |
+| `scripts/check.sh` | JavaScript syntax and regressions, theme/catalog validation, content hashes, PWA cache boundaries, Git exclusions, packaged resource bytes and JAR/media separation |
 | `scripts/check-docs.py` | Local links/anchors, English/Korean guide pairs, documented environment settings, public examples and build references |
 
 Inspect the actual test output and failures. Unit/adapter tests do not establish real native-player, installation, filesystem or network behavior. Test counts change with the codebase and are not a compatibility certification. Public images or download commands should be documented only after the corresponding artifact exists.
@@ -30,7 +30,7 @@ Use synthetic media and an otherwise disposable generated-data directory. Never 
 python3 -B scripts/verify-runtime.py http://127.0.0.1:8080
 ```
 
-The smoke tool checks the running endpoint; review its output rather than assuming every item below is automated. Verify the following for a candidate on its intended host:
+The smoke tool checks health/configuration, duration-sorted root browsing, invalid paths and static cache revalidation. It sends GET requests; browsing can still start normal server-side analysis and generated work, so use the isolated data root. Review its output rather than assuming every item below is automated. Verify the following for a candidate on its intended host:
 
 - Application health/configuration and current-folder navigation, including non-ASCII/decomposed names, spaces, empty directories and unsupported files.
 - Duration-sorted preparation/pages, fixed-expiry cache reuse, explicit refresh, invalid/expired cursors and accurate duration boundaries.
@@ -49,6 +49,8 @@ python3 -B scripts/verify-platform.py --image moviesites:ubuntu26.04 --port 8081
 ```
 
 The helper creates synthetic media and a separate data root, uses the non-root host UID/GID and a unique Compose project, and checks its candidate without mounting production data. Choose an unused port. Its generated reports and any `--keep` recovery details are local operator artifacts, not public documentation.
+
+By default the helper exercises the application's default theme, UI locale and topic profile. To verify the optional child combination, append `--theme child-toy --locale ko --topic-profile kids-education`. Other registered theme IDs and supported locale/profile values can be selected with the same options; the image must include those resources.
 
 ## Browser and PWA checks
 

@@ -55,6 +55,19 @@ docker compose --env-file .env.compose -f compose.yaml up -d --no-build moviesit
 
 init·읽기 전용 컨테이너 루트·CPU/메모리/PID 제한·로컬 로그·정상 종료 대기 시간을 사용합니다. 이는 설정 가능한 실행 제한이며 처리량 보증이 아닙니다. JVM heap 이외에 FFmpeg와 네이티브 메모리를 위한 여유도 필요합니다.
 
+## 선택형 어린이 프리셋
+
+[어린이 환경 예시](../../examples/child.env.example)는 `child-toy` 테마·한국어 UI·선택형 `kids-education` 파일명 추천을 설정합니다. 같은 `main`에서 빌드한 이미지를 사용하므로 별도 소스 브랜치나 앱 복사본이 필요하지 않습니다. 기본 예시는 중립 테마·영어 UI·주제 추천 비활성화를 유지합니다.
+
+위 절차에 따라 이미지·디렉토리·비공개 Compose 설정을 준비한 뒤 해당 실행에서 프리셋을 선택합니다.
+
+```bash
+MOVIESITES_ENV_FILE=examples/child.env.example \
+docker compose --env-file .env.compose -f compose.yaml up -d --no-build moviesites
+```
+
+비공개 `.env.compose`에 `MOVIESITES_ENV_FILE=examples/child.env.example`을 넣어도 됩니다. `docker run`에서는 `--env-file .env.example`을 `--env-file examples/child.env.example`로 바꿉니다. 운영별 값을 추가할 때는 프리셋을 비공개 환경 파일로 복사하세요. 마운트·사용자·포트·접근 제어는 기존 배포 설정을 사용합니다. JAR는 이 파일을 자동으로 읽지 않으므로 호스트 원본·데이터 경로와 함께 원하는 설정을 환경변수로 내보냅니다.
+
 ## 시험과 업데이트
 
 합성 영상·별도 데이터 디렉토리·사용하지 않는 루프백 포트에서 [재현 가능한 검사](verification.md)를 실행하세요. 격리 시험에 운영 `/data`를 연결하지 않습니다. 실제 호스트에서 한글 경로·대표 코덱·부분 전송·권한·데이터 잠금·재시작을 확인합니다. HTTP 정상 상태가 전체 NAS 검사는 아닙니다.

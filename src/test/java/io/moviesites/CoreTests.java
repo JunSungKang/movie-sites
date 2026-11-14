@@ -64,7 +64,7 @@ class CoreTests {
         var browser=new DirectoryBrowser(s,storage);
         try{var page=browser.browse("",null);assertEquals(48,page.entries().size());assertNotNull(page.nextCursor());}finally{browser.close();}
     }
-    @Test void playbackAuthorizationSurvivesJobEvictionAndRejectsForgery()throws Exception{
+    @Test void playbackTokensNeedNoInMemoryJobAndRejectForgeryAndSourceChanges()throws Exception{
         var s=settings(48);var storage=storage(s);Files.writeString(s.mediaRoot().resolve("video.mp4"),"bytes");
         var media=new MediaService(s,storage);
         try{String version=storage.version("video.mp4");String token=media.playbackToken("video.mp4",version,true);

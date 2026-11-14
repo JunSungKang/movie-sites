@@ -57,7 +57,7 @@ const english = {
   "목록을 확인할 수 없습니다.": "The list is unavailable.",
   " 보기": " · Open",
   "{0}번째 목록": "Page {0}",
-  "일부 항목이나 주제 정보를 읽지 못했습니다. 연결된 링크는 표시하지 않으며, 잘못된 주제 파일은 추천 태그로 대신합니다.": "Some items or topic metadata could not be read. Symbolic links are hidden; invalid metadata uses suggestions when a topic profile is enabled.",
+  "일부 항목이나 주제 정보를 읽지 못했습니다. 연결된 링크는 표시하지 않습니다. 잘못된 주제 파일은 주제 추천이 켜져 있을 때만 추천 태그로 대신합니다.": "Some items or topic metadata could not be read. Symbolic links are hidden; invalid metadata uses suggestions when a topic profile is enabled.",
   "이 구간에는 표시할 영상이 없습니다. 다음 목록에서 계속 확인할 수 있습니다.": "There are no videos on this page. Continue to the next page.",
   " 재생": " · Play",
   "파일명 기반 추천 주제": "Suggested topics based on the filename",

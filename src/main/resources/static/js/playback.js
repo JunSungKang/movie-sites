@@ -1,4 +1,4 @@
-import {t, setLocale, localeTag} from './i18n.js';
+import {t} from './i18n.js';
 // One saved queue; playback uses a snapshot so edits apply to the next play-through.
 export const MAX_QUEUE = 200;
 function valid(entry) {

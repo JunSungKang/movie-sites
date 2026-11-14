@@ -24,6 +24,8 @@
 
 Docker 기본 루트는 `/media`와 `/data`입니다. 이는 컨테이너 안의 경로이며 호스트 원본 경로는 별개입니다. [환경변수 예시](../../.env.example)를 `--env-file`로 전달하세요. JAR는 `.env`를 자동으로 읽지 않습니다. 호스트 JAR에는 호스트 경로를 설정하고 컨테이너용 예시를 그대로 source하지 마세요.
 
+선택형 [어린이 프리셋](../../examples/child.env.example)은 `MOVIESITES_THEME=child-toy`·`MOVIESITES_UI_LOCALE=ko`·`MOVIESITES_TOPIC_PROFILE=kids-education`을 함께 설정합니다. Compose에서는 `MOVIESITES_ENV_FILE=examples/child.env.example`로 선택합니다. [프리셋 실행 방법](docker.md#선택형-어린이-프리셋)을 참고하세요. 설정만 선택하며 위 기본값을 바꾸거나 다른 소스 브랜치를 요구하지 않습니다.
+
 ## 표시 문구
 
 ```bash
@@ -37,6 +39,8 @@ export MOVIESITES_FOLDER_LABELS='{"Tutorials":"Learning","Interviews":"Conversat
 디렉토리 세션·읽기/분석 대기열·변환 작업에도 고정 제한이 있습니다. [아키텍처](architecture.md)를 참고하세요. 캐시 바이트 예산은 전체 메모리 제한이 아닙니다. JVM·FFmpeg·브라우저 디코더·GPU 사용량은 별개이므로 실제 저장소와 동시 사용 조건으로 시험해야 합니다.
 
 소개와 영상 화면은 같은 `MOVIESITES_THEME`를 사용하며 로고·헤더·푸터·테마 CSS·일러스트를 공유합니다. 소개는 시작 시 테마를 결정해 JavaScript·영상 목록 조회 없이 보이는 HTML을 제공합니다. 실행 테마를 바꾸고 재시작하면 두 화면에 함께 적용됩니다. `css/about.css`는 소개 배치만 담당하고 색상·글꼴·이미지는 등록된 테마 디렉토리에서 관리합니다.
+
+설치 manifest의 색상은 UI 언어와 독립적으로 선택한 테마를 따릅니다. 앱 아이콘은 공통 MovieSites 마크를 사용합니다.
 
 ## 검색 노출
 

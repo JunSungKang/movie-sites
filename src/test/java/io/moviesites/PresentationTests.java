@@ -21,11 +21,18 @@ class PresentationTests {
             for (var entry : catalog.path("themes")) {
                 var service = new PresentationService(entry.path("id").asText(), "{}");
                 assertEquals(entry.path("id").asText(), service.theme().id());
+                assertTrue(service.themeColor().matches("#[a-fA-F0-9]{6}"));
                 String base = "static/themes/" + service.theme().directory() + "/";
                 for (String asset : new String[]{"theme.json", "theme.css", "assets/hero.svg", "assets/preview.svg"})
                     assertTrue(new ClassPathResource(base + asset).exists(), base + asset);
             }
         }
+    }
+
+    @Test void themeDisplayNamesFollowTheSelectedInterfaceLanguage() throws Exception {
+        assertEquals("Midnight Stream", new PresentationService("20s-midnight-stream", "{}", new UiLocale("en")).theme().name());
+        assertEquals("미드나이트 스트림", new PresentationService("20s-midnight-stream", "{}", new UiLocale("ko")).theme().name());
+        assertEquals("Toy Playground", new PresentationService("child-toy", "{}", new UiLocale("en")).theme().name());
     }
 
     @Test void refusesUnknownAndPathLikeSelections() {

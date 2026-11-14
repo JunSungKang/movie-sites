@@ -14,6 +14,7 @@ import tools.jackson.databind.json.JsonMapper;
 public class PresentationService {
     public record Theme(String id, String name, String group, String directory) {}
     private final Theme theme;
+    private final String themeColor;
     private final UiLocale locale;
     private final Map<String, String> folderLabels;
 
@@ -35,10 +36,15 @@ public class PresentationService {
             if (!id.matches("[a-z0-9]+(?:-[a-z0-9]+)*")
                     || !directory.matches("(?:[1-6]0s/)?[a-z0-9]+(?:-[a-z0-9]+)*")
                     || themes.containsKey(id)) throw new IllegalArgumentException("Invalid packaged theme catalog");
-            themes.put(id, new Theme(id, item.path("name").asText(), item.path("group").asText(), directory));
+            String name = item.path(locale.isKorean() ? "name" : "nameEn").asText(item.path("name").asText());
+            themes.put(id, new Theme(id, name, item.path("group").asText(), directory));
         }
         theme = themes.get(selected);
         if (theme == null) throw new IllegalArgumentException("Unknown MOVIESITES_THEME: choose an ID from /themes/catalog.json");
+        try (var input = new ClassPathResource("static/themes/" + theme.directory() + "/theme.json").getInputStream()) {
+            themeColor = json.readTree(input).path("color").asText();
+        }
+        if (!themeColor.matches("#[a-fA-F0-9]{6}")) throw new IllegalArgumentException("Invalid packaged theme color");
         if (labels.length() > 8192) throw new IllegalArgumentException("MOVIESITES_FOLDER_LABELS is too large");
         JsonNode values;
         try { values = json.readTree(labels); }
@@ -59,6 +65,7 @@ public class PresentationService {
     }
 
     public Theme theme() { return theme; }
+    public String themeColor() { return themeColor; }
     public UiLocale uiLocale() { return locale; }
     public Map<String, String> folderLabels() { return folderLabels; }
 }

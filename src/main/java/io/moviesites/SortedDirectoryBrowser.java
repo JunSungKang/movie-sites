@@ -123,14 +123,14 @@ public class SortedDirectoryBrowser {
         synchronized (query) {
             if (query.cancelled) throw new DirectoryBrowser.ExpiredCursor();
             query.touched = System.nanoTime();
-            if (!query.state.equals("ready")) return page(query, List.of(), null, "");
-            List<Item> entries = new ArrayList<>(); long nextOffset = offset;
+            if (!query.state.equals("ready")) return page(query, List.of(), null);
+            List<Item> entries = new ArrayList<>();
             try (var file = FileChannel.open(query.result, StandardOpenOption.READ, LinkOption.NOFOLLOW_LINKS)) {
                 if (offset > file.size()) throw new DirectoryBrowser.ExpiredCursor();
                 file.position(offset);
                 for (int i = 0; i < settings.pageSize() && file.position() < file.size(); i++) entries.add(read(file));
-                nextOffset = file.position();
-                return page(query, entries, nextOffset < file.size() ? query.id + "." + nextOffset + "." + signature(query, nextOffset) : null, "");
+                long nextOffset = file.position();
+                return page(query, entries, nextOffset < file.size() ? query.id + "." + nextOffset + "." + signature(query, nextOffset) : null);
             }
         }
     }
@@ -146,9 +146,9 @@ public class SortedDirectoryBrowser {
         }
     }
     private String signature(Query q, long offset) { return Storage.digest(q.secret + "\0" + q.id + "\0" + offset); }
-    private Page page(Query q, List<Item> entries, String next, String message) {
+    private Page page(Query q, List<Item> entries, String next) {
         String parent = q.path.isEmpty() ? null : q.path.contains("/") ? q.path.substring(0, q.path.lastIndexOf('/')) : "";
-        if (q.state.equals("failed")) message = q.message;
+        String message = q.state.equals("failed") ? q.message : "";
         return new Page(q.path, parent, List.copyOf(entries), next, q.warnings, q.state, q.id, q.examined, q.analyzed, q.unknown, message);
     }
     private Double duration(String path) throws IOException {
