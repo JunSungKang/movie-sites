@@ -6,7 +6,7 @@
       "id": "child-toy",
       "group": "child",
       "name": "토이 플레이그라운드",
-      "description": "기존의 장난감 폴더 데크 · 둥근 카드와 파스텔 친구들",
+      "description": "장난감 폴더 데크 · 둥근 카드와 파스텔 친구들",
       "directory": "child-toy",
       "nameEn": "Toy Playground",
       "descriptionEn": "Rounded toy-deck cards and friendly pastel shapes"

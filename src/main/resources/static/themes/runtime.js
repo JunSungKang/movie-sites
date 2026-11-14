@@ -1,4 +1,4 @@
-import {t, setLocale, localeTag} from '../js/i18n.js';
+import {t} from '../js/i18n.js';
 // Theme data is packaged with the application. Preview overrides never alter server settings.
 export function selectTheme(catalog, configuredId, requestedId) {
   if (catalog.version !== 1 || !Array.isArray(catalog.themes)) throw new Error(t('테마 목록을 확인할 수 없습니다.'));

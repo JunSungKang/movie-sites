@@ -4,7 +4,7 @@
 
 ## Prerequisites and setup
 
-Use JDK 25, Node.js 24 and Python 3.14.x (3.14.9 or newer within that series) for the full repository checks. Install FFmpeg/ffprobe to exercise local media processing, or use the Docker image. A global Gradle installation, frontend development server and database are not required.
+Use JDK 25, Node.js 24 and Python 3.14.x for the full repository checks. Install FFmpeg/ffprobe to exercise local media processing, or use the Docker image. A global Gradle installation, frontend development server and database are not required.
 
 Fork/clone the repository, create a focused branch and run:
 
@@ -14,7 +14,7 @@ bash scripts/check.sh
 python3 -B scripts/check-docs.py
 ```
 
-`build/libs/moviesites.jar` is the executable artifact. Java test results are under `build/test-results/test/` and the HTML report under `build/reports/tests/test/`. `./gradlew test` runs server tests; `node --test scripts/cache.test.mjs scripts/playback.test.mjs scripts/player-ui.test.mjs scripts/library.test.mjs scripts/pwa.test.mjs` runs the JavaScript tests. Package checks require a freshly built JAR. See [CONTRIBUTING](../CONTRIBUTING.md) for the PR workflow.
+`build/libs/moviesites.jar` is the executable artifact. Java test results are under `build/test-results/test/` and the HTML report under `build/reports/tests/test/`. `./gradlew test` runs server tests; `node --test scripts/*.test.mjs` runs all JavaScript tests, including UI locales and PWA behavior. Package checks require a freshly built JAR. See [CONTRIBUTING](../CONTRIBUTING.md) for the PR workflow.
 
 ## Source layout
 
@@ -36,9 +36,9 @@ The application follows the standard Java/Gradle source layout. The current smal
 
 Use the [getting-started guide](getting-started.md) for the JAR or run `./gradlew bootRun` with explicit media/data roots. Every concurrent instance needs a distinct data root and port. Tests use project-local temporary files and remove their fixtures. Real media must never become a committed fixture.
 
-`bash scripts/check.sh` checks JavaScript syntax, cache/queue/player behavior, theme assets, content hashes, Git exclusions and JAR/data separation. `scripts/check-docs.py` checks local documentation links, public settings examples, locale counterparts and build references. Visible UI changes also require real browser inspection; native codec/device, NAS failures and load tests are separate from adapter/unit tests.
+`bash scripts/check.sh` checks JavaScript syntax, cache/queue/player behavior, theme assets, content hashes, Git exclusions, packaged resource bytes and JAR/data separation. `scripts/check-docs.py` checks local documentation links, public settings examples, locale counterparts and build references. Visible UI changes also require real browser inspection; native codec/device, NAS failures and load tests are separate from adapter/unit tests.
 
-After changing a versioned UI asset, update its content-hash query reference in `index.html` or its importing module. Keep the root media directory, generated data, build output and credentials untracked. Do not change stream authorization or filesystem boundaries as incidental cleanup.
+After changing a versioned UI asset, update its content-hash query reference in both `index.html` and `index.ko.html`, or its importing module. Keep localized manifest/preview resources synchronized when changing their shared settings or assets. Keep the root media directory, generated data, build output and credentials untracked. Do not change stream authorization or filesystem boundaries as incidental cleanup.
 
 Runtime smoke check against an already running test instance:
 

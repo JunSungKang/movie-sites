@@ -24,6 +24,8 @@ Set environment variables before starting the process or creating the container.
 
 The Docker image defaults to `/media` and `/data` for its two roots. These are container paths; the host mount sources can be elsewhere. [`.env.example`](../.env.example) contains public Docker values. Pass it with `--env-file`; the JAR does not automatically load `.env` files. Host JAR execution should export host paths rather than source a container-path example.
 
+The optional [child preset](../examples/child.env.example) combines `MOVIESITES_THEME=child-toy`, `MOVIESITES_UI_LOCALE=ko` and `MOVIESITES_TOPIC_PROFILE=kids-education`. For Compose, choose it through `MOVIESITES_ENV_FILE=examples/child.env.example`; see the [preset instructions](docker.md#optional-child-preset). This changes configuration only and does not change the default values above or require another source branch.
+
 ## Display labels
 
 ```bash
@@ -37,6 +39,8 @@ Labels affect presentation only. They do not rename files, change API paths or c
 The application also uses fixed bounds for directory sessions, reader/analysis queues and conversion workers. See [architecture](architecture.md). A cache-byte budget is not a total memory limit. FFmpeg, the JVM, browser decoders and GPU memory have different costs. Use container/host limits and test your workload; the documented defaults are not a capacity guarantee.
 
 The introduction and library use the same `MOVIESITES_THEME`: shared logo/header/footer, packaged theme stylesheet and illustration. The introduction resolves these at startup and renders visible HTML without JavaScript or catalog requests. Changing the runtime theme and restarting updates both pages. `css/about.css` owns introduction layout only; visual tokens and assets remain in the registered theme directory.
+
+The installation manifest uses the selected theme colors independently of UI language; the app icon remains the shared MovieSites mark.
 
 ## Search visibility
 

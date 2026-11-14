@@ -1,4 +1,4 @@
-import {t, setLocale, localeTag} from './i18n.js';
+import {t} from './i18n.js';
 // Non-overlapping intervals use exact seconds, not rounded display strings.
 export const DURATION_GROUPS = [
   {id:'under-five',get label(){return t('5분 미만');},limit:300},

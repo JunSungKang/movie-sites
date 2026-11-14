@@ -40,8 +40,13 @@ tasks.test {
     doFirst { temporaryDirectory.mkdirs() }
 }
 
+val externalMediaExtensions = setOf(
+    "mp4", "m4v", "mov", "mkv", "webm", "avi", "mpeg", "mpg", "mts", "m2ts",
+    "ts", "ogv", "wmv", "flv", "3gp", "3g2", "mxf", "vob", "av1"
+)
+
 tasks.processResources {
-    exclude("**/*.mp4", "**/*.mov", "**/*.mkv", "**/*.webm")
+    exclude { it.name.substringAfterLast('.', "").lowercase() in externalMediaExtensions }
 }
 
 tasks.withType<AbstractArchiveTask>().configureEach {

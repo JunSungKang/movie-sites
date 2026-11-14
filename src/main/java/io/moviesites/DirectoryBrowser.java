@@ -65,7 +65,7 @@ public class DirectoryBrowser {
                 try{
                     var a=session.stream.getFileAttributeView(file,BasicFileAttributeView.class,LinkOption.NOFOLLOW_LINKS).readAttributes();
                     if(a.isSymbolicLink()){warnings++;continue;}
-                    int dot=name.lastIndexOf('.');boolean video=dot>=0&&EXTENSIONS.contains(name.substring(dot+1).toLowerCase(Locale.ROOT));
+                    boolean video=isVideo(name);
                     if(a.isDirectory()||(a.isRegularFile()&&video))entries.add(new Entry(name,path.isEmpty()?name:path+"/"+name,a.isDirectory()?"folder":"video",a.isRegularFile()?a.size():0,a.lastModifiedTime().toInstant().toString()));
                 }catch(IOException e){warnings++;}
             }

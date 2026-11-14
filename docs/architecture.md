@@ -34,14 +34,14 @@ The startup theme comes from the packaged allowlist. A theme owns copy, styles a
 
 The browser queue is origin/root-scoped localStorage with a 200-entry limit, or an in-memory fallback if storage is unavailable. Play-all snapshots the saved queue, advances on natural completion and closes after the final item. Closing invalidates pending inspection/playback work. The same dialog/video element retains native controls; responsive sizing preserves the original video ratio and keeps controls inside the available viewport.
 
-Application HTML remains `no-store`; packaged assets with a verified content fingerprint get one-year immutable caching. Other assets use content ETags and `no-cache`, with archive timestamps disabled. HTML/module references carry content hashes. Text/JSON/SVG compression excludes video/JPEG. The generic `/about` is the only page intended for indexing; catalog/media responses carry noindex headers. See [cache and search policy](configuration.md#cache-policy). CSP restricts resources to the service's own origin, and focus/reduced-motion rules are kept in the shared presentation.
+Application HTML remains `no-store`; packaged assets with a verified content fingerprint get one-year immutable caching. Other assets use content ETags and `no-cache`, with archive timestamps disabled. HTML/module references carry content hashes. Text/JSON/SVG compression excludes video/JPEG. The generic `/about` is the only page intended for indexing; catalog/media responses carry noindex headers. See [cache and search policy](configuration.md#cache-policy). CSP restricts scripts, styles and media to the service's own origin and also permits `data:` images. Focus/reduced-motion rules are kept in the shared presentation.
 
 ## HTTP surface
 
 | Endpoint | Purpose |
 |---|---|
 | `GET /api/health` | Application response status, not a full storage audit |
-| `GET /api/config` | Root identity, list limits, selected theme and display labels |
+| `GET /api/config` | Root identity, list limits, selected theme/UI locale and display labels |
 | `GET /api/browse?path=...&cursor=...` | Immediate-child continuation page |
 | `GET /api/media/folder-cover?path=...` | Exact folder's validated JPEG |
 | `GET /api/media/info?path=...&play=true` | Media inspection and optional playback preparation |
@@ -58,7 +58,7 @@ Sort chunks contain at most 128 records. Sorted runs live under the external dat
 
 At most the configured directory-session count (default eight) is retained. Ready/failed snapshots expire after the normal idle period; an abandoned preparation is retired after 15 idle seconds, with cleanup checks every 15 seconds. Active OS/NAS calls may still outlive cancellation. Temporary files are removed on disposal and recognized abandoned sort files are reclaimed at startup. The data-root lock still prevents multiple instances from sharing work.
 
-Duration results use an LRU of at most 2000 source-version keys. File identity, size and modification changes invalidate reuse; unavailable durations are reused for at most 15 seconds. Source moves and sidecar edits are picked up by a new query. Prepared pages are immutable snapshots; stream access still revalidates the real source. Sorted cursors bind query, path and byte offset with an unexposed per-query secret; replay of a valid cursor reads the same immutable page. Unknown/tampered/expired cursors fail. The original streaming API keeps its previous ordered, single-use cursor contract.
+Duration results use an LRU of at most 2000 source-version keys. File identity, size and modification changes invalidate reuse; unavailable durations are reused for at most 15 seconds. Source moves and sidecar edits are picked up by a new query. Prepared pages are immutable snapshots; stream access still revalidates the real source. Sorted cursors bind query, path and byte offset with an unexposed per-query secret; replay of a valid cursor reads the same immutable page. Unknown/tampered/expired cursors fail. The `sort=filesystem` browsing API uses ordered, single-use cursors.
 
 The browser receives at most the configured page size and displays exact duration groups with recommended or explicit topic chips. Pending requests abort on navigation. Polling runs only while a requested query is preparing; ordinary cache expiration does not trigger background polling. Large NAS folders may take substantial time because exact duration order cannot be known without inspecting their immediate videos. These changes bound memory/work but do not provide a huge-folder latency or device-capacity guarantee.
 

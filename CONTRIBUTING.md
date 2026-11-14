@@ -27,14 +27,14 @@ Describe the problem, the resulting behavior, how it was checked and any limitat
 - **Code:** keep the single-application runtime and bounded media/storage work. Use the existing JDK 25/Spring Boot stack and static frontend.
 - **Themes:** follow [the theme guide](docs/themes.md#adding-a-theme); add a catalog entry, manifest, stylesheet and original/local SVG assets. Do not copy the application for each theme.
 - **Documentation:** use English as the canonical text, put detailed information in the relevant guide and link it from the root README. Avoid duplicating configuration tables or entire setup procedures.
-- **Translations:** update `README.ko.md` and matching files under `docs/ko/` with the English source change. New languages should use their language code and keep the same guide filenames. Documentation translation does not imply that the application UI is localized.
+- **Translations:** update `README.ko.md` and matching files under `docs/ko/` with the English source change. The UI currently supports English and Korean. New documentation languages should use their language code and keep the same guide filenames; translating a guide does not add a complete UI locale.
 - **Tests:** test observable behavior and important error paths. Browser/media adapters do not certify all browser decoders or storage devices.
 
 ## Project conventions
 
 Use the committed Gradle Wrapper. Java uses the normal `src/main/java`, `src/main/resources` and `src/test/java` layout. Follow nearby code and avoid unrelated reformatting. Use descriptive commit messages and keep each change reviewable; an issue number or special commit-prefix scheme is not mandatory.
 
-Only contribute work you have the right to contribute under the project license. Declare new dependencies and asset licenses in the relevant notice file. Do not commit original videos, actual collection covers, generated playback files, credentials, local environment files, private host addresses or build caches. `movie/` tracks only `.gitkeep`; public configuration examples belong in `.env.example`.
+Only contribute work you have the right to contribute under the project license. Declare new dependencies and asset licenses in the relevant notice file. Do not commit original videos, actual collection covers, generated playback files, credentials, local environment files, private host addresses or build caches. `movie/` tracks only `.gitkeep`; public configuration examples belong in `.env.example`, `compose.env.example` or `examples/` and must contain no private deployment values.
 
 ## Review and integration
 

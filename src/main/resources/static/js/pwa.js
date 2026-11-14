@@ -1,4 +1,4 @@
-import {t, setLocale, localeTag} from './i18n.js';
+import {t} from './i18n.js';
 /** Installation is optional; browsing and playback never depend on its availability. */
 export function initPwa({window: win, document: doc, navigator: nav}) {
   const button = doc.getElementById('install-app');

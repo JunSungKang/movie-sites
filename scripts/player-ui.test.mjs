@@ -10,7 +10,7 @@ import {durationGroups,topicLabels,waitForPreparation} from '../src/main/resourc
 const entry=name=>({path:`folder/${name}.mp4`,name:`${name}.mp4`,size:12});
 const flush=async()=>{for(let i=0;i<15;i++)await Promise.resolve();};
 // Run the actual app event wiring with a small DOM/media adapter. No duplicated player logic.
-async function app({inspect,random,initialPath='folder',locale='ko',play=()=>Promise.resolve(),entries=[],denyFullscreen=false}={}) {
+async function app({inspect,random,initialPath='folder',locale='ko',play=()=>Promise.resolve(),entries=[],denyFullscreen=false,theme=async()=>({rootTitle:'Videos',rootCollection:'Collection'}),onBoot=()=>{}}={}) {
  setLocale(locale);
  let document;
  const fullscreenCalls={enter:0,exit:0};
@@ -37,15 +37,17 @@ async function app({inspect,random,initialPath='folder',locale='ko',play=()=>Pro
  ids.get('player-fullscreen').requestFullscreen=()=>{fullscreenCalls.enter++;if(denyFullscreen)return Promise.reject(new Error('permission denied'));document.fullscreenElement=ids.get('player-fullscreen');document.dispatchEvent(new Event('fullscreenchange'));return Promise.resolve();};
  document.exitFullscreen=()=>{fullscreenCalls.exit++;document.fullscreenElement=null;document.dispatchEvent(new Event('fullscreenchange'));return Promise.resolve();};
  const disk=new Map(),localStorage={getItem:key=>disk.get(key),setItem:(key,value)=>disk.set(key,value)};
- const window={localStorage,addEventListener:()=>{},scrollTo:(x,y)=>{if(typeof x==='object'){context.scrollY=x.top;}else{context.scrollX=x;context.scrollY=y;}}};
+ const window=Object.assign(new EventTarget(),{localStorage,scrollTo:(x,y)=>{if(typeof x==='object'){context.scrollY=x.top;}else{context.scrollX=x;context.scrollY=y;}}});
  const response=data=>({ok:true,json:async()=>data});
  const ready={state:'ready',version:'video-v1',streamToken:'original.signature'};
  const context=vm.createContext({document,window,location:{href:'http://test/'+(initialPath?'?path='+encodeURIComponent(initialPath):''),reload(){}},history:{pushState(){}},scrollX:0,scrollY:321,URL,URLSearchParams,AbortController,Event,queueMicrotask,
   setTimeout:(fn,ms)=>{if(ms<2000)queueMicrotask(fn);return 1;},clearTimeout:()=>{},IntersectionObserver:class{observe(){}disconnect(){}},PlaybackQueue,PlaybackSession,PlaybackFullscreen,MAX_QUEUE,DirectoryCache,PageHistory,
-  t,setLocale,localeTag,durationGroups,topicLabels,waitForPreparation,applyTheme:async()=>({rootTitle:'Videos',rootCollection:'Collection'}),
+  t,setLocale,localeTag,durationGroups,topicLabels,waitForPreparation,applyTheme:theme,
   fetch:async(url,options)=>url==='/api/config'?response({locale,rootId:'r',cacheTtlSeconds:120,folderLabels:{},sourceUrl:'#'}):url.startsWith('/api/browse')?response({entries,state:'ready'}):url.startsWith('/api/random-playback')&&random?random(url,options,response):inspect?inspect(url,options,response,ready):response(ready)});
  const source=readFileSync('src/main/resources/static/js/app.js','utf8').replace(/^import .*;$/gm,'');
- const exposed=await vm.runInContext(`(async()=>{${source}\nreturn {startPlayback,startRandom,loadFolder,closePlayer,playback,state,playbackQueue,enrich,renderVideo};})()`,context);
+ const boot=vm.runInContext(`(async()=>{${source}\nreturn {startPlayback,startRandom,loadFolder,closePlayer,playback,state,playbackQueue,enrich,renderVideo};})()`,context);
+ onBoot({window,context});
+ const exposed=await boot;
  return {...exposed,ids,context,document,fullscreenCalls,click:id=>ids.get(id).dispatchEvent(new Event('click')),end:()=>{ids.get('video-player').ended=true;ids.get('video-player').dispatchEvent(new Event('ended'));}};
 }
 test('actual player wiring advances on ended, closes final popup and preserves selection, scroll and saved queue',async()=>{
@@ -206,4 +208,12 @@ test('English startup drives actual list, queue and random controls without tran
  assert.equal(b.ids.get('player-title').textContent,'한글 영상');
  assert.equal(b.ids.get('player-position').textContent,'Playing video');
  b.closePlayer();
+});
+
+test('navigation during theme startup waits for initialization and uses the latest URL',async()=>{
+ let completeTheme,boot;const gate=new Promise(resolve=>completeTheme=resolve);
+ const pending=app({theme:async()=>{await gate;return {rootTitle:'Videos',rootCollection:'Collection'};},onBoot:value=>boot=value});
+ await flush();boot.context.location.href='http://test/?path=changed-during-boot';boot.window.dispatchEvent(new Event('popstate'));
+ completeTheme();const a=await pending;
+ assert.equal(a.state.path,'changed-during-boot');assert.equal(a.state.listing.state,'ready');assert.ok(a.playbackQueue);
 });

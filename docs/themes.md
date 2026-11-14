@@ -8,6 +8,8 @@ All presets use the same library and player behavior. Age groups organize option
 
 Set `MOVIESITES_THEME` before startup, for example `MOVIESITES_THEME=20s-soft-minimal`, and restart the process or recreate the container. Selection is case-sensitive and unknown IDs fail startup. Choosing an existing packaged theme does not require a rebuild.
 
+For a combined `child-toy`/Korean/`kids-education` configuration, use the optional [child preset](docker.md#optional-child-preset). It runs the same application and leaves the neutral default unchanged. Selecting `child-toy` alone does not change the UI language or topic profile.
+
 Open `/themes/preview.html` on your running service to view the catalog. Its real-page links use `/?preview-theme=<registered-ID>`. This is a tab-local preview, clearly marked, and does not change the server setting. Invalid preview IDs fall back to the configured default.
 
 ## Bundled presets

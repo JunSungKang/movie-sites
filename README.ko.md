@@ -15,7 +15,7 @@ Midnight Stream 테마의 배치 도식입니다. 실제 컬렉션 표지는 사
 - 열어 본 폴더의 바로 아래 항목을 탐색하며, 마운트된 로컬·네트워크 저장소를 사용합니다.
 - 표준 HTML 영상 컨트롤로 재생하고, 필요한 경우 FFmpeg로 호환 재생본을 준비합니다.
 - 폴더 표지, 영상별 JPEG 썸네일과 자동 생성 대체 이미지를 지원합니다.
-- 짧은 영상부터 정렬하고 길이 구분선과 추천·직접 지정 주제 태그를 표시합니다.
+- 짧은 영상부터 정렬하고 길이 구분선과 직접 지정 주제 태그를 표시하며, 파일명 기반 추천은 선택적으로 켭니다.
 - 브라우저에 대기열 하나를 저장하고 순서를 바꾸거나 연속 재생합니다.
 - 환경변수로 기본 제공 테마 19개를 선택하고 카탈로그에 새 테마를 기여할 수 있습니다.
 - 실행 가능한 JAR 또는 Docker 컨테이너 하나로 실행합니다. 화면은 정적 HTML·CSS·JavaScript입니다.
@@ -60,17 +60,19 @@ java -jar build/libs/moviesites.jar
 
 플랫폼 조건은 [시작하기](docs/ko/getting-started.md)에 정리했습니다. Node.js와 Python은 추가 저장소 검사에 사용하며 서비스 실행에는 필요하지 않습니다.
 
-이식 가능한 단일 서비스 Compose 구성은 [Docker 안내](docs/docker.md)를 참고하세요. `compose.yaml`의 `moviesites` 서비스를 사용하며 `compose.env.example`에서 호스트 경로·사용자·포트를 설정합니다.
+이식 가능한 단일 서비스 Compose 구성은 [Docker 안내](docs/ko/docker.md)를 참고하세요. `compose.yaml`의 `moviesites` 서비스를 사용하며 `compose.env.example`에서 호스트 경로·사용자·포트를 설정합니다.
 
 ## 설정
 
-원본은 `MOVIESITES_MEDIA_ROOT`, 생성 데이터는 `MOVIESITES_DATA_ROOT`, 화면 테마는 `MOVIESITES_THEME`로 지정합니다. 기본 테마는 `20s-midnight-stream`입니다. 예를 들어 `MOVIESITES_THEME=20s-midnight-stream`으로 설정하고 재시작하면 해당 테마를 사용합니다.
+원본은 `MOVIESITES_MEDIA_ROOT`, 생성 데이터는 `MOVIESITES_DATA_ROOT`, 화면 테마는 `MOVIESITES_THEME`로 지정합니다. 기본 테마는 `20s-midnight-stream`입니다. 예를 들어 `MOVIESITES_THEME=20s-soft-minimal`로 설정하고 재시작하면 다른 테마를 선택할 수 있습니다.
 
 `MOVIESITES_PUBLIC_URL=https://media.example.org`을 설정하면 `/about` 소개 페이지의 canonical·사이트맵 주소를 활성화합니다. 검색 노출 대상은 일반적인 사이트 소개이며 영상 목록은 기존 `/`에서 이용합니다. SEO·캐시 정책은 설정 안내에 정리했습니다.
 
 모든 환경변수·기본값·허용 범위는 [설정 안내](docs/ko/configuration.md)에 있습니다. `.env.example`은 Docker 예시이며 JAR는 `.env` 파일을 자동으로 읽지 않습니다.
 
 주제 추천은 기본으로 꺼져 있습니다(`MOVIESITES_TOPIC_PROFILE=none`). 교육 주제 추천이 필요하면 `kids-education`을 지정하세요. 영상별 직접 태그는 프로필과 무관하게 사용할 수 있으며 테마와 주제 프로필은 독립적입니다.
+
+선택형 [어린이 프리셋](examples/child.env.example)은 `child-toy`·한국어 UI·`kids-education`을 함께 설정합니다. Compose에서는 [Docker 안내](docs/ko/docker.md#선택형-어린이-프리셋)에 따라 `MOVIESITES_ENV_FILE=examples/child.env.example`로 선택합니다. 모든 프리셋은 같은 `main` 애플리케이션을 사용하며 중립적인 기본값은 유지합니다.
 
 ## 문서
 
@@ -85,7 +87,7 @@ java -jar build/libs/moviesites.jar
 | 동작 구조와 자원 제한 | [아키텍처](docs/ko/architecture.md) |
 | 오류 원인과 복구 | [문제 해결](docs/ko/troubleshooting.md) |
 | 검토·통합·배포 | [유지관리](docs/ko/maintainers.md) |
-| 실제 검사 범위와 한계 | [검증 기록](docs/ko/verification.md) |
+| 검사 재현과 지원 한계 | [테스트와 호환성](docs/ko/verification.md) |
 
 ## 기여
 

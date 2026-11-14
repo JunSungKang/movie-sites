@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Check local documentation links, translations and executable setup references."""
 
+import ipaddress
 import re
 import subprocess
 from pathlib import Path
@@ -12,6 +13,8 @@ GUIDES = (
     "getting-started", "configuration", "media-library", "docker", "themes",
     "development", "architecture", "troubleshooting", "maintainers", "verification",
 )
+EXAMPLE_NETWORKS = tuple(ipaddress.ip_network(value) for value in
+                         ("192.0.2.0/24", "198.51.100.0/24", "203.0.113.0/24"))
 
 
 def require(condition, message):
@@ -41,8 +44,16 @@ links = 0
 for document in markdown:
     require(document.resolve().is_relative_to(ROOT), f"Document outside repository: {document}")
     text = document.read_text(encoding="utf-8")
-    require(not re.search(r"/(?:Users|home)/[^\s/]+/|\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}:18081\b", text),
+    require(not re.search(r"/(?:Users|home)/[^\s/]+/", text),
             f"Private host details in {document.relative_to(ROOT)}")
+    for literal in re.findall(r"(?<![\w.])(?:[0-9]{1,3}\.){3}[0-9]{1,3}(?![\w.])", text):
+        try:
+            address = ipaddress.ip_address(literal)
+        except ValueError:
+            continue
+        require(address.is_loopback or address.is_unspecified or
+                any(address in network for network in EXAMPLE_NETWORKS),
+                f"Use a documentation address instead of a host IP in {document.relative_to(ROOT)}")
     require(not re.search(r"(?:\./mvnw|\bmvn\s+(?:verify|package|test|clean)|target/moviesites\.jar)", text),
             f"Obsolete active build command in {document.relative_to(ROOT)}")
     for target in re.findall(r"!?\[[^\]\n]*\]\(([^\s)]+)\)", prose(text)):
@@ -65,43 +76,50 @@ for locale, readme_name in (("", "README.md"), ("ko/", "README.ko.md")):
                 f"Missing guide/index entry: {path}")
 require(not (ROOT / "docs/README.md").exists(), "Use the root README as the document index")
 
-application = (ROOT / "src/main/resources/application.yml").read_text()
+application = (ROOT / "src/main/resources/application.yml").read_text(encoding="utf-8")
 settings = set(re.findall(r"\$\{([A-Z][A-Z0-9_]*):", application))
+runtime_defaults = dict(re.findall(r"\$\{([A-Z][A-Z0-9_]*):((?:[^{}\n]|\{\})*)\}", application))
+require(set(runtime_defaults) == settings, "Cannot resolve every application environment default")
 presentation_keys = ("MOVIESITES_THEME", "MOVIESITES_TOPIC_PROFILE", "MOVIESITES_UI_LOCALE")
-presentation_defaults = {}
-for key in presentation_keys:
-    value = re.search(r"\$\{" + key + r":([^}\n]*)\}", application)
-    require(value is not None, f"Missing presentation setting: {key}")
-    presentation_defaults[key] = value.group(1)
+require(set(presentation_keys) <= settings, "Missing presentation settings")
+presentation_defaults = {key: runtime_defaults[key] for key in presentation_keys}
 for locale in ("", "ko/"):
     configuration = (ROOT / f"docs/{locale}configuration.md").read_text(encoding="utf-8")
     documented = set(re.findall(r"^\| `([A-Z][A-Z0-9_]*)` \|", configuration, re.MULTILINE))
     require(documented == settings, f"Configuration table differs from application settings: {locale or 'en'}")
     defaults = dict(re.findall(r"^\| `([A-Z][A-Z0-9_]*)` \| ([^|\n]+) \|", configuration, re.MULTILINE))
-    for key, value in presentation_defaults.items():
-        require(defaults.get(key, "").strip(" `") == value,
+    for key, value in runtime_defaults.items():
+        documented_default = defaults.get(key, "").strip(" `")
+        require(documented_default == value if value else documented_default in {"blank", "빈 값"},
                 f"Documented default differs from runtime: {locale or 'en'} {key}")
-example = dict(re.findall(r"^([A-Z][A-Z0-9_]*)=(.*)$", (ROOT / ".env.example").read_text(), re.MULTILINE))
+example = dict(re.findall(r"^([A-Z][A-Z0-9_]*)=(.*)$", (ROOT / ".env.example").read_text(encoding="utf-8"), re.MULTILINE))
 example_keys = set(example)
 require(example_keys <= settings and {"MOVIESITES_MEDIA_ROOT", "MOVIESITES_DATA_ROOT", "MOVIESITES_THEME"} <= example_keys,
         "Environment example has missing or unknown settings")
 for key, value in presentation_defaults.items():
     require(example.get(key) == value, f"Public application example default differs from runtime: {key}")
-compose_example = dict(re.findall(r"^([A-Z][A-Z0-9_]*)=(.*)$", (ROOT / "compose.env.example").read_text(), re.MULTILINE))
-compose = (ROOT / "compose.yaml").read_text()
-for key in ("MOVIESITES_UID", "MOVIESITES_GID", "MOVIESITES_WEB_PORT", "MOVIESITES_BIND_ADDRESS", "MOVIESITES_IMAGE"):
-    value = re.search(r"\$\{" + key + r":-([^}\n]*)\}", compose)
-    require(value is not None and compose_example.get(key) == value.group(1),
+compose_example = dict(re.findall(r"^([A-Z][A-Z0-9_]*)=(.*)$", (ROOT / "compose.env.example").read_text(encoding="utf-8"), re.MULTILINE))
+compose = (ROOT / "compose.yaml").read_text(encoding="utf-8")
+compose_defaults = dict(re.findall(r"\$\{([A-Z][A-Z0-9_]*):-([^}\n]*)\}", compose))
+require(set(compose_example) == set(compose_defaults), "Public Compose example has missing or unknown inputs")
+for key, value in compose_defaults.items():
+    require(compose_example.get(key) == value,
             f"Public Compose example default differs from the service: {key}")
-ignored = subprocess.run(["git", "check-ignore", "-q", ".env.example"], cwd=ROOT, check=False)
-require(ignored.returncode == 1, "Public .env.example must not be ignored")
+child_example = dict(re.findall(r"^([A-Z][A-Z0-9_]*)=(.*)$", (ROOT / "examples/child.env.example").read_text(encoding="utf-8"), re.MULTILINE))
+require(set(child_example) <= settings, "Child example has unknown application settings")
+for key, value in {"MOVIESITES_THEME": "child-toy", "MOVIESITES_UI_LOCALE": "ko",
+                   "MOVIESITES_TOPIC_PROFILE": "kids-education"}.items():
+    require(child_example.get(key) == value, f"Child example has an inconsistent selection: {key}")
+for name in (".env.example", "compose.env.example", "examples/child.env.example"):
+    ignored = subprocess.run(["git", "check-ignore", "-q", name], cwd=ROOT, check=False)
+    require(ignored.returncode == 1, f"Public {name} must not be ignored")
 
 for name in ("build.gradle.kts", "settings.gradle.kts", "gradlew", "gradlew.bat",
              "gradle/wrapper/gradle-wrapper.jar", "gradle/wrapper/gradle-wrapper.properties"):
     require((ROOT / name).is_file(), f"Missing standard build file: {name}")
 for name in ("pom.xml", "mvnw", ".mvn"):
     require(not (ROOT / name).exists(), f"Obsolete build entry point: {name}")
-properties = (ROOT / "gradle/wrapper/gradle-wrapper.properties").read_text()
+properties = (ROOT / "gradle/wrapper/gradle-wrapper.properties").read_text(encoding="utf-8")
 require(re.search(r"^distributionSha256Sum=[a-f0-9]{64}$", properties, re.MULTILINE),
         "Gradle distribution must have a pinned SHA-256 checksum")
 require("validateDistributionUrl=true" in properties, "Gradle distribution URL validation must remain enabled")

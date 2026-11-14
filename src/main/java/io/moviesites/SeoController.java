@@ -27,8 +27,7 @@ public class SeoController {
         try(var input=new ClassPathResource("static/themes/"+theme.directory()+"/theme.json").getInputStream()) {
             manifest=new JsonMapper().readTree(input);
         }
-        String color=manifest.path("color").asText();
-        if(!color.matches("#[a-fA-F0-9]{6}"))throw new IllegalArgumentException("Invalid packaged theme color");
+        String color=presentation.themeColor();
         Map<String,Object> data=new LinkedHashMap<>();data.put("@context","https://schema.org");data.put("@type","WebPage");data.put("name",title);data.put("description",description);data.put("inLanguage",locale.id());
         if(!origin.isEmpty())data.put("url",origin+"/about");
         String json=new JsonMapper().writeValueAsString(data).replace("<","\\u003c").replace(">","\\u003e").replace("&","\\u0026");

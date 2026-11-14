@@ -4,7 +4,7 @@
 
 ## 준비와 검사
 
-전체 검사에는 JDK 25·Node.js 24·Python 3.14.x (해당 계열의 3.14.9 이상)을 사용합니다. 로컬 미디어 처리를 시험하려면 FFmpeg/ffprobe를 설치하거나 Docker 이미지를 사용하세요. 전역 Gradle·프론트엔드 개발 서버·데이터베이스는 필요하지 않습니다.
+전체 검사에는 JDK 25·Node.js 24·Python 3.14.x를 사용합니다. 로컬 미디어 처리를 시험하려면 FFmpeg/ffprobe를 설치하거나 Docker 이미지를 사용하세요. 전역 Gradle·프론트엔드 개발 서버·데이터베이스는 필요하지 않습니다.
 
 fork/clone 후 작업 브랜치에서 실행합니다.
 
@@ -14,7 +14,7 @@ bash scripts/check.sh
 python3 -B scripts/check-docs.py
 ```
 
-실행 파일은 `build/libs/moviesites.jar`, Java 결과는 `build/test-results/test/`, HTML 보고서는 `build/reports/tests/test/`입니다. 서버만 검사하려면 `./gradlew test`, JavaScript는 `node --test scripts/cache.test.mjs scripts/playback.test.mjs scripts/player-ui.test.mjs scripts/library.test.mjs scripts/pwa.test.mjs`를 사용합니다. 패키지 검사는 최신 JAR가 필요합니다. [기여 안내](../../CONTRIBUTING.md)를 참고하세요.
+실행 파일은 `build/libs/moviesites.jar`, Java 결과는 `build/test-results/test/`, HTML 보고서는 `build/reports/tests/test/`입니다. 서버만 검사하려면 `./gradlew test`, UI 언어·PWA를 포함한 JavaScript 전체 검사는 `node --test scripts/*.test.mjs`를 사용합니다. 패키지 검사는 최신 JAR가 필요합니다. [기여 안내](../../CONTRIBUTING.md)를 참고하세요.
 
 ## 소스 구조
 
@@ -36,9 +36,9 @@ Java/Gradle 표준 소스 구성을 따릅니다. 현재 작은 Java 코드베�
 
 [시작하기](getting-started.md)의 JAR 또는 명시적 원본·데이터 환경변수와 `./gradlew bootRun`을 사용합니다. 동시 실행본은 포트·데이터 루트를 분리하세요. 테스트는 프로젝트 안의 임시 파일을 정리합니다. 실제 개인 영상은 테스트 fixture로 커밋하지 않습니다.
 
-`scripts/check.sh`는 JS 구문·캐시/대기열/플레이어·테마·콘텐츠 해시·Git/JAR 데이터 분리를 확인합니다. 문서 검사기는 링크·설정 예시·번역 대응·빌드 참조를 확인합니다. 화면 변경은 실제 브라우저 검사도 필요합니다. 미디어 어댑터·단위 테스트는 기기별 코덱·NAS 장애·부하 시험을 대신하지 않습니다.
+`scripts/check.sh`는 JS 구문·캐시/대기열/플레이어·테마·콘텐츠 해시·Git 제외·패키지 자원의 바이트 일치·JAR/데이터 분리를 확인합니다. 문서 검사기는 링크·설정 예시·번역 대응·빌드 참조를 확인합니다. 화면 변경은 실제 브라우저 검사도 필요합니다. 미디어 어댑터·단위 테스트는 기기별 코덱·NAS 장애·부하 시험을 대신하지 않습니다.
 
-버전 관리하는 UI 자원 변경 시 `index.html` 또는 가져오는 모듈의 콘텐츠 해시 쿼리를 갱신하세요. 원본·생성 데이터·빌드 출력·인증정보는 추적하지 않습니다. 정리 작업으로 경로 경계·스트림 검증을 바꾸지 마세요.
+버전 관리하는 UI 자원 변경 시 `index.html`·`index.ko.html` 양쪽 또는 가져오는 모듈의 콘텐츠 해시 쿼리를 갱신하세요. 공통 설정·자원을 바꾸면 언어별 manifest·미리 보기도 함께 맞춥니다. 원본·생성 데이터·빌드 출력·인증정보는 추적하지 않습니다. 정리 작업으로 경로 경계·스트림 검증을 바꾸지 마세요.
 
 실행 중인 별도 검증 인스턴스에는 다음을 사용할 수 있습니다.
 

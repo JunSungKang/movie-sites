@@ -64,9 +64,11 @@ For the portable single-service Compose deployment, read [Docker](docs/docker.md
 
 ## Configuration
 
-Set `MOVIESITES_MEDIA_ROOT` for original media, `MOVIESITES_DATA_ROOT` for generated data, and `MOVIESITES_THEME` for presentation. The default theme is `20s-midnight-stream`; for example, use `MOVIESITES_THEME=20s-midnight-stream` and restart the application to choose a different preset.
+Set `MOVIESITES_MEDIA_ROOT` for original media, `MOVIESITES_DATA_ROOT` for generated data, and `MOVIESITES_THEME` for presentation. The default theme is `20s-midnight-stream`; for example, use `MOVIESITES_THEME=20s-soft-minimal` and restart the application to choose a different preset.
 
 Topic suggestions are disabled by default (`MOVIESITES_TOPIC_PROFILE=none`). Enable `kids-education` for conservative education-topic suggestions, or supply per-video tags regardless of profile. Theme and topic profile are independent.
+
+The optional [child preset](examples/child.env.example) combines `child-toy`, Korean UI and `kids-education`. For Compose, select it with `MOVIESITES_ENV_FILE=examples/child.env.example` as shown in the [Docker guide](docs/docker.md#optional-child-preset). All presets use the same application from `main`; the neutral defaults remain unchanged.
 
 Set `MOVIESITES_PUBLIC_URL=https://media.example.org` to enable canonical and sitemap URLs for `/about`. Only the generic introduction is intended for indexing; the library remains at `/`. See the SEO and cache policy in the configuration guide.
 
@@ -85,7 +87,7 @@ The [configuration reference](docs/configuration.md) is the source for defaults,
 | Understand the design and resource limits | [Architecture](docs/architecture.md) |
 | Diagnose an error | [Troubleshooting](docs/troubleshooting.md) |
 | Review and release changes | [Maintainers](docs/maintainers.md) |
-| Read actual test coverage and limitations | [Verification](docs/verification.md) |
+| Reproduce checks and understand support limits | [Testing and compatibility](docs/verification.md) |
 
 ## Contributing
 

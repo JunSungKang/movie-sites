@@ -15,7 +15,13 @@ node --test scripts/cache.test.mjs scripts/playback.test.mjs scripts/player-ui.t
 python3 -B - <<'PY'
 from pathlib import Path
 import subprocess, zipfile, hashlib, re
-assets=Path('src/main/resources/static')
+resources=Path('src/main/resources')
+assets=resources/'static'
+java=Path('src/main/java/io/moviesites/DirectoryBrowser.java').read_text()
+formats=set(re.findall(r'"([^"]+)"', re.search(r'EXTENSIONS=Set.of\(([^)]+)\)',java)[1]))
+build=Path('build.gradle.kts').read_text()
+packaging_formats=set(re.findall(r'"([^"]+)"', re.search(r'val externalMediaExtensions = setOf\(([^)]+)\)',build)[1]))
+assert formats == packaging_formats, 'Keep video resource exclusions aligned with supported extensions'
 html=(assets/'index.html').read_text()
 assert {x for x in re.findall(r'(?:src|href)="([^"]+)"', html)} == {x for x in re.findall(r'(?:src|href)="([^"]+)"', (assets/'index.ko.html').read_text())}, 'Keep localized assets synchronized'
 app=(assets/'js/app.js').read_text()
@@ -32,15 +38,12 @@ assert jar.is_file(), 'Build the application before checking the package'
 with zipfile.ZipFile(jar) as z:
  names=z.namelist()
  assert 'BOOT-INF/classes/static/index.html' in names
- for name in ['index.ko.html','manifest.ko.webmanifest','manifest.webmanifest','service-worker.js','offline.html','js/pwa.js','css/pwa.css','pwa/offline.css','pwa/icon.svg','pwa/icon-192.png','pwa/icon-512.png','pwa/icon-maskable-512.png','pwa/apple-touch-icon.png']:
-  assert z.read('BOOT-INF/classes/static/'+name)==(assets/name).read_bytes(), 'Missing or stale PWA asset: '+name
- for asset in (assets/'themes').rglob('*'):
-  if asset.is_file():
-   name='BOOT-INF/classes/static/'+asset.relative_to(assets).as_posix()
-   assert name in names, 'Missing packaged theme asset: '+name
-   assert z.read(name)==asset.read_bytes(), 'Stale packaged theme asset: '+name
+ for asset in resources.rglob('*'):
+  if asset.is_file() and asset.suffix.lower().lstrip('.') not in formats:
+   name='BOOT-INF/classes/'+asset.relative_to(resources).as_posix()
+   assert name in names, 'Missing packaged resource: '+name
+   assert z.read(name)==asset.read_bytes(), 'Stale packaged resource: '+name
  assert not any(n.startswith(('movie/','runtime/','BOOT-INF/classes/movie/','BOOT-INF/classes/runtime/')) for n in names)
- assert not any(n.lower().endswith(('.mp4','.mov','.mkv','.webm')) for n in names)
-assert not any(p.exists() for p in [Path('charts'),Path('helm'),Path('k8s')])
+ assert not any(n.rsplit('.',1)[-1].lower() in formats for n in names)
 print('Git exclusions, static assets and JAR separation verified.')
 PY

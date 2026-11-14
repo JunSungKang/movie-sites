@@ -14,6 +14,6 @@ Security fixes are currently maintained on the default branch on a best-effort b
 
 ## Deployment model
 
-The application currently has no login or upload/edit/delete API. Anyone who can reach it can browse and play supported files under the configured media root. Signed playback parameters validate a prepared stream; they are not user authentication.
+The application currently has no login or original-media upload/edit/delete API. Cancelling a random-playback query affects only its in-memory preparation. Anyone who can reach it can browse and play supported files under the configured media root. Signed playback parameters validate a prepared stream; they are not user authentication.
 
 Mount media read-only, keep the writable data root separate, run as a non-root user and apply appropriate access control, TLS and network restrictions in your deployment. The [Docker guide](docs/docker.md) and [architecture](docs/architecture.md) describe filesystem boundaries and resource limits. Treat input media and storage as external dependencies; validate the chosen filesystem, codecs and workload.

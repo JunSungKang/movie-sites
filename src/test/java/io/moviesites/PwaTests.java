@@ -83,4 +83,34 @@ class PwaTests {
         }
     }
 
+    @Test void manifestPaletteFollowsTheActiveThemeAndRenderedEtagsChangeAcrossThemesOrLocales()throws Exception {
+        String previousTag=null;
+        for(String[] selection:new String[][]{{"en","child-toy","#fff9ed"},{"ko","20s-midnight-stream","#101015"},{"ko","child-toy","#fff9ed"},{"en","20s-midnight-stream","#101015"}}) {
+            String locale=selection[0],theme=selection[1],color=selection[2];
+            try(var context=new AnnotationConfigWebApplicationContext()) {
+                context.setServletContext(new MockServletContext());
+                context.getEnvironment().getPropertySources().addFirst(new org.springframework.core.env.MapPropertySource("theme-locale-test",java.util.Map.of("moviesites.ui-locale",locale,"moviesites.theme",theme)));
+                context.register(StaticAssetsTests.TestConfig.class);context.refresh();
+                var mvc=MockMvcBuilders.webAppContextSetup(context).addFilters(context.getBean(OncePerRequestFilter.class)).build();
+                var request=get("/manifest.webmanifest");
+                if(previousTag!=null)request.header("If-None-Match",previousTag);
+                var response=mvc.perform(request).andExpect(status().isOk())
+                    .andExpect(header().string("Cache-Control","public, no-cache"))
+                    .andExpect(header().string("Content-Language",locale)).andReturn().getResponse();
+                byte[] bytes=response.getContentAsByteArray();
+                var manifest=new JsonMapper().readTree(bytes);
+                assertEquals(locale,manifest.path("lang").asText());
+                assertEquals(color,manifest.path("background_color").asText(),locale+" / "+theme);
+                assertEquals(color,manifest.path("theme_color").asText(),locale+" / "+theme);
+                String tag=response.getHeader("ETag");assertEquals("W/"+ByteCache.tag(bytes),tag);
+                if(previousTag!=null)assertNotEquals(previousTag,tag);
+                mvc.perform(get("/manifest.webmanifest").header("If-None-Match",tag))
+                    .andExpect(status().isNotModified()).andExpect(content().string(""));
+                mvc.perform(get("/manifest.webmanifest").param("v",ByteCache.tag(bytes).substring(1,17)))
+                    .andExpect(status().isOk()).andExpect(header().string("Cache-Control","public, no-cache"));
+                previousTag=tag;
+            }
+        }
+    }
+
 }

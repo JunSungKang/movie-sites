@@ -55,6 +55,19 @@ The canonical example has one service, `moviesites`, and publishes `127.0.0.1:80
 
 The example uses init, a read-only container root, bounded CPU/memory/PIDs, local logging and a graceful stop period. These are configurable deployment limits, not a workload-capacity guarantee. JVM heap is only part of memory use; FFmpeg and native allocations require headroom.
 
+## Optional child preset
+
+The [child environment example](../examples/child.env.example) selects the `child-toy` theme, Korean UI and optional `kids-education` filename suggestions. It uses the same image built from `main`; a separate source branch or application copy is unnecessary. The default example keeps the neutral theme, English UI and no generated topic suggestions.
+
+After preparing the image, directories and private Compose settings above, select the preset for this Compose invocation:
+
+```bash
+MOVIESITES_ENV_FILE=examples/child.env.example \
+docker compose --env-file .env.compose -f compose.yaml up -d --no-build moviesites
+```
+
+Alternatively, set `MOVIESITES_ENV_FILE=examples/child.env.example` in the private `.env.compose`. With `docker run`, replace `--env-file .env.example` with `--env-file examples/child.env.example`. Copy the preset to a private environment file before adding deployment-specific values. Existing mounts, user, port and access controls still come from the deployment configuration. The JAR does not load these files automatically; export the desired settings with host media/data paths instead.
+
 ## Testing and upgrades
 
 Run the [reproducible checks](verification.md) against synthetic media, a separate data directory and an unused loopback port. Do not point an isolated test at production `/data`. Verify non-ASCII names, representative codecs, byte ranges, permissions, data locking and restart behavior on the target host. A healthy HTTP endpoint is not a full NAS audit.

@@ -22,7 +22,7 @@ COLLECTION = unicodedata.normalize('NFD', '한글 모음')
 NESTED = COLLECTION + '/' + unicodedata.normalize('NFD', '하위 폴더')
 DIRECT = NESTED + '/' + unicodedata.normalize('NFD', '첫 이야기.mp4')
 CONVERTED = COLLECTION + '/' + unicodedata.normalize('NFD', '변환 영상.avi')
-FOLDER_LABELS = {'중편': '중편 (약11분)'}
+FOLDER_LABELS = {COLLECTION: 'Fixture collection'}
 
 def command(args, *, check=True, timeout=90, env=None):
     result = subprocess.run(args, text=True, capture_output=True, timeout=timeout, env=env)
@@ -109,6 +109,10 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--image', required=True)
     parser.add_argument('--port', type=int, default=8081)
+    themes = json.loads((ROOT / 'src/main/resources/static/themes/catalog.json').read_text())
+    parser.add_argument('--theme', choices=[theme['id'] for theme in themes['themes']])
+    parser.add_argument('--locale', choices=['en', 'ko'])
+    parser.add_argument('--topic-profile', choices=['none', 'kids-education'])
     parser.add_argument('--keep', action='store_true', help='Keep only this QA instance for browser inspection; see qa-state.json for cleanup.')
     args = parser.parse_args()
     if not 1024 <= args.port <= 65535: parser.error('--port must be between 1024 and 65535')
@@ -128,7 +132,10 @@ def main():
     env = {k: v for k, v in os.environ.items() if not k.startswith(('MOVIESITES_', 'JAVA_BUILD_IMAGE', 'JAVA_RUNTIME_IMAGE', 'COMPOSE_'))}
     project = 'moviesites-qa-' + uuid.uuid4().hex[:8]
     appenv = work / 'application.env'
-    appenv.write_text('MOVIESITES_THEME=child-toy\nMOVIESITES_MIN_FREE_BYTES=0\nMOVIESITES_PAGE_SIZE=2\nMOVIESITES_PUBLIC_URL=http://127.0.0.1:' + str(args.port) + '\nMOVIESITES_FOLDER_LABELS=' + json.dumps(FOLDER_LABELS, ensure_ascii=False) + '\n')
+    appenv.write_text('MOVIESITES_MIN_FREE_BYTES=0\nMOVIESITES_PAGE_SIZE=2\nMOVIESITES_PUBLIC_URL=http://127.0.0.1:' + str(args.port) + '\nMOVIESITES_FOLDER_LABELS=' + json.dumps(FOLDER_LABELS, ensure_ascii=False) + '\n')
+    selected = {key: value for key, value in {'MOVIESITES_THEME': args.theme, 'MOVIESITES_UI_LOCALE': args.locale, 'MOVIESITES_TOPIC_PROFILE': args.topic_profile}.items() if value is not None}
+    with appenv.open('a') as output:
+        output.write(''.join(key + '=' + value + '\n' for key, value in selected.items()))
     composeenv = work / 'compose.env'
     values = {'MOVIESITES_IMAGE': image, 'MOVIESITES_UID': str(os.getuid()), 'MOVIESITES_GID': str(os.getgid()), 'MOVIESITES_BIND_ADDRESS': '127.0.0.1', 'MOVIESITES_WEB_PORT': str(args.port), 'MOVIESITES_MEDIA_PATH': str(media), 'MOVIESITES_DATA_PATH': str(data), 'MOVIESITES_ENV_FILE': str(appenv)}
     composeenv.write_text(''.join(k + '=' + v + '\n' for k, v in values.items()))
@@ -169,7 +176,10 @@ def main():
         encoding = docker('exec', container, 'java', '-XshowSettings:properties', '-version')
         properties = encoding.stdout + encoding.stderr
         assert 'native.encoding = UTF-8' in properties and 'sun.jnu.encoding = UTF-8' in properties
-        assert api(base, '/api/config')[0]['folderLabels'] == FOLDER_LABELS
+        config = api(base, '/api/config')[0]
+        assert config['folderLabels'] == FOLDER_LABELS
+        assert config['theme']['id'] == (args.theme or themes['defaultTheme'])
+        assert config['locale'] == (args.locale or 'en')
         assert request(base, '/')[0] == 200 and request(base, '/about')[0] == 200
         assert listing(base)['entries'][0]['path'] == COLLECTION
         assert {x['path'] for x in listing(base, COLLECTION)['entries']} == {NESTED, CONVERTED}

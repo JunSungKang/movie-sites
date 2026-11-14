@@ -1,8 +1,8 @@
 import {t, setLocale, localeTag} from './i18n.js';
-import {applyTheme} from '../themes/runtime.js?v=1d1dff298aad683d';
-import {PlaybackQueue,PlaybackSession,PlaybackFullscreen,MAX_QUEUE} from './playback.js?v=336b3988450064da';
+import {applyTheme} from '../themes/runtime.js?v=079baafff3084528';
+import {PlaybackQueue,PlaybackSession,PlaybackFullscreen,MAX_QUEUE} from './playback.js?v=8fbc1c747aa92f69';
 import {DirectoryCache,PageHistory} from './cache.js?v=cb07f2467980d05a';
-import {durationGroups,topicLabels,waitForPreparation} from './library.js?v=bb964d8d670b26d4';
+import {durationGroups,topicLabels,waitForPreparation} from './library.js?v=06f5e577f9773a44';
 
 const $=id=>document.getElementById(id);
 const cache=new DirectoryCache();
@@ -125,7 +125,7 @@ function folderLabel(name){return categoryLabels.get(name)||name;}
 function cacheScope(){return `${state.config?.rootId??''}\0${state.config?.instanceId??''}\0`;}
 function cacheKey(path,cursor){return `${cacheScope()}${path}\0${cursor??''}`;}
 function invalidateCurrent(){cache.invalidatePath(`${cacheScope()}${state.path}\0`);}
-async function api(url,options={}){const response=await fetch(url,{cache:'no-cache',...options});if(!response.ok){let data;try{data=await response.json();}catch{data={message:t('요청을 처리하지 못했습니다.')};}const error=new Error(data.message);error.code=data.code;error.status=response.status;throw error;}const data=await response.json();const age=response.headers?.get('Cache-Control')?.match(/(?:^|,)\s*max-age=(\d+)/);if(url.startsWith('/api/browse?')&&age)data.cacheTtlMs=Number(age[1])*1000;return data;}
+async function api(url,options={}){const response=await fetch(url,{cache:'no-cache',...options});if(!response.ok){let data;try{data=await response.json();}catch{data={message:t('요청을 처리하지 못했습니다.')};}const error=new Error(data.message);error.status=response.status;throw error;}const data=await response.json();const age=response.headers?.get('Cache-Control')?.match(/(?:^|,)\s*max-age=(\d+)/);if(url.startsWith('/api/browse?')&&age)data.cacheTtlMs=Number(age[1])*1000;return data;}
 function toast(message){$('toast').textContent=message;$('toast').hidden=false;clearTimeout(toast.timer);toast.timer=setTimeout(()=>$('toast').hidden=true,4500);}
 function notice(message,retry){$('notice').replaceChildren(node('div','',message));if(retry)$('notice').append(button(t('다시 불러오기'),()=>loadFolder(state.path,{force:true})));$('notice').hidden=false;}
 function renderLocation(){
@@ -161,6 +161,7 @@ async function listing(path,cursor,force){
 }
 function navigate(path){if(path!==state.path){const url=new URL(location.href);if(path)url.searchParams.set('path',path);else url.searchParams.delete('path');history.pushState({path},'',url);}window.scrollTo({top:0,behavior:'auto'});loadFolder(path);}
 async function loadFolder(path,{force=false,keepPage=false}={}){
+  if(!themeCopy)return;
   if(randomRequest||randomRetry)closePlayer();
   if(path!==state.path||force){randomPlaylist=null;$('random-playlist').hidden=true;}
   if(force){randomRefreshScopes.add(path);while(randomRefreshScopes.size>20)randomRefreshScopes.delete(randomRefreshScopes.values().next().value);}
@@ -172,7 +173,6 @@ async function loadFolder(path,{force=false,keepPage=false}={}){
   $('loading-text').textContent=themeCopy.loadingText||t('영상 목록을 불러오고 있습니다.');
   renderLocation();
   try{
-    if(!state.config){state.config=await api('/api/config');cache.ttlMs=state.config.cacheTtlSeconds*1000;}
     const result=await listing(path,state.history.current,force);if(generation!==state.generation)return;
     state.listing=result.data;renderListing(result.data,generation);
     $('listing-status').textContent=result.cached?t('최근에 본 목록입니다. 새로고침하면 변경된 내용을 확인할 수 있습니다.'):t('짧은 영상부터 보여드려요. 길이별로 나누어 편하게 골라 보세요.');
@@ -194,7 +194,7 @@ function renderListing(data,generation){
     const copy=node('span','folder-copy'),bottom=node('span','folder-bottom');bottom.append(node('span','',themeCopy.openLabel),node('span','folder-arrow','↗'));copy.append(node('span','folder-name',label),bottom);face.append(portal,copy);card.append(tab,face);$('folder-list').append(card);
   }
   $('folder-section').hidden=!folders.length;$('video-section').hidden=!videos.length;$('queue-add-page').hidden=!videos.length;
-  observer=new IntersectionObserver(items=>{for(const item of items){item.target._visible=item.isIntersecting;if(item.isIntersecting&&!item.target._queued){item.target._queued=true;state.queue.push({entry:item.target._entry,row:item.target,generation});pump();}}},{rootMargin:'200px'});
+  observer=new IntersectionObserver(items=>{for(const item of items){if(item.isIntersecting&&!item.target._queued){item.target._queued=true;state.queue.push({entry:item.target._entry,row:item.target,generation});pump();}}},{rootMargin:'200px'});
   for(const group of durationGroups(videos)){
     const heading=node('h3','duration-divider',group.label);heading.dataset.durationGroup=group.id;$('video-list').append(heading);
     for(const entry of group.entries){const row=renderVideo(entry);$('video-list').append(row);observer.observe(row);}
@@ -202,7 +202,7 @@ function renderListing(data,generation){
   renderQueue();
   $('empty-state').hidden=data.entries.length>0||Boolean(data.nextCursor);
   $('first-button').hidden=state.history.offset===0;$('previous-button').disabled=!state.history.canPrevious;$('next-button').disabled=!data.nextCursor;$('page-label').textContent=t`${state.history.pageNumber}번째 목록`;$('pagination').hidden=state.history.pageNumber===1&&!data.nextCursor;
-  if(data.warnings)notice(t('일부 항목이나 주제 정보를 읽지 못했습니다. 연결된 링크는 표시하지 않으며, 잘못된 주제 파일은 추천 태그로 대신합니다.'),false);
+  if(data.warnings)notice(t('일부 항목이나 주제 정보를 읽지 못했습니다. 연결된 링크는 표시하지 않습니다. 잘못된 주제 파일은 주제 추천이 켜져 있을 때만 추천 태그로 대신합니다.'),false);
   if(!data.entries.length&&data.nextCursor)notice(t('이 구간에는 표시할 영상이 없습니다. 다음 목록에서 계속 확인할 수 있습니다.'),false);
 }
 function renderVideo(entry){
@@ -216,7 +216,7 @@ function renderVideo(entry){
   for(const label of labels.tags)tags.append(node('span','topic-tag',label));
   if(!labels.tags.length)tags.append(node('span','topic-empty',labels.empty));
   if(typeof entry.duration==='number'&&entry.duration>0&&Number.isFinite(entry.duration)){time.textContent=duration(entry.duration);time.hidden=false;}
-  const meta=node('div','entry-meta');meta.append(node('span','',date(entry.modified)),node('span','',size(entry.size)));copy.append(category,heading,tags,node('p','entry-file',entry.name),meta);const add=button(t('대기열에 담기'),()=>enqueue([entry]),'queue-button enqueue-button');add.dataset.path=entry.path;add.setAttribute('aria-label',title(entry.name)+t(' 대기열에 담기'));copy.append(add);row.append(thumb,copy);
+  const meta=node('div','entry-meta');meta.append(node('span','',date(entry.modified)),node('span','',size(entry.size)));copy.append(category,heading,tags,meta);const add=button(t('대기열에 담기'),()=>enqueue([entry]),'queue-button enqueue-button');add.dataset.path=entry.path;add.setAttribute('aria-label',title(entry.name)+t(' 대기열에 담기'));copy.append(add);row.append(thumb,copy);
   row._thumb=thumb;row._time=time;row._meta=meta;return row;
 }
 function pump(){while(state.workers<2&&state.queue.length){const item=state.queue.shift();if(item.generation!==state.generation||!item.row.isConnected)continue;state.workers++;enrich(item).catch(()=>{}).finally(()=>{state.workers--;pump();});}}
@@ -243,7 +243,7 @@ function resetVideo() {
 }
 async function showPlayer(entry,token) {
   $('retry-player').textContent=t('다시 확인');
-  resetVideo();state.player={entry,token,version:null,controller:new AbortController(),loaded:false};
+  resetVideo();state.player={entry,token,controller:new AbortController(),loaded:false};
   $('player-title').textContent=title(entry.name);$('player-folder').textContent=entry.path.split('/').slice(0,-1).join(' / ');$('player-file').textContent=entry.name+(entry.size?' · '+size(entry.size):'');$('video-player').hidden=true;$('player-preparing').hidden=false;$('player-progress').hidden=false;$('retry-player').hidden=true;$('player-resume').hidden=true;$('player-state').textContent=t('영상을 확인하고 있습니다.');
   $('player-position').textContent=sessionLabel?`${playback.index+1} / ${playback.items.length} · ${sessionLabel}`:playback.items.length>1?t`${playback.index+1} / ${playback.items.length} · 순서대로 재생`:t('영상 재생');
   $('player-previous').disabled=!playback.hasPrevious;$('player-next').disabled=!playback.hasNext;
@@ -271,7 +271,7 @@ async function pollPlayer(token,retry) {
     if(!playback.current(token)||state.player!==player)return;
     if(info.state==='ready') {
       if(selectedVersions.has(player.entry.path)&&selectedVersions.get(player.entry.path)!==info.version){playerFailure(t('영상을 고른 뒤 파일이 바뀌었어요. 다음 영상을 선택하거나 닫고 목록을 다시 골라 주세요.'));$('retry-player').hidden=true;return;}
-      player.version=info.version;player.loaded=true;
+      player.loaded=true;
       $('video-player').src='/api/media/stream?'+new URLSearchParams({path:player.entry.path,v:info.version,token:info.streamToken});$('video-player').hidden=false;$('player-preparing').hidden=true;
       await resumePlayer(token);return;
     }
