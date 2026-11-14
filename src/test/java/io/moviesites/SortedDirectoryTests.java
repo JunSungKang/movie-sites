@@ -50,6 +50,7 @@ class SortedDirectoryTests {
         }
     }
     @Test void refreshRevalidatesFileVersionsAndTopicOverridesWithoutWatchingOrDatabase() throws Exception {
+        topics = new VideoTopics(storage, "kids-education", new UiLocale("ko"));
         video("야채.mp4");AtomicInteger calls=new AtomicInteger();
         try(var browser=new ClosingBrowser(new SortedDirectoryBrowser(settings,storage,topics,path->{calls.incrementAndGet();return (double)Files.size(settings.mediaRoot().resolve(path));},null,2))){
             var first=all(browser.value,"").getFirst();assertEquals(5.0,first.duration());assertEquals("filename",first.tagSource());

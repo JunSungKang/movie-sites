@@ -14,7 +14,7 @@ bash scripts/check.sh
 python3 -B scripts/check-docs.py
 ```
 
-`build/libs/moviesites.jar` is the executable artifact. Java test results are under `build/test-results/test/` and the HTML report under `build/reports/tests/test/`. `./gradlew test` runs server tests; `node --test scripts/cache.test.mjs scripts/playback.test.mjs scripts/player-ui.test.mjs scripts/library.test.mjs` runs the JavaScript tests. Package checks require a freshly built JAR. See [CONTRIBUTING](../CONTRIBUTING.md) for the PR workflow.
+`build/libs/moviesites.jar` is the executable artifact. Java test results are under `build/test-results/test/` and the HTML report under `build/reports/tests/test/`. `./gradlew test` runs server tests; `node --test scripts/cache.test.mjs scripts/playback.test.mjs scripts/player-ui.test.mjs scripts/library.test.mjs scripts/pwa.test.mjs` runs the JavaScript tests. Package checks require a freshly built JAR. See [CONTRIBUTING](../CONTRIBUTING.md) for the PR workflow.
 
 ## Source layout
 
@@ -50,6 +50,14 @@ Gradle uses its normal user cache unless `GRADLE_USER_HOME` is set. For workspac
 
 ## Themes and documentation
 
-Use [the theme guide](themes.md#adding-a-theme) for preset contributions. English is the documentation source, `README.ko.md` is the root Korean translation, and `docs/ko/` mirrors guide filenames. Keep both languages updated in the same PR. Actual UI copy is currently Korean and is separate from documentation translation. Historical SDD metadata is explained in [maintainer notes](maintainers.md).
+Use [the theme guide](themes.md#adding-a-theme) for preset contributions. English is the documentation source, `README.ko.md` is the root Korean translation, and `docs/ko/` mirrors guide filenames. Keep both languages updated in the same PR. The UI supports `MOVIESITES_UI_LOCALE=en` (default) and `ko`. Packaged UI keys live in `static/js/i18n.js`; media names and operator tags remain literal. Use [maintainer notes](maintainers.md) for release responsibilities; task plans and private deployment evidence stay outside published documentation.
 
 Use Python 3.14 for operational/verification scripts and Node 24 for JavaScript checks. Neither Python nor Node is added to the application runtime image.
+
+## PWA changes
+
+PWA behavior is in `static/js/pwa.js`, `static/service-worker.js` and `static/manifest.webmanifest`; `static/pwa/` contains brand icons and offline-only assets. These paths are relative to `src/main/resources/`. `scripts/pwa.test.mjs` checks real installation event wiring, standalone/insecure behavior and service-worker network/privacy boundaries. `PwaTests` checks HTTP types, cache revalidation, icon sizes, opacity and worker scope.
+
+When changing an offline asset, update the worker cache suffix to the first16 SHA-256 hex characters of the concatenated bytes of `offline.html`, `pwa/offline.css` and `pwa/icon-192.png`, in that order. Do not add media, catalog responses or tokens to its cache. The package check verifies that cache revision and the packaged PWA bytes. Keep icon graphics within the maskable safe zone; `pwa/icon.svg` is the editable vector source.
+
+Inspect a localhost or trusted-HTTPS test instance in a real browser: check manifest/install eligibility, install or follow platform guidance, launch standalone, verify playback and Range seeking, then disconnect only the test instance and check the generic fallback/reconnection. Test at a narrow viewport as well. iOS installation and codec support still require a real supported device; do not label desktop emulation as a native iPhone test.

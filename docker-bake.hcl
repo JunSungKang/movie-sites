@@ -1,21 +1,21 @@
-variable "JAVA_BUILD_IMAGE" { default = "movie-kids-java-build:25-ubuntu26.04" }
-variable "JAVA_RUNTIME_IMAGE" { default = "movie-kids-java-runtime:25-ubuntu26.04" }
-variable "MOVIESITES_IMAGE" { default = "movie-kids:ubuntu26.04" }
-group "default" { targets = ["movie-kids"] }
+variable "JAVA_BUILD_IMAGE" { default = "moviesites-java-build:25-ubuntu26.04" }
+variable "JAVA_RUNTIME_IMAGE" { default = "moviesites-java-runtime:25-ubuntu26.04" }
+variable "MOVIESITES_IMAGE" { default = "moviesites:ubuntu26.04" }
+group "default" { targets = ["moviesites"] }
 group "fallback-bases" { targets = ["java-build", "java-runtime"] }
 target "java-build" {
   context = "."
   dockerfile = "docker/java-base.Dockerfile"
   target = "java-build"
-  tags = ["movie-kids-java-build:25-ubuntu26.04"]
+  tags = ["moviesites-java-build:25-ubuntu26.04"]
 }
 target "java-runtime" {
   context = "."
   dockerfile = "docker/java-base.Dockerfile"
   target = "java-runtime"
-  tags = ["movie-kids-java-runtime:25-ubuntu26.04"]
+  tags = ["moviesites-java-runtime:25-ubuntu26.04"]
 }
-target "movie-kids" {
+target "moviesites" {
   context = "."
   dockerfile = "Dockerfile"
   target = "runtime"

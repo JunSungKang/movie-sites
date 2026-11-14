@@ -21,7 +21,9 @@ spring:
     timeout-per-shutdown-phase: 15s
 moviesites:
   public-url: ${MOVIESITES_PUBLIC_URL:}
-  theme: ${MOVIESITES_THEME:child-toy}
+  theme: ${MOVIESITES_THEME:20s-midnight-stream}
+  topic-profile: ${MOVIESITES_TOPIC_PROFILE:none}
+  ui-locale: ${MOVIESITES_UI_LOCALE:en}
   folder-labels: '${MOVIESITES_FOLDER_LABELS:{}}'
   media-root: ${MOVIESITES_MEDIA_ROOT:./movie}
   data-root: ${MOVIESITES_DATA_ROOT:./runtime}

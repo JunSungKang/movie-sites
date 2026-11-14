@@ -21,5 +21,23 @@
     "loadingText": "이야기를 불러오는 중이에요."
   },
   "hero": "assets/hero.svg",
-  "color": "#fff9ed"
+  "color": "#fff9ed",
+  "copyEn": {
+    "rootTitle": "Who shall we watch today?",
+    "rootDescription": "Choose a favorite friend and discover a story.",
+    "nestedDescription": "Pick a story you would like to watch.",
+    "rootCaption": "STORY TIME TOGETHER",
+    "headerLabel": "Our video playground",
+    "rootFolders": "Meet your friends",
+    "nestedFolders": "More stories to explore",
+    "videosHeading": "Choose a story",
+    "folderTab": "Play together",
+    "openLabel": "Watch",
+    "footer": "A little time to smile together",
+    "collectionSuffix": " stories",
+    "rootCollection": "Our stories",
+    "emptyTitle": "No stories here yet.",
+    "emptyDescription": "Add a video, then refresh to find a new story.",
+    "loadingText": "Getting the stories ready..."
+  }
 }

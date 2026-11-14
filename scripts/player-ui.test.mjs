@@ -1,3 +1,5 @@
+import {t,setLocale,localeTag} from '../src/main/resources/static/js/i18n.js';
+setLocale('ko');
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
@@ -8,7 +10,8 @@ import {durationGroups,topicLabels,waitForPreparation} from '../src/main/resourc
 const entry=name=>({path:`folder/${name}.mp4`,name:`${name}.mp4`,size:12});
 const flush=async()=>{for(let i=0;i<15;i++)await Promise.resolve();};
 // Run the actual app event wiring with a small DOM/media adapter. No duplicated player logic.
-async function app({inspect,random,initialPath='folder',play=()=>Promise.resolve(),entries=[],denyFullscreen=false}={}) {
+async function app({inspect,random,initialPath='folder',locale='ko',play=()=>Promise.resolve(),entries=[],denyFullscreen=false}={}) {
+ setLocale(locale);
  let document;
  const fullscreenCalls={enter:0,exit:0};
  class Element extends EventTarget {
@@ -39,8 +42,8 @@ async function app({inspect,random,initialPath='folder',play=()=>Promise.resolve
  const ready={state:'ready',version:'video-v1',streamToken:'original.signature'};
  const context=vm.createContext({document,window,location:{href:'http://test/'+(initialPath?'?path='+encodeURIComponent(initialPath):''),reload(){}},history:{pushState(){}},scrollX:0,scrollY:321,URL,URLSearchParams,AbortController,Event,queueMicrotask,
   setTimeout:(fn,ms)=>{if(ms<2000)queueMicrotask(fn);return 1;},clearTimeout:()=>{},IntersectionObserver:class{observe(){}disconnect(){}},PlaybackQueue,PlaybackSession,PlaybackFullscreen,MAX_QUEUE,DirectoryCache,PageHistory,
-  durationGroups,topicLabels,waitForPreparation,applyTheme:async()=>({rootTitle:'Videos',rootCollection:'Collection'}),
-  fetch:async(url,options)=>url==='/api/config'?response({rootId:'r',cacheTtlSeconds:120,folderLabels:{},sourceUrl:'#'}):url.startsWith('/api/browse')?response({entries,state:'ready'}):url.startsWith('/api/random-playback')&&random?random(url,options,response):inspect?inspect(url,options,response,ready):response(ready)});
+  t,setLocale,localeTag,durationGroups,topicLabels,waitForPreparation,applyTheme:async()=>({rootTitle:'Videos',rootCollection:'Collection'}),
+  fetch:async(url,options)=>url==='/api/config'?response({locale,rootId:'r',cacheTtlSeconds:120,folderLabels:{},sourceUrl:'#'}):url.startsWith('/api/browse')?response({entries,state:'ready'}):url.startsWith('/api/random-playback')&&random?random(url,options,response):inspect?inspect(url,options,response,ready):response(ready)});
  const source=readFileSync('src/main/resources/static/js/app.js','utf8').replace(/^import .*;$/gm,'');
  const exposed=await vm.runInContext(`(async()=>{${source}\nreturn {startPlayback,startRandom,loadFolder,closePlayer,playback,state,playbackQueue,enrich,renderVideo};})()`,context);
  return {...exposed,ids,context,document,fullscreenCalls,click:id=>ids.get(id).dispatchEvent(new Event('click')),end:()=>{ids.get('video-player').ended=true;ids.get('video-player').dispatchEvent(new Event('ended'));}};
@@ -193,4 +196,14 @@ test('leaving OS fullscreen during random preparation is respected when its list
  a.click('random-10');assert.equal(a.fullscreenCalls.enter,1);
  a.document.fullscreenElement=null;a.document.dispatchEvent(new Event('fullscreenchange'));release();await flush();
  assert.equal(a.playback.active,true);assert.equal(a.ids.get('video-player').paused,false);assert.equal(a.ids.get('player-dialog').dataset.expanded,'true');assert.equal(a.fullscreenCalls.enter,1);a.closePlayer();
+});
+
+test('English startup drives actual list, queue and random controls without translating video names', async()=>{
+ const b=await app({locale:'en',entries:[{...entry('한글 영상'),kind:'video',duration:200,tags:['직접 태그'],tagSource:'metadata'}]});
+ assert.equal(b.ids.get('video-list').children[0].textContent,'Under 5 minutes');
+ assert.match(b.ids.get('random-scope').textContent,/Choose randomly/);
+ b.playbackQueue.add([entry('한글 영상')]);b.startPlayback(b.playbackQueue.items);await flush();
+ assert.equal(b.ids.get('player-title').textContent,'한글 영상');
+ assert.equal(b.ids.get('player-position').textContent,'Playing video');
+ b.closePlayer();
 });

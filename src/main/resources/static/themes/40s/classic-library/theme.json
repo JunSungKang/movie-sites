@@ -21,5 +21,23 @@
     "loadingText": "영상 목록을 불러오고 있습니다."
   },
   "hero": "assets/hero.svg",
-  "color": "#f5f1e8"
+  "color": "#f5f1e8",
+  "copyEn": {
+    "rootTitle": "A library of moving pictures",
+    "rootDescription": "Browse the shelves and return to a recording worth keeping.",
+    "nestedDescription": "Choose a video from this collection.",
+    "rootCaption": "COLLECTIONS WORTH RETURNING TO",
+    "headerLabel": "Your video library",
+    "rootFolders": "Collections",
+    "nestedFolders": "Subfolders",
+    "videosHeading": "Videos",
+    "folderTab": "Collection",
+    "openLabel": "Open",
+    "footer": "Keep the recordings. Revisit the moments.",
+    "collectionSuffix": " collection",
+    "rootCollection": "Video library",
+    "emptyTitle": "No videos here yet.",
+    "emptyDescription": "Add videos to storage, then refresh this folder.",
+    "loadingText": "Loading videos..."
+  }
 }

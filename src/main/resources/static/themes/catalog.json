@@ -1,139 +1,177 @@
 {
   "version": 1,
-  "defaultTheme": "child-toy",
+  "defaultTheme": "20s-midnight-stream",
   "themes": [
     {
       "id": "child-toy",
       "group": "child",
       "name": "토이 플레이그라운드",
       "description": "기존의 장난감 폴더 데크 · 둥근 카드와 파스텔 친구들",
-      "directory": "child-toy"
+      "directory": "child-toy",
+      "nameEn": "Toy Playground",
+      "descriptionEn": "Rounded toy-deck cards and friendly pastel shapes"
     },
     {
       "id": "10s-neon-lab",
       "group": "10s",
       "name": "네온 랩",
       "description": "네온 사이드 레일 · 비스듬한 패널과 유리 카드",
-      "directory": "10s/neon-lab"
+      "directory": "10s/neon-lab",
+      "nameEn": "Neon Lab",
+      "descriptionEn": "Neon side rail, angled panels and glass-like cards"
     },
     {
       "id": "10s-pop-sticker",
       "group": "10s",
       "name": "팝 스티커",
       "description": "두꺼운 테두리 · 기울어진 스티커와 큼직한 타일",
-      "directory": "10s/pop-sticker"
+      "directory": "10s/pop-sticker",
+      "nameEn": "Pop Sticker",
+      "descriptionEn": "Bold outlines, tilted stickers and oversized tiles"
     },
     {
       "id": "10s-pixel-arcade",
       "group": "10s",
       "name": "픽셀 아케이드",
       "description": "픽셀 프레임 · 정사각 아케이드 선반",
-      "directory": "10s/pixel-arcade"
+      "directory": "10s/pixel-arcade",
+      "nameEn": "Pixel Arcade",
+      "descriptionEn": "Square pixel frames and an arcade-style collection grid"
     },
     {
       "id": "20s-midnight-stream",
       "group": "20s",
       "name": "미드나이트 스트림",
       "description": "시네마틱 히어로 · 이미지 위에 겹치는 제목",
-      "directory": "20s/midnight-stream"
+      "directory": "20s/midnight-stream",
+      "nameEn": "Midnight Stream",
+      "descriptionEn": "Cinematic wide images with layered titles"
     },
     {
       "id": "20s-soft-minimal",
       "group": "20s",
       "name": "소프트 미니멀",
       "description": "가벼운 여백 · 가로로 이어지는 미디어 리스트",
-      "directory": "20s/soft-minimal"
+      "directory": "20s/soft-minimal",
+      "nameEn": "Soft Minimal",
+      "descriptionEn": "Open spacing and quiet horizontal media rows"
     },
     {
       "id": "20s-color-block",
       "group": "20s",
       "name": "컬러 블록",
       "description": "비대칭 벤토 · 선명한 면과 커다란 숫자",
-      "directory": "20s/color-block"
+      "directory": "20s/color-block",
+      "nameEn": "Color Block",
+      "descriptionEn": "Asymmetric bento panels, vivid shapes and large numbers"
     },
     {
       "id": "30s-studio-grid",
       "group": "30s",
       "name": "스튜디오 그리드",
       "description": "정돈된 3열 · 작업실 같은 얇은 그리드",
-      "directory": "30s/studio-grid"
+      "directory": "30s/studio-grid",
+      "nameEn": "Studio Grid",
+      "descriptionEn": "Aligned three-column rows with fine studio-style lines"
     },
     {
       "id": "30s-calm-gallery",
       "group": "30s",
       "name": "캄 갤러리",
       "description": "세이지 그린 · 넓은 2열 사진 갤러리",
-      "directory": "30s/calm-gallery"
+      "directory": "30s/calm-gallery",
+      "nameEn": "Calm Gallery",
+      "descriptionEn": "Sage tones and a spacious two-column picture gallery"
     },
     {
       "id": "30s-home-cinema",
       "group": "30s",
       "name": "홈 시네마",
       "description": "버건디 극장 · 와이드 스크린과 황동 라인",
-      "directory": "30s/home-cinema"
+      "directory": "30s/home-cinema",
+      "nameEn": "Home Cinema",
+      "descriptionEn": "Wide cinema cards, burgundy surfaces and brass lines"
     },
     {
       "id": "40s-classic-library",
       "group": "40s",
       "name": "클래식 라이브러리",
       "description": "책장형 내비게이션 · 잉크와 아이보리",
-      "directory": "40s/classic-library"
+      "directory": "40s/classic-library",
+      "nameEn": "Classic Library",
+      "descriptionEn": "Library-style navigation in ink and ivory tones"
     },
     {
       "id": "40s-forest-view",
       "group": "40s",
       "name": "포레스트 뷰",
       "description": "숲빛 헤더 · 한 줄씩 펼쳐지는 컬렉션",
-      "directory": "40s/forest-view"
+      "directory": "40s/forest-view",
+      "nameEn": "Forest View",
+      "descriptionEn": "Forest-toned header and full-width collection rows"
     },
     {
       "id": "40s-slate-dashboard",
       "group": "40s",
       "name": "슬레이트 대시보드",
       "description": "모듈형 패널 · 촘촘하고 명확한 4열",
-      "directory": "40s/slate-dashboard"
+      "directory": "40s/slate-dashboard",
+      "nameEn": "Slate Dashboard",
+      "descriptionEn": "Compact modular panels and a clearly aligned grid"
     },
     {
       "id": "50s-paper-light",
       "group": "50s",
       "name": "페이퍼 라이트",
       "description": "큰 활자 · 종이 위의 편안한 2열",
-      "directory": "50s/paper-light"
+      "directory": "50s/paper-light",
+      "nameEn": "Paper Light",
+      "descriptionEn": "Large type on a light, paper-like two-column layout"
     },
     {
       "id": "50s-navy-theater",
       "group": "50s",
       "name": "네이비 시어터",
       "description": "세로 포스터 · 네이비와 크림빛 극장",
-      "directory": "50s/navy-theater"
+      "directory": "50s/navy-theater",
+      "nameEn": "Navy Theater",
+      "descriptionEn": "Tall posters and a navy-and-cream cinema palette"
     },
     {
       "id": "50s-warm-lounge",
       "group": "50s",
       "name": "웜 라운지",
       "description": "아치형 컬렉션 · 테라코타 가로 목록",
-      "directory": "50s/warm-lounge"
+      "directory": "50s/warm-lounge",
+      "nameEn": "Warm Lounge",
+      "descriptionEn": "Arched covers and warm terracotta horizontal rows"
     },
     {
       "id": "60s-clear-blue",
       "group": "60s",
       "name": "클리어 블루",
       "description": "한눈에 보는 한 줄 목록 · 큰 글자와 버튼",
-      "directory": "60s/clear-blue"
+      "directory": "60s/clear-blue",
+      "nameEn": "Clear Blue",
+      "descriptionEn": "Readable single-column rows and large blue controls"
     },
     {
       "id": "60s-warm-comfort",
       "group": "60s",
       "name": "웜 컴포트",
       "description": "넉넉한 간격 · 부드러운 크림빛 2열",
-      "directory": "60s/warm-comfort"
+      "directory": "60s/warm-comfort",
+      "nameEn": "Warm Comfort",
+      "descriptionEn": "Generous spacing and soft cream-colored cards"
     },
     {
       "id": "60s-bold-contrast",
       "group": "60s",
       "name": "볼드 콘트라스트",
       "description": "검정과 노랑 · 굵은 윤곽과 선명한 조작부",
-      "directory": "60s/bold-contrast"
+      "directory": "60s/bold-contrast",
+      "nameEn": "Bold Contrast",
+      "descriptionEn": "Strong outlines, large type and black-and-yellow accents"
     }
   ]
 }

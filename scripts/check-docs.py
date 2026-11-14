@@ -65,14 +65,34 @@ for locale, readme_name in (("", "README.md"), ("ko/", "README.ko.md")):
                 f"Missing guide/index entry: {path}")
 require(not (ROOT / "docs/README.md").exists(), "Use the root README as the document index")
 
-settings = set(re.findall(r"\$\{([A-Z][A-Z0-9_]*):", (ROOT / "src/main/resources/application.yml").read_text()))
+application = (ROOT / "src/main/resources/application.yml").read_text()
+settings = set(re.findall(r"\$\{([A-Z][A-Z0-9_]*):", application))
+presentation_keys = ("MOVIESITES_THEME", "MOVIESITES_TOPIC_PROFILE", "MOVIESITES_UI_LOCALE")
+presentation_defaults = {}
+for key in presentation_keys:
+    value = re.search(r"\$\{" + key + r":([^}\n]*)\}", application)
+    require(value is not None, f"Missing presentation setting: {key}")
+    presentation_defaults[key] = value.group(1)
 for locale in ("", "ko/"):
     configuration = (ROOT / f"docs/{locale}configuration.md").read_text(encoding="utf-8")
     documented = set(re.findall(r"^\| `([A-Z][A-Z0-9_]*)` \|", configuration, re.MULTILINE))
     require(documented == settings, f"Configuration table differs from application settings: {locale or 'en'}")
-example_keys = set(re.findall(r"^([A-Z][A-Z0-9_]*)=", (ROOT / ".env.example").read_text(), re.MULTILINE))
+    defaults = dict(re.findall(r"^\| `([A-Z][A-Z0-9_]*)` \| ([^|\n]+) \|", configuration, re.MULTILINE))
+    for key, value in presentation_defaults.items():
+        require(defaults.get(key, "").strip(" `") == value,
+                f"Documented default differs from runtime: {locale or 'en'} {key}")
+example = dict(re.findall(r"^([A-Z][A-Z0-9_]*)=(.*)$", (ROOT / ".env.example").read_text(), re.MULTILINE))
+example_keys = set(example)
 require(example_keys <= settings and {"MOVIESITES_MEDIA_ROOT", "MOVIESITES_DATA_ROOT", "MOVIESITES_THEME"} <= example_keys,
         "Environment example has missing or unknown settings")
+for key, value in presentation_defaults.items():
+    require(example.get(key) == value, f"Public application example default differs from runtime: {key}")
+compose_example = dict(re.findall(r"^([A-Z][A-Z0-9_]*)=(.*)$", (ROOT / "compose.env.example").read_text(), re.MULTILINE))
+compose = (ROOT / "compose.yaml").read_text()
+for key in ("MOVIESITES_UID", "MOVIESITES_GID", "MOVIESITES_WEB_PORT", "MOVIESITES_BIND_ADDRESS", "MOVIESITES_IMAGE"):
+    value = re.search(r"\$\{" + key + r":-([^}\n]*)\}", compose)
+    require(value is not None and compose_example.get(key) == value.group(1),
+            f"Public Compose example default differs from the service: {key}")
 ignored = subprocess.run(["git", "check-ignore", "-q", ".env.example"], cwd=ROOT, check=False)
 require(ignored.returncode == 1, "Public .env.example must not be ignored")
 

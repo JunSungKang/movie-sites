@@ -1,3 +1,5 @@
+import {setLocale} from '../src/main/resources/static/js/i18n.js';
+setLocale('ko');
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {durationGroup,durationGroups,topicLabels,waitForPreparation} from '../src/main/resources/static/js/library.js';

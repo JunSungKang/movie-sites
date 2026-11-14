@@ -21,5 +21,23 @@
     "loadingText": "영상 목록을 불러오고 있습니다."
   },
   "hero": "assets/hero.svg",
-  "color": "#f5ebe1"
+  "color": "#f5ebe1",
+  "copyEn": {
+    "rootTitle": "Settle in with a good video",
+    "rootDescription": "Your familiar collections are ready to explore.",
+    "nestedDescription": "Choose a video from this collection.",
+    "rootCaption": "A WARM WELCOME BACK",
+    "headerLabel": "Your video lounge",
+    "rootFolders": "Collections",
+    "nestedFolders": "Subfolders",
+    "videosHeading": "Videos",
+    "folderTab": "Collection",
+    "openLabel": "Open",
+    "footer": "A comfortable place to press play",
+    "collectionSuffix": " collection",
+    "rootCollection": "Video library",
+    "emptyTitle": "No videos here yet.",
+    "emptyDescription": "Add videos to storage, then refresh this folder.",
+    "loadingText": "Loading videos..."
+  }
 }

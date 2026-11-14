@@ -9,7 +9,9 @@ Set environment variables before starting the process or creating the container.
 | `MOVIESITES_MEDIA_ROOT` | `./movie` | Existing original-media root; use a read-only mount where possible |
 | `MOVIESITES_DATA_ROOT` | `./runtime` | Writable generated-data root, separate from media and other instances |
 | `MOVIESITES_PUBLIC_URL` | blank | Optional public HTTP(S) origin (e.g. `https://media.example.org`), without credentials, path, query or fragment |
-| `MOVIESITES_THEME` | `child-toy` | Exact, case-sensitive registered theme ID; unknown values fail startup |
+| `MOVIESITES_THEME` | `20s-midnight-stream` | Exact, case-sensitive registered theme ID; unknown values fail startup |
+| `MOVIESITES_TOPIC_PROFILE` | `none` | Optional filename suggestions: `none` or `kids-education`; independent of theme. Manual video tags always apply. |
+| `MOVIESITES_UI_LOCALE` | `en` | UI language: `en` or `ko`; unknown values fail startup. Does not change OS filename encoding. |
 | `MOVIESITES_FOLDER_LABELS` | `{}` | Optional JSON object mapping a folder name to literal display text |
 | `MOVIESITES_BROWSER_CACHE_TTL_SECONDS` | `120` | Server snapshot and maximum browser directory-cache freshness, 60–180 seconds |
 | `MOVIESITES_PAGE_SIZE` | `48` | Entries returned per page, 1–100 |
@@ -58,3 +60,15 @@ Generated thumbnails larger than the 2 MiB in-memory read limit stream from disk
 The per-tab memory cache is limited to 20 pages, 2000 entries and approximately 10 MiB. Optional `sessionStorage` restoration uses one bounded record (about 2.8 MiB serialized budget), retains the original expiry and discards records from another root/server instance. Storage denial/quota errors fall back to memory. It stores list metadata including titles/paths on that device, not videos or playback authorization. Clear site storage to remove it.
 
 The refresh button invalidates that folder's browser pages and sends `refresh=true` for a fresh server snapshot. Cache expiry is fixed, does not slide on hits, and does not start background polling. A refreshed listing uses current folder-cover versions; image versions use the existing file-identity/size/mtime contract. Old version URLs can retain old image bytes until cache expiry. Text/JSON/SVG responses above 1024 bytes can be gzip-compressed when negotiated; video and JPEG compression is excluded. ETags let unchanged responses return 304 without retransmitting their bodies. See [MDN Cache-Control](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Cache-Control).
+
+## Install as an app (PWA)
+
+The library includes a web app manifest, standard/maskable/Apple icons and optional installation controls. Chrome/Edge expose a native install button when the browser raises its installation event. On iPhone/iPad, use Safari's Share menu → Add to Home Screen (enable Open as Web App when offered); macOS Safari can use File → Add to Dock on supported versions. Installed launches use the same library, theme and native video player. No app store, extra frontend server or new application runtime is required.
+
+Use a browser-trusted HTTPS origin in production, with the library and every API/media URL on that origin. `http://localhost` is a development exception; public HTTP IP addresses are not eligible for PWA promotion. Setting `MOVIESITES_PUBLIC_URL` supplies public metadata only and does **not** enable TLS. Terminate TLS at your deployment's reverse proxy, preserve streaming Range/206 responses, and make `/manifest.webmanifest` and `/service-worker.js` reachable at the origin root. See [MDN's installation requirements](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Guides/Making_PWAs_installable).
+
+A domain is optional: a public IP can use a trusted certificate containing that IP as an IP-address SAN. Let's Encrypt's IP certificates use its short-lived profile (160 hours), so issuance validation, automatic renewal and certificate reload must all work reliably. Self-signed certificates and browser warning bypasses are not a public deployment solution. See [Let's Encrypt's IP certificate guide](https://letsencrypt.org/2026/03/11/shorter-certs-certbot.html). Changing scheme, host/IP or port changes the browser origin, including its installation identity, local queue and caches; a stable public address avoids reinstalling after an address change.
+
+Installation does not download videos. The service worker caches only three generic offline assets: `/offline.html`, `/pwa/offline.css` and `/pwa/icon-192.png`. On a failed library/about navigation it shows a reconnect screen. Catalog responses, paths/titles, playback tokens, thumbnails and video bytes never enter its Cache Storage. Normal HTTP and the existing bounded list/image caches remain in use; every API/media/Range request bypasses service-worker interception. Server connectivity is required to browse and play. Clearing site data removes the offline cache and existing browser-local queue/cache data.
+
+Worker updates revalidate the script and wait for the normal browser lifecycle; they do not force a reload during playback. Close all app/browser windows for that origin and reopen to activate a waiting version. Installation support varies by browser/device, and adapter tests do not replace native-device checks.

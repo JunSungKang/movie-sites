@@ -2,7 +2,7 @@
 
 [한국어](ko/themes.md) · [Documentation index](../README.md#documentation)
 
-All presets use the same library and player behavior. Age groups organize optional visual styles; they do not restrict who may choose a theme and no age is collected. `child-toy` preserves the original toy-like folder deck and remains the default.
+All presets use the same library and player behavior. Age groups organize optional visual styles; they do not restrict who may choose a theme and no age is collected. The neutral default is `20s-midnight-stream`. `child-toy` remains available as an optional toy-like folder deck. Theme selection does not enable a topic profile. UI language is selected independently with `MOVIESITES_UI_LOCALE=en` or `ko`; existing theme IDs stay the same in both languages.
 
 ## Choosing a preset
 
@@ -52,7 +52,7 @@ src/main/resources/static/themes/
 ## Adding a theme
 
 1. Add a preset folder under an existing catalog group, or a safe standalone directory when following the supported directory format. Use a unique lowercase/hyphenated ID and register its relative directory in `catalog.json`.
-2. Supply a matching `theme.json` with all required copy fields, the exact local hero path and a six-digit theme color. Follow an existing manifest; values are rendered as literal text.
+2. Supply a matching `theme.json` with all required `copy` (Korean) and `copyEn` (English) fields, the exact local hero path and a six-digit theme color. Provide `nameEn` and `descriptionEn` in the catalog entry while preserving its existing ID and Korean fields. Follow an existing manifest; values are rendered as literal text.
 3. Add `theme.css`, importing the shared structural foundation with the correct relative path when applicable. Own the composition, palette, density, shape and typography. Preserve navigation semantics and native player behavior.
 4. Add self-contained `assets/hero.svg` and `assets/preview.svg`. The latter is a layout illustration for the catalog. Use original or appropriately licensed assets; do not include user video frames, remote scripts, external font services or private media.
 5. Keep existing public theme IDs compatible. The 19 bundled presets are the baseline, not a maximum catalog size. Use one of the existing groups unless the preview grouping and validation are explicitly extended together.

@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
-ARG JAVA_BUILD_IMAGE=movie-kids-java-build:25-ubuntu26.04
-ARG JAVA_RUNTIME_IMAGE=movie-kids-java-runtime:25-ubuntu26.04
+ARG JAVA_BUILD_IMAGE=moviesites-java-build:25-ubuntu26.04
+ARG JAVA_RUNTIME_IMAGE=moviesites-java-runtime:25-ubuntu26.04
 FROM ${JAVA_BUILD_IMAGE} AS build
 USER root
 RUN . /etc/os-release && test "$ID" = ubuntu && test "$VERSION_ID" = 26.04 \

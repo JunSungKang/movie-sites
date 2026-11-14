@@ -8,19 +8,20 @@ An open-source, self-hosted video platform that turns your folders into a browsa
 
 ![MovieSites collection layout illustration](docs/assets/overview.svg)
 
-Layout illustration of the Midnight Stream theme. Collection covers come from your own media. The interface currently uses Korean text; documentation is available in English and Korean.
+Layout illustration of the Midnight Stream theme. Collection covers come from your own media. The interface and documentation support English and Korean. Set `MOVIESITES_UI_LOCALE=ko` for Korean; the default is English.
 
 ## Features
 
 - Browse the folder you open, including nested collections on mounted local or network storage.
 - Play videos with native HTML video controls and prepare compatible playback copies with FFmpeg when needed.
 - Use folder covers and per-video JPEG thumbnails, with automatic video-thumbnail fallback.
-- Browse videos shortest first with exact duration dividers and suggested or custom topic tags.
+- Browse videos shortest first with duration dividers and custom topic tags; optionally enable a filename-based topic profile.
 - Keep one browser-local playback queue, reorder it, and play the queue in sequence.
 - Select from 19 bundled themes through an environment variable; contribute additional presets through the theme catalog.
 - Run a single executable JAR or Docker container. The frontend is static HTML, CSS and JavaScript.
 - Cache directory snapshots and versioned thumbnails on the server and browser, with bounded memory and explicit refresh.
 - Publish an optional search-friendly introduction while excluding the media catalog from search indexing.
+- Install the library as a PWA on supported browsers using trusted HTTPS; videos continue streaming from your server.
 - Use bounded directory pages and limited background processing. There is no database, full-tree index or recursive filesystem watcher.
 
 ## Quick start
@@ -34,7 +35,7 @@ git clone https://github.com/JunSungKang/movie-sites.git
 cd movie-sites
 mkdir -p movie runtime
 docker buildx bake -f docker-bake.hcl --load fallback-bases
-MOVIESITES_IMAGE=moviesites:local docker buildx bake -f docker-bake.hcl --load movie-kids
+MOVIESITES_IMAGE=moviesites:local docker buildx bake -f docker-bake.hcl --load moviesites
 docker run --rm --init --name moviesites \
   --user "$(id -u):$(id -g)" \
   -p 127.0.0.1:8080:8080 \
@@ -59,11 +60,13 @@ java -jar build/libs/moviesites.jar
 
 See [Getting started](docs/getting-started.md) for prerequisites and platform requirements. Node.js and Python are used for additional repository checks, not for running the application.
 
-For the single-service Compose deployment (`platform` / `movie-kids-web`, web port 20010), read [Docker](docs/docker.md) and the [migration and rollback guide](docs/platform-migration.md).
+For the portable single-service Compose deployment, read [Docker](docs/docker.md). `compose.yaml` runs the `moviesites` service; `compose.env.example` documents host paths, user and port settings.
 
 ## Configuration
 
-Set `MOVIESITES_MEDIA_ROOT` for original media, `MOVIESITES_DATA_ROOT` for generated data, and `MOVIESITES_THEME` for presentation. The default theme is `child-toy`; for example, use `MOVIESITES_THEME=20s-midnight-stream` and restart the application to choose a different preset.
+Set `MOVIESITES_MEDIA_ROOT` for original media, `MOVIESITES_DATA_ROOT` for generated data, and `MOVIESITES_THEME` for presentation. The default theme is `20s-midnight-stream`; for example, use `MOVIESITES_THEME=20s-midnight-stream` and restart the application to choose a different preset.
+
+Topic suggestions are disabled by default (`MOVIESITES_TOPIC_PROFILE=none`). Enable `kids-education` for conservative education-topic suggestions, or supply per-video tags regardless of profile. Theme and topic profile are independent.
 
 Set `MOVIESITES_PUBLIC_URL=https://media.example.org` to enable canonical and sitemap URLs for `/about`. Only the generic introduction is intended for indexing; the library remains at `/`. See the SEO and cache policy in the configuration guide.
 

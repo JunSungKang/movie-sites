@@ -38,6 +38,10 @@ Use an exact ID from the [theme list](themes.md). Validate the folder-label JSON
 
 Use JDK 25 and the committed `gradlew`/`gradlew.bat`. Check network/proxy/CA access to the configured HTTPS distribution and repositories. Do not disable certificate or checksum validation. A separate Gradle install is unnecessary. Build with `./gradlew clean build`, then run the [repository checks](development.md).
 
+## App installation or connection-lost screen
+
+Use the browser/platform installation flow described in [configuration](configuration.md#install-as-an-app-pwa). A trusted HTTPS origin or eligible localhost is required; public URL metadata does not enable TLS. A connection-lost screen means the server could not be reached, not that an offline catalog is available. Reconnect and retry. Do not solve installation problems by caching private API/media or bypassing certificate warnings.
+
 ## Reporting a bug
 
 Include the exact commit, Java/Gradle or image version, OS, filesystem/mount type, browser, safe reproduction and relevant redacted logs. `/api/health` reports application response status, not NAS-wide health. Do not attach private videos, tokens or personal paths to a public issue. Use the [issue template](https://github.com/JunSungKang/movie-sites/issues/new/choose), or follow the [security policy](../SECURITY.md) for sensitive reports.

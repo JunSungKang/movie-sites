@@ -52,6 +52,21 @@ class SeoTests {
             assertFalse(html.contains("/api/"));assertFalse(html.contains("/js/"));assertFalse(html.contains("{{"));
         }
     }
+    @Test void introductionUsesSelectedLanguageInContentAndStructuredMetadata()throws Exception {
+        for(String locale:new String[]{"en","ko"}) {
+            var presentation=new PresentationService("20s-midnight-stream","{}",new UiLocale(locale));
+            var response=MockMvcBuilders.standaloneSetup(new SeoController("https://media.example.org",presentation)).build()
+                .perform(get("/about").header("Accept-Language",locale.equals("en")?"ko":"en"))
+                .andExpect(status().isOk()).andExpect(header().string("Content-Language",locale)).andReturn().getResponse();
+            String html=response.getContentAsString(StandardCharsets.UTF_8);
+            assertTrue(html.contains("<html lang=\""+locale+"\""));
+            assertTrue(html.contains("data-theme=\"20s-midnight-stream\""));
+            assertTrue(html.contains(locale.equals("en")?"Your videos.":"보고 싶은 영상,"));
+            String json=html.split("<script type=\"application/ld\\+json\">",2)[1].split("</script>",2)[0];
+            assertEquals(locale,new tools.jackson.databind.json.JsonMapper().readTree(json).path("inLanguage").asText());
+            assertFalse(html.contains("{{"));
+        }
+    }
     @Test void originSettingRejectsCredentialsPathsAndNonHttpSchemes() {
         for(String url:new String[]{"javascript:alert(1)","https://a.example/path","https://user:secret@a.example","https://a.example?name=x","https://a.example/#a","https://a.example:0","https://a.example:70000"})
             assertThrows(IllegalArgumentException.class,()->SeoController.validateOrigin(url));

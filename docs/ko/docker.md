@@ -2,65 +2,75 @@
 
 [English](../docker.md) · [문서 목록](../../README.ko.md#문서)
 
-Ubuntu 26.04·Temurin 25 컨테이너 하나에 FFmpeg·ffprobe·인증서를 구성합니다. Python·Node는 검증 도구이며 앱 실행 이미지에는 포함하지 않습니다. DB·별도 API 컨테이너도 필요하지 않습니다.
+MovieSites는 Ubuntu 26.04·Temurin 25 컨테이너 하나에 FFmpeg·ffprobe·CA 인증서를 구성합니다. 정적 화면·JSON API·영상 스트림은 8080 포트를 공유합니다. Python·Node는 개발·검사 도구이며 앱 실행 런타임이 아닙니다.
 
 ## 이미지 빌드
 
+Linux 컨테이너 엔진과 Buildx/Bake를 사용합니다.
+
 ```bash
 docker buildx bake -f docker-bake.hcl --load fallback-bases
-docker buildx bake -f docker-bake.hcl --load movie-kids
+docker buildx bake -f docker-bake.hcl --load moviesites
 ```
 
-첫 명령은 다이제스트로 고정한 공식 Temurin Ubuntu 26.04에서 **프로젝트 전용** `movie-kids-java-build:25-ubuntu26.04`·`movie-kids-java-runtime:25-ubuntu26.04`를 만듭니다. 공통 이미지 태그를 덮어쓰지 않습니다. 앱은 `movie-kids:ubuntu26.04`입니다. 호환 공통 이미지가 있으면 `JAVA_BUILD_IMAGE`·`JAVA_RUNTIME_IMAGE`로 지정합니다. Dockerfile에서 OS·Java 주 버전을 확인하고 Gradle Wrapper로 빌드합니다. 정적 화면에는 Node 빌드 단계가 필요하지 않습니다.
+fallback 타깃은 고정된 공식 Java 이미지에서 프로젝트 전용 `moviesites-java-build:25-ubuntu26.04`·`moviesites-java-runtime:25-ubuntu26.04`를 만듭니다. 앱 타깃은 `moviesites:ubuntu26.04`를 빌드합니다. 호환 베이스는 `JAVA_BUILD_IMAGE`·`JAVA_RUNTIME_IMAGE`로 지정할 수 있으며 Dockerfile이 OS·Java 주 버전을 확인합니다. 공유 이미지 태그를 덮어쓰지 않습니다. 저장소의 Gradle Wrapper로 빌드하고 최종 이미지에는 JAR와 실행 구성요소만 포함합니다.
 
-FFmpeg·curl·인증서는 프로젝트 앱 이미지에서 설치합니다. 이미지 기본 UID/GID는 기존 `10001:10001`, 조사한 Compose 운영 설정은 `501:20`입니다. 호스트 소유권에 맞는 숫자를 사용하고 원본을 재귀 chown하거나 전체 쓰기를 허용하지 마세요.
+## 외부 저장소와 권한
 
-앱 이미지와 Compose 서비스 모두 `LANG=C.UTF-8`·`LC_ALL=C.UTF-8`을 명시합니다. Java는 `file.encoding`이 UTF-8이어도 파일명·환경변수 해석에 OS 로케일을 사용하므로, UTF-8 설정이 없는 베이스에서는 한글 폴더명·경로·설정 문구가 깨질 수 있습니다. 배포 구성을 바꿀 때도 이 설정을 유지하고 `java -XshowSettings:properties -version`의 `native.encoding`·`sun.jnu.encoding`이 모두 UTF-8인지 확인하세요.
+원본과 생성 데이터는 이미지 밖에 둡니다.
 
-## Compose
+| 호스트 경로 | 컨테이너 경로 | 접근 |
+|---|---|---|
+| 기존 원본 디렉토리 또는 마운트된 NAS | `/media` | 읽기 전용 |
+| 별도의 생성 데이터 디렉토리 | `/data` | 읽기·쓰기, 활성 인스턴스 하나 |
 
-Compose 2.30 이상(raw 환경 파일 지원)과 Buildx/Bake를 사용합니다.
+이미지와 Compose 예시의 기본 사용자는 비루트 `10001:10001`입니다. 호스트 권한에 맞춰 `MOVIESITES_UID`·`MOVIESITES_GID`에 적절한 비루트 숫자 사용자·그룹을 지정하세요. 해당 계정이 데이터를 쓸 수 있고 원본을 읽을 수 있어야 합니다. 배포 오류를 해결하려고 원본 소유권을 재귀 변경하거나 모두에게 쓰기를 허용하지 마세요. Windows/macOS Docker Desktop에서는 선택한 호스트 경로 공유도 확인합니다.
+
+예시의 `create_host_path: false`에 따라 마운트 원본 경로는 미리 존재해야 합니다. 컨테이너 환경변수는 호스트 경로 대신 `/media`·`/data`를 사용하며 두 루트는 겹치면 안 됩니다. 영상·메타데이터·썸네일·재생본은 JAR나 이미지에 포함하지 않습니다.
+
+이미지와 Compose 서비스는 `LANG=C.UTF-8`·`LC_ALL=C.UTF-8`을 설정합니다. 한글 파일명과 환경변수를 위해 UTF-8 네이티브 로케일을 유지하세요. Java의 `file.encoding`만으로 실제 경로 디코딩을 보장하지 않으므로 베이스를 바꿀 때는 `native.encoding`·`sun.jnu.encoding`도 확인합니다.
+
+## Compose 예시
+
+raw 환경 파일을 지원하는 Docker Compose 2.30 이상을 사용합니다.
 
 ```bash
-cp platform.env.example .env.platform
-# 호스트 경로·UID/GID·공개 주소·이미지를 수정합니다.
-# 기존 소유권이 올바른 movie/·runtime/을 먼저 준비합니다.
-docker compose --env-file .env.platform -f compose.platform.yaml config
-docker compose --env-file .env.platform -f compose.platform.yaml up -d --no-build --no-deps movie-kids-web
+cp compose.env.example .env.compose
+# 이미지·기존 경로·숫자 사용자/그룹을 비공개 파일에서 수정합니다.
+docker compose --env-file .env.compose -f compose.yaml config
+docker compose --env-file .env.compose -f compose.yaml up -d --no-build moviesites
 ```
 
-프로젝트는 `platform`, 서비스는 `movie-kids-web`, 기본 컨테이너 이름은 `platform-movie-kids-web-1`입니다. 기본 공개는 루프백 **20010:8080 하나**입니다. 화면·API가 같은 포트를 쓰므로 웹 나머지 20011~20014·API 20110~20114를 추가 노출하지 않습니다. 다른 기기에 제공할 때 공개 주소를 지정하세요. `MOVIESITES_ENV_FILE`은 JSON 문구·달러 기호를 보존하는 별도의 raw 앱 환경 파일입니다. Compose 내부 경로는 `/media`·`/data`, 포트는 8080으로 고정합니다.
+공식 예시는 `moviesites` 서비스 하나이며 `127.0.0.1:8080`을 앱의 8080에 연결합니다. 이미 사용하는 포트라면 호스트 포트를 변경하세요. 다른 기기에 제공할 때는 공개 주소와 접근 정책을 정합니다. `MOVIESITES_ENV_FILE`은 JSON 문구·달러 기호를 보존하는 별도 raw 앱 환경 파일입니다. 앱 설정은 [설정 안내](configuration.md)에 있습니다.
 
-| Compose 입력 | 기본값·역할 |
+| Compose 입력 | 기본값·용도 |
 |---|---|
-| `JAVA_BUILD_IMAGE`, `JAVA_RUNTIME_IMAGE` | 프로젝트 대체 베이스, 빌드 시 공통 참조로 변경 가능 |
-| `MOVIESITES_IMAGE` | `movie-kids:ubuntu26.04`, 운영은 검증한 불변 이미지 ID 사용 |
-| `MOVIESITES_UID`, `MOVIESITES_GID` | `501`·`20`, 기존 숫자 소유권 보존 |
-| `MOVIESITES_BIND_ADDRESS`, `MOVIESITES_WEB_PORT` | `127.0.0.1`·`20010` |
+| `JAVA_BUILD_IMAGE`, `JAVA_RUNTIME_IMAGE` | 호환 빌드·실행 베이스. 기본은 프로젝트 전용 fallback 이미지 |
+| `MOVIESITES_IMAGE` | `moviesites:ubuntu26.04`. 교체 시 검증한 불변 참조 사용 |
+| `MOVIESITES_UID`, `MOVIESITES_GID` | `10001`·`10001`. 호스트의 비루트 접근 권한에 맞춤 |
+| `MOVIESITES_BIND_ADDRESS`, `MOVIESITES_WEB_PORT` | `127.0.0.1`·`8080` |
 | `MOVIESITES_MEDIA_PATH` | `./movie` → `/media`, 읽기 전용 |
-| `MOVIESITES_DATA_PATH` | `./runtime` → `/data`, 쓰기 가능·배타 잠금 |
-| `MOVIESITES_ENV_FILE` | `.env.example`, 실제 설정은 비공개 앱 파일에 보존 |
+| `MOVIESITES_DATA_PATH` | `./runtime` → `/data`, 읽기·쓰기 |
+| `MOVIESITES_ENV_FILE` | `.env.example`. 운영별 값은 비공개 사본 사용 |
 
-Bind 원본은 미리 있어야 하며 `create_host_path: false`로 오타 경로를 자동 생성하지 않습니다. 기존 디렉토리를 익명·이름 있는 데이터 볼륨으로 대체하지 않습니다. 같은 `/data`에 여러 writer를 실행하지 마세요. 메모리 2 GiB·CPU 2·PID 128·init·읽기 전용 루트·local 로그는 기존 실행 설정을 재현합니다. 종료 유예는 Spring의 15초 정상 종료를 감싸도록 30초입니다.
+init·읽기 전용 컨테이너 루트·CPU/메모리/PID 제한·로컬 로그·정상 종료 대기 시간을 사용합니다. 이는 설정 가능한 실행 제한이며 처리량 보증이 아닙니다. JVM heap 이외에 FFmpeg와 네이티브 메모리를 위한 여유도 필요합니다.
 
-다른 프로젝트 의존성 없이 Compose bridge를 사용합니다. 공유 `platform` 프로젝트 전체를 `down`하지 말고 서비스에 한정한 `stop`·`rm`·`start`·`up`을 사용하세요. `down -v`·전체 prune은 금지합니다.
+## 시험과 업데이트
 
-## 격리 검증과 운영 전환
+합성 영상·별도 데이터 디렉토리·사용하지 않는 루프백 포트에서 [재현 가능한 검사](verification.md)를 실행하세요. 격리 시험에 운영 `/data`를 연결하지 않습니다. 실제 호스트에서 한글 경로·대표 코덱·부분 전송·권한·데이터 잠금·재시작을 확인합니다. HTTP 정상 상태가 전체 NAS 검사는 아닙니다.
 
-저장소 검사는 Python 3.14·Node 24로 실행합니다.
+교체 전 현재 불변 이미지 참조·환경변수·숫자 사용자·실제 마운트 경로를 비공개 운영 기록에 보관합니다. 후보를 별도 환경에서 시험한 뒤 기존 writer를 정지하고 종료를 기다린 후 같은 운영 마운트로 교체합니다. 이전 이미지·설정을 복구용으로 유지하고 새 서비스 확인 후 정리합니다. 복구할 때도 후보를 먼저 정지한 뒤 이전 이미지가 데이터 루트를 열도록 합니다.
 
-```bash
-python3 -B scripts/verify-platform.py --image movie-kids:ubuntu26.04
-```
+배포 잠금·복구 세부사항은 운영자의 환경에서 관리합니다. 다른 서비스가 함께 정지되지 않도록 서비스 범위의 Compose 명령을 사용하세요. 일상 교체·복구에 `down -v`·전체 prune을 사용하거나, 시작 오류 해결을 위해 원본·데이터 디렉토리를 삭제하지 않습니다.
 
-`.codex-work/platform-release/` 아래 합성 영상·별도 데이터와 고유 QA Compose 프로젝트를 만들고 예약 루프백 웹 포트 하나만 사용합니다. 원본/변환 재생·썸네일·탐색·FFmpeg·경로 탈출/심볼릭 링크 거부·재생 토큰·미디어/루트 읽기 전용·쓰기 잠금·정상 종료/재시작을 검사합니다. `--keep`은 브라우저 검수를 위해 QA를 남기며 `qa-state.json`에 해당 환경만 정리할 명령을 기록합니다. 검증 스크립트는 운영 데이터를 마운트하지 않습니다.
+## 데이터 루트 단독 소유
 
-합성 데이터에는 한글·분해형 한글·공백이 있는 경로와 한글 환경변수 문구가 포함되며, 재시작 전후 경로·문구가 정확히 일치해야 통과합니다. 운영에서 이미 20010을 사용한다면 `--port 20011`처럼 비어 있는 예약 포트를 선택하세요.
+Java advisory FileLock과 원자적으로 생성하는 `/data/.moviesites.owner` 디렉토리로 생성 데이터 루트의 다중 writer를 막습니다. 두 번째 인스턴스는 기존 소유자 표시를 지우지 않고 시작을 거부합니다. 정상 종료는 자신의 표시를 제거하고 잠금을 해제합니다. 여러 인스턴스가 같은 `/data`를 사용하는 확장은 지원하지 않습니다.
 
-운영 전환은 동일 이미지·Compose 해시의 통과 보고서를 요구하고 실제 배포 파일 잠금을 잡은 상태에서 기존 컨테이너·설정을 보존하며 실패 시 복구합니다. 실행 전 [전환·복구 안내](platform-migration.md)를 읽으세요. NAS 보안 디렉토리 지원·장애는 별도로 시험해야 하며 HTTP 정상 상태가 전체 저장소 검사는 아닙니다.
+SIGKILL·호스트 장애·비정상 종료 뒤에는 소유 증적이 남을 수 있습니다. 느린 writer가 죽었다고 추측하지 않고 시작을 거부합니다. 해당 루트를 사용하는 모든 컨테이너·프로세스를 정지하고 배포 잠금으로 복구를 직렬화한 뒤 증적을 확인하세요. 그 다음에만 남은 소유 디렉토리를 제거하고 인스턴스 하나를 시작합니다. advisory 잠금 파일을 삭제·재생성하거나 TTL로 소유권을 빼앗지 마세요. 이전 이미지로 복구할 때도 같은 원칙을 지킵니다.
 
-## 데이터 배타 소유권
+## 외부 접속과 PWA
 
-기존 Java FileLock을 유지합니다. Docker Desktop 바인드 마운트의 실제 시험에서 advisory lock만으로는 컨테이너 간 잠금이 분리될 수 있어, 캐시·작업 처리 전에 `/data/.moviesites.owner` 디렉토리를 원자적으로 생성하도록 보강했습니다. 두 번째 인스턴스는 기존 소유자 표시를 지우지 않고 시작 실패합니다. 정상 종료는 소유자 표시·디렉토리와 파일 잠금을 해제합니다.
+앱은 로그인 없는 읽기 전용 서비스이므로 도달 가능한 방문자는 지원 영상을 탐색·재생할 수 있습니다. 외부 공개 전에 네트워크·인증 경계를 구성하세요. PWA 설치를 위해 라이브러리와 API·미디어를 하나의 브라우저 신뢰 HTTPS 출처로 제공합니다. 개발용 localhost는 일반적인 예외입니다. `MOVIESITES_PUBLIC_URL`은 소개 메타데이터를 설정할 뿐 TLS를 켜지 않습니다. 프록시는 Range·206 응답과 루트 manifest·service worker 경로를 보존해야 합니다. [PWA 설정](configuration.md#앱으로-설치-pwa)을 참고하세요.
 
-SIGKILL·호스트 장애 등 비정상 종료에는 소유 디렉토리가 남을 수 있습니다. 느린 writer를 죽었다고 추정하지 않고 안전하게 시작을 거부합니다. 해당 데이터 루트를 쓰는 **모든** 컨테이너·프로세스를 정지하고 공통 배포 잠금을 보유한 상태에서 소유자 증거를 확인한 뒤에만 잔여 디렉토리를 제거하고 하나만 시작하세요. 실행 중일 수 있는 writer가 있으면 지우지 마세요. TTL로 잠금을 빼앗지 않습니다.
+PWA 오프라인 화면은 연결 끊김을 안내하며 영상·목록·인증 세션을 오프라인 저장하는 기능이 아닙니다. 실제 NAS·브라우저 설치·전체화면·코덱 지원은 대상 기기에서 시험해야 합니다.

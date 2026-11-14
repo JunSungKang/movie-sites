@@ -15,6 +15,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 class StaticAssetsTests {
     @Configuration @EnableWebMvc @Import(WebConfiguration.class)
     static class TestConfig {
+        @Bean UiLocale uiLocale(@org.springframework.beans.factory.annotation.Value("${moviesites.ui-locale:en}") String selected){return new UiLocale(selected);}
         @Bean Settings settings(){return new Settings(Path.of("movie"),Path.of("runtime"),120,48,8,120,4,10_737_418_240L,0,"ffmpeg","ffprobe");}
     }
     @Test void cachedBuildTimestampCannotSuppressUpdatedStaticAssets()throws Exception{

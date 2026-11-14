@@ -21,5 +21,23 @@
     "loadingText": "영상 목록을 불러오고 있습니다."
   },
   "hero": "assets/hero.svg",
-  "color": "#f6f6f2"
+  "color": "#f6f6f2",
+  "copyEn": {
+    "rootTitle": "A little room to watch",
+    "rootDescription": "Your videos, simply arranged. Choose a collection to begin.",
+    "nestedDescription": "Choose a video from this collection.",
+    "rootCaption": "LESS NOISE. MORE SPACE.",
+    "headerLabel": "Your viewing space",
+    "rootFolders": "Collections",
+    "nestedFolders": "Subfolders",
+    "videosHeading": "Videos",
+    "folderTab": "Collection",
+    "openLabel": "Open",
+    "footer": "Space for the videos you keep",
+    "collectionSuffix": " collection",
+    "rootCollection": "Video library",
+    "emptyTitle": "No videos here yet.",
+    "emptyDescription": "Add videos to storage, then refresh this folder.",
+    "loadingText": "Loading videos..."
+  }
 }

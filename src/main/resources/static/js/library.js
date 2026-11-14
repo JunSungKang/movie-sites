@@ -1,10 +1,11 @@
+import {t, setLocale, localeTag} from './i18n.js';
 // Non-overlapping intervals use exact seconds, not rounded display strings.
 export const DURATION_GROUPS = [
-  {id:'under-five',label:'5분 미만',limit:300},
-  {id:'under-ten',label:'5분 이상 · 10분 미만',limit:600},
-  {id:'under-twenty',label:'10분 이상 · 20분 미만',limit:1200},
-  {id:'twenty-plus',label:'20분 이상',limit:Infinity},
-  {id:'unknown',label:'길이를 확인하지 못한 영상'}
+  {id:'under-five',get label(){return t('5분 미만');},limit:300},
+  {id:'under-ten',get label(){return t('5분 이상 · 10분 미만');},limit:600},
+  {id:'under-twenty',get label(){return t('10분 이상 · 20분 미만');},limit:1200},
+  {id:'twenty-plus',get label(){return t('20분 이상');},limit:Infinity},
+  {id:'unknown',get label(){return t('길이를 확인하지 못한 영상');}}
 ];
 export function durationGroup(seconds) {
   if (typeof seconds !== 'number' || !Number.isFinite(seconds) || seconds <= 0) return DURATION_GROUPS.at(-1);
@@ -15,7 +16,7 @@ export function durationGroups(videos) {
 }
 export function topicLabels(entry) {
   const tags=Array.isArray(entry.tags)?entry.tags.filter(tag=>typeof tag==='string'&&tag.trim()&&tag.length<=40).slice(0,8):[];
-  return {tags,recommended:entry.tagSource==='filename',empty:entry.tagSource==='metadata'?'주제 표시 안 함':'주제 미지정'};
+  return {tags,recommended:entry.tagSource==='filename',empty:entry.tagSource==='metadata'?t('주제 표시 안 함'):t('주제 미지정')};
 }
 export function waitForPreparation(signal, milliseconds=1200) {
   return new Promise((resolve,reject)=>{

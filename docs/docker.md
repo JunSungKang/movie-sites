@@ -2,65 +2,75 @@
 
 [한국어](ko/docker.md) · [Documentation index](../README.md#documentation)
 
-The application runs in one Ubuntu 26.04 / Temurin 25 container with FFmpeg, ffprobe and CA certificates. Python and Node are verification tools, not application runtimes. No database or separate API container is required.
+MovieSites runs in one Ubuntu 26.04 / Temurin 25 container with FFmpeg, ffprobe and CA certificates. The static frontend, JSON API and video streams share port 8080. Python and Node are development/test tools, not application runtimes.
 
 ## Build images
 
+Use Docker with a Linux container engine and Buildx/Bake:
+
 ```bash
 docker buildx bake -f docker-bake.hcl --load fallback-bases
-docker buildx bake -f docker-bake.hcl --load movie-kids
+docker buildx bake -f docker-bake.hcl --load moviesites
 ```
 
-The fallback targets create **project-owned** `movie-kids-java-build:25-ubuntu26.04` and `movie-kids-java-runtime:25-ubuntu26.04`, from digest-pinned official Temurin Ubuntu 26.04 images. They never retag shared images. The application target builds `movie-kids:ubuntu26.04`. Set `JAVA_BUILD_IMAGE` and `JAVA_RUNTIME_IMAGE` to compatible shared references when available; Dockerfile assertions reject the wrong OS/Java major. The build uses the committed Gradle Wrapper. No Node build stage is needed for the static frontend.
+The fallback targets create project-owned `moviesites-java-build:25-ubuntu26.04` and `moviesites-java-runtime:25-ubuntu26.04` from pinned official Java images. The application target builds `moviesites:ubuntu26.04`. Compatible Java bases can be supplied through `JAVA_BUILD_IMAGE` and `JAVA_RUNTIME_IMAGE`; the Dockerfile checks the OS and Java major version. Shared images are not retagged. The committed Gradle Wrapper builds the application, and only the JAR and runtime components enter the final image.
 
-FFmpeg, curl and certificates are installed in the project application image, leaving Java bases reusable. The image default remains `10001:10001`; the investigated Compose deployment uses `501:20`. Set the Compose UID/GID to match the existing host ownership. Do not recursively chown original media or grant world-write permissions.
+## External storage and permissions
 
-The application image and Compose service explicitly set `LANG=C.UTF-8` and `LC_ALL=C.UTF-8`. Java's native filename/environment decoding depends on the OS locale even when `file.encoding` is UTF-8. A base with no UTF-8 locale can corrupt non-ASCII folder names, paths and configured labels. Preserve these settings when adapting the deployment; check both `native.encoding` and `sun.jnu.encoding` with `java -XshowSettings:properties -version`.
+Original media and generated data must remain outside the image:
 
-## Compose
+| Host path | Container path | Access |
+|---|---|---|
+| Existing media directory or mounted NAS | `/media` | Read-only |
+| Separate generated-data directory | `/data` | Read/write, one active instance |
 
-Use Docker Compose 2.30+ (raw environment-file support) and Buildx/Bake:
+The image and Compose example default to non-root user `10001:10001`. Set `MOVIESITES_UID` and `MOVIESITES_GID` to an appropriate non-root numeric user/group when the host directories require it. Prepare a writable data directory for that identity and readable original media. Do not recursively change original-media ownership or grant world-write permissions to fix a deployment error. Windows/macOS Docker Desktop users must also allow access to the chosen host paths.
+
+Bind sources must already exist; the example uses `create_host_path: false`. Container environment variables refer to `/media` and `/data`, not the host source paths. Media/data roots must not overlap. Videos, sidecars, thumbnails and prepared playback files never become JAR/image content.
+
+The image and Compose service set `LANG=C.UTF-8` and `LC_ALL=C.UTF-8`. Preserve a UTF-8 native locale for non-ASCII file names and environment values. Java's `file.encoding` alone does not establish native path decoding; inspect `native.encoding` and `sun.jnu.encoding` when adapting the image.
+
+## Compose example
+
+Use Docker Compose 2.30 or later for raw environment-file support:
 
 ```bash
-cp platform.env.example .env.platform
-# Edit .env.platform for the host paths, UID/GID, bind address and image.
-# Prepare existing, correctly owned movie/ and runtime/ directories first.
-docker compose --env-file .env.platform -f compose.platform.yaml config
-docker compose --env-file .env.platform -f compose.platform.yaml up -d --no-build --no-deps movie-kids-web
+cp compose.env.example .env.compose
+# Edit the private file for your image, existing paths and numeric user/group.
+docker compose --env-file .env.compose -f compose.yaml config
+docker compose --env-file .env.compose -f compose.yaml up -d --no-build moviesites
 ```
 
-The project is `platform`, service `movie-kids-web`, container normally `platform-movie-kids-web-1`. Only **20010:8080** is published by default, bound to loopback. UI and API share that port; web reservations 20011–20014 and API reservations 20110–20114 are not automatically exposed. Set the bind address deliberately for other devices. `MOVIESITES_ENV_FILE` is a separate raw application environment file; it preserves JSON labels and literal dollar signs. `/media`, `/data` and internal port 8080 are fixed in the Compose service.
+The canonical example has one service, `moviesites`, and publishes `127.0.0.1:8080` to the application's port 8080. Change the host port if it is already in use. Use a deliberate bind address and access policy when serving another device. `MOVIESITES_ENV_FILE` names the separate raw application environment file, preserving JSON labels and literal dollar signs. See [configuration](configuration.md) for application settings.
 
 | Compose input | Default / purpose |
 |---|---|
-| `JAVA_BUILD_IMAGE`, `JAVA_RUNTIME_IMAGE` | Project fallback bases, overridable at build time |
-| `MOVIESITES_IMAGE` | `movie-kids:ubuntu26.04`; use the verified immutable image ID for deployment |
-| `MOVIESITES_UID`, `MOVIESITES_GID` | `501`, `20`; preserve the existing numeric owner |
-| `MOVIESITES_BIND_ADDRESS`, `MOVIESITES_WEB_PORT` | `127.0.0.1`, `20010` |
+| `JAVA_BUILD_IMAGE`, `JAVA_RUNTIME_IMAGE` | Compatible build/runtime bases; project-owned fallback images by default |
+| `MOVIESITES_IMAGE` | `moviesites:ubuntu26.04`; use a tested immutable reference when upgrading |
+| `MOVIESITES_UID`, `MOVIESITES_GID` | `10001`, `10001`; adapt to non-root host access |
+| `MOVIESITES_BIND_ADDRESS`, `MOVIESITES_WEB_PORT` | `127.0.0.1`, `8080` |
 | `MOVIESITES_MEDIA_PATH` | `./movie` → `/media`, read-only |
-| `MOVIESITES_DATA_PATH` | `./runtime` → `/data`, writable, exclusively locked |
-| `MOVIESITES_ENV_FILE` | `.env.example`; copy/edit a private application file to preserve actual settings |
+| `MOVIESITES_DATA_PATH` | `./runtime` → `/data`, writable |
+| `MOVIESITES_ENV_FILE` | `.env.example`; use a private copy for deployment-specific values |
 
-Bind sources must already exist (`create_host_path: false`). No anonymous/named data volume replaces the original directories. Keep one writer per data root; scaling this service against the same `/data` is unsupported. Memory 2 GiB, CPUs 2, PID limit 128, init, read-only root and local logging reproduce the investigated run settings. The 30-second stop grace period accommodates Spring's 15-second graceful shutdown window.
+The example uses init, a read-only container root, bounded CPU/memory/PIDs, local logging and a graceful stop period. These are configurable deployment limits, not a workload-capacity guarantee. JVM heap is only part of memory use; FFmpeg and native allocations require headroom.
 
-A Compose-managed bridge is used without adding cross-project dependencies. Never `down` the shared `platform` project to update only this service. Use service-scoped `stop`, `rm`, `start` or `up`; never `down -v` or global prune.
+## Testing and upgrades
 
-## Isolated verification and operating migration
+Run the [reproducible checks](verification.md) against synthetic media, a separate data directory and an unused loopback port. Do not point an isolated test at production `/data`. Verify non-ASCII names, representative codecs, byte ranges, permissions, data locking and restart behavior on the target host. A healthy HTTP endpoint is not a full NAS audit.
 
-With Python 3.14 and Node 24 for repository checks:
+Before upgrading, record the current immutable image reference, environment, numeric user and actual bind sources in private operator records. Test the candidate independently, then stop and wait for the current writer before starting the replacement with the same production mounts. Retain the previous image/configuration for rollback and verify the new service before removing recovery resources. A rollback must also stop the candidate before reopening the data root with the previous image.
 
-```bash
-python3 -B scripts/verify-platform.py --image movie-kids:ubuntu26.04
-```
-
-This generates synthetic media and a disposable data root under `.codex-work/platform-release/`, with a unique QA Compose project and only a reserved loopback web port. It tests direct/converted playback, thumbnails, navigation, FFmpeg, traversal/symlink rejection, private stream tokens, read-only roots/media, exclusive data locking, graceful stop and restart. `--keep` retains that QA instance for browser inspection; its `qa-state.json` records the exact isolated Compose command for cleanup. Production data is never mounted by this verification script.
-
-Fixtures include Korean names, decomposed Hangul, spaces and Korean environment labels; their exact paths and labels must round-trip before and after restart. If production already uses 20010, select an unused reserved QA port with `--port 20011`.
-
-The production migration tool requires a passing report for the exact candidate image and Compose hash, acquires a real advisory deployment lock, preserves the old container/configuration and rolls back on failure. Read the [migration/rollback guide](platform-migration.md) before invoking it. Test actual NAS secure-directory support and outages separately; a healthy HTTP endpoint is not a full storage audit.
+Keep deployment locks and rollback details in your own operating environment. Service-scoped Compose commands avoid stopping unrelated services. Do not use `down -v` or global pruning as a routine update or recovery command, and never delete media/data directories to resolve a startup error.
 
 ## Exclusive data ownership
 
-The original Java advisory FileLock is retained. Actual Docker Desktop verification showed that advisory locks alone can be independent across bind mounts. Storage therefore also atomically creates `/data/.moviesites.owner` before starting any cache/work handling. A second instance fails startup without deleting the first owner's marker. Normal shutdown removes the marker/directory and releases the advisory lock.
+A Java advisory FileLock and an atomically created `/data/.moviesites.owner` directory protect one generated-data root from concurrent writers. A second instance fails startup without deleting the current owner's marker. Normal shutdown removes its own owner directory and releases the lock. Scaling several instances against one `/data` is unsupported.
 
-After SIGKILL, host failure or an unclean exit, the ownership directory can remain. Startup deliberately fails closed rather than guessing that a slow writer is dead. Stop **every** container/process using that data root, hold the shared deployment lock, inspect the owner evidence, and only then remove that stale directory before restarting one instance. Never clear it while a writer might still be running. Do not use a TTL to steal ownership.
+After SIGKILL, host failure or an unclean exit, ownership evidence can remain. Startup fails closed rather than guessing that a slow writer is dead. Stop every container/process using that data root, serialize recovery with your deployment lock, inspect the owner evidence, and only then remove the stale owner directory before restarting one instance. Do not delete/recreate the advisory lock file or use a TTL to steal ownership. Restoring an older image does not remove these responsibilities.
+
+## External access and PWA
+
+The application is anonymous and read-only, so reachable visitors can browse and play supported media. Configure the intended network/authentication boundary before exposing it. For installable PWA behavior, serve the library and API/media from one browser-trusted HTTPS origin; development localhost is the usual exception. `MOVIESITES_PUBLIC_URL` configures introduction metadata and does not enable TLS. A proxy must preserve Range/206 streaming and the root manifest/service-worker paths. See [PWA configuration](configuration.md#install-as-an-app-pwa).
+
+The PWA's offline screen reports a lost connection. It is not offline video, catalog or authenticated-session storage. Actual NAS behavior, browser installation and fullscreen/codec support must be tested on the target devices.

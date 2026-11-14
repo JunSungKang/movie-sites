@@ -8,7 +8,7 @@
 
 ![MovieSites 컬렉션 배치 도식](docs/assets/overview.svg)
 
-Midnight Stream 테마의 배치 도식입니다. 실제 컬렉션 표지는 사용자의 외부 미디어에서 가져옵니다. 현재 화면 문구는 한국어이며 문서는 영어와 한국어로 제공합니다.
+Midnight Stream 테마의 배치 도식입니다. 실제 컬렉션 표지는 사용자의 외부 미디어에서 가져옵니다. 화면과 문서는 영어와 한국어를 지원합니다. 기본 화면은 영어이며 `MOVIESITES_UI_LOCALE=ko`로 한국어를 선택합니다.
 
 ## 주요 기능
 
@@ -21,6 +21,7 @@ Midnight Stream 테마의 배치 도식입니다. 실제 컬렉션 표지는 사
 - 실행 가능한 JAR 또는 Docker 컨테이너 하나로 실행합니다. 화면은 정적 HTML·CSS·JavaScript입니다.
 - 서버·브라우저에서 목록과 버전별 썸네일을 캐시하고 메모리 제한·명시적 새로고침을 지원합니다.
 - 검색 노출용 소개 페이지를 제공하고 영상 목록은 검색 제외로 처리합니다.
+- 신뢰할 수 있는 HTTPS에서 지원 브라우저의 PWA 앱으로 설치합니다. 영상은 기존처럼 서버에서 재생합니다.
 - 목록 페이지와 백그라운드 처리에 제한을 둡니다. 데이터베이스·전체 트리 색인·재귀 파일 감시는 없습니다.
 
 ## 빠른 시작
@@ -34,7 +35,7 @@ git clone https://github.com/JunSungKang/movie-sites.git
 cd movie-sites
 mkdir -p movie runtime
 docker buildx bake -f docker-bake.hcl --load fallback-bases
-MOVIESITES_IMAGE=moviesites:local docker buildx bake -f docker-bake.hcl --load movie-kids
+MOVIESITES_IMAGE=moviesites:local docker buildx bake -f docker-bake.hcl --load moviesites
 docker run --rm --init --name moviesites \
   --user "$(id -u):$(id -g)" \
   -p 127.0.0.1:8080:8080 \
@@ -59,15 +60,17 @@ java -jar build/libs/moviesites.jar
 
 플랫폼 조건은 [시작하기](docs/ko/getting-started.md)에 정리했습니다. Node.js와 Python은 추가 저장소 검사에 사용하며 서비스 실행에는 필요하지 않습니다.
 
-단일 서비스 Compose(`platform` / `movie-kids-web`, 웹 20010)는 [Docker](docs/ko/docker.md)와 [전환·복구 안내](docs/ko/platform-migration.md)를 참고하세요.
+이식 가능한 단일 서비스 Compose 구성은 [Docker 안내](docs/docker.md)를 참고하세요. `compose.yaml`의 `moviesites` 서비스를 사용하며 `compose.env.example`에서 호스트 경로·사용자·포트를 설정합니다.
 
 ## 설정
 
-원본은 `MOVIESITES_MEDIA_ROOT`, 생성 데이터는 `MOVIESITES_DATA_ROOT`, 화면 테마는 `MOVIESITES_THEME`로 지정합니다. 기본 테마는 `child-toy`입니다. 예를 들어 `MOVIESITES_THEME=20s-midnight-stream`으로 설정하고 재시작하면 해당 테마를 사용합니다.
+원본은 `MOVIESITES_MEDIA_ROOT`, 생성 데이터는 `MOVIESITES_DATA_ROOT`, 화면 테마는 `MOVIESITES_THEME`로 지정합니다. 기본 테마는 `20s-midnight-stream`입니다. 예를 들어 `MOVIESITES_THEME=20s-midnight-stream`으로 설정하고 재시작하면 해당 테마를 사용합니다.
 
 `MOVIESITES_PUBLIC_URL=https://media.example.org`을 설정하면 `/about` 소개 페이지의 canonical·사이트맵 주소를 활성화합니다. 검색 노출 대상은 일반적인 사이트 소개이며 영상 목록은 기존 `/`에서 이용합니다. SEO·캐시 정책은 설정 안내에 정리했습니다.
 
 모든 환경변수·기본값·허용 범위는 [설정 안내](docs/ko/configuration.md)에 있습니다. `.env.example`은 Docker 예시이며 JAR는 `.env` 파일을 자동으로 읽지 않습니다.
+
+주제 추천은 기본으로 꺼져 있습니다(`MOVIESITES_TOPIC_PROFILE=none`). 교육 주제 추천이 필요하면 `kids-education`을 지정하세요. 영상별 직접 태그는 프로필과 무관하게 사용할 수 있으며 테마와 주제 프로필은 독립적입니다.
 
 ## 문서
 
