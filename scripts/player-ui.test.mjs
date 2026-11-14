@@ -25,7 +25,7 @@ async function app({inspect,play=()=>Promise.resolve(),entries=[],denyFullscreen
   showModal(){this.open=true;}
   close(){this.open=false;queueMicrotask(()=>this.dispatchEvent(new Event('close')));}
   pause(){this.paused=true;}
-  load(){this.ended=false;this.error=null;this.currentTime=0;}
+  load(){this.ended=false;this.error=null;this.currentTime=0;this.readyState=0;}
   async play(){await play();this.paused=false;this.readyState=4;this.dispatchEvent(new Event('playing'));}
  }
  const ids=new Map([...readFileSync('src/main/resources/static/index.html','utf8').matchAll(/id="([^"]+)"/g)].map(m=>[m[1],new Element()]));
@@ -88,6 +88,19 @@ test('autoplay denial exposes a working resume button',async()=>{
  let allowed=false;const a=await app({play:()=>allowed?Promise.resolve():Promise.reject(Object.assign(new Error(),{name:'NotAllowedError'}))});
  a.startPlayback([entry('first')]);await flush();assert.equal(a.ids.get('player-resume').hidden,false);assert.equal(a.ids.get('video-player').paused,true);
  allowed=true;a.click('player-resume');await flush();assert.equal(a.ids.get('player-resume').hidden,true);assert.equal(a.ids.get('video-player').paused,false);
+ a.closePlayer();
+});
+test('native controls consume pending automatic entry even when autoplay was denied',async()=>{
+ let allowed=false,enters=0;
+ const a=await app({play:()=>allowed?Promise.resolve():Promise.reject(Object.assign(new Error(),{name:'NotAllowedError'}))});
+ const target=a.ids.get('player-fullscreen'),video=a.ids.get('video-player');delete target.requestFullscreen;
+ video.webkitEnterFullscreen=()=>{enters++;video.webkitDisplayingFullscreen=true;};
+ video.webkitExitFullscreen=()=>{video.webkitDisplayingFullscreen=false;};
+ a.startPlayback([entry('first')]);await flush();assert.equal(video.paused,true);assert.equal(enters,0);
+ video.webkitDisplayingFullscreen=true;video.dispatchEvent(new Event('webkitbeginfullscreen'));
+ video.webkitDisplayingFullscreen=false;video.dispatchEvent(new Event('webkitendfullscreen'));
+ allowed=true;await video.play();await flush();
+ assert.equal(enters,0);assert.equal(a.ids.get('player-dialog').dataset.expanded,'true');
  a.closePlayer();
 });
 test('closing while inspection is pending aborts and prevents late response from reopening or playing',async()=>{

@@ -72,6 +72,7 @@ export class PlaybackFullscreen {
     this.document = document; this.container = container; this.video = video;
     this.changed = changed; this.enabled = false; this.nativePending = false; this.expanded = false;
     const update = () => {
+      if (this.active) this.nativePending = false;
       if (!this.enabled && this.active) this.exit();
       changed();
     };
