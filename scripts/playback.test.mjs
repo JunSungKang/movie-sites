@@ -82,6 +82,21 @@ test('prefixed fullscreen is supported and closing does not exit another element
  fullscreen.close();await settle();assert.equal(exited,1);
  f.document.webkitFullscreenElement={};fullscreen.close();assert.equal(exited,1);
 });
+test('legacy void fullscreen calls that enter after close are exited on their late notification',async()=>{
+ const f=fullscreenFixture();let exits=0;
+ f.target.webkitRequestFullscreen=()=>{};
+ delete f.document.exitFullscreen;f.document.webkitExitFullscreen=()=>{exits++;f.document.webkitFullscreenElement=null;};
+ const fullscreen=new PlaybackFullscreen(f.document,f.target,f.video);
+ fullscreen.start();await settle();fullscreen.close();f.document.webkitFullscreenElement=f.target;
+ f.document.dispatchEvent(new Event('webkitfullscreenchange'));await settle();
+ assert.equal(f.document.webkitFullscreenElement,null);assert.equal(exits,1);
+ const native=fullscreenFixture();native.video.readyState=4;native.video.webkitEnterFullscreen=()=>{};
+ native.video.webkitExitFullscreen=()=>{native.video.webkitDisplayingFullscreen=false;};
+ const nativeFullscreen=new PlaybackFullscreen(native.document,native.target,native.video);
+ nativeFullscreen.start();nativeFullscreen.close();native.video.webkitDisplayingFullscreen=true;
+ native.video.dispatchEvent(new Event('webkitbeginfullscreen'));
+ assert.equal(native.video.webkitDisplayingFullscreen,false);
+});
 test('unsupported/rejected native fullscreen is non-fatal and user exit is not undone by playing events',()=>{
  const f=fullscreenFixture(),fullscreen=new PlaybackFullscreen(f.document,f.target,f.video);
  assert.equal(fullscreen.supported,false);fullscreen.start();fullscreen.close();

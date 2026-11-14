@@ -72,6 +72,7 @@ export class PlaybackFullscreen {
     this.changed = changed; this.enabled = false; this.nativePending = false; this.expanded = false; this.wasActive = false;
     const update = () => {
       const active = this.active;
+      if (!this.enabled && active) { this.exit(); return; }
       if (this.wasActive && !active) this.expanded = false;
       this.wasActive = active; changed();
     };
