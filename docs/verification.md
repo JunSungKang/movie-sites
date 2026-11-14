@@ -74,3 +74,9 @@ Those observations apply to that baseline and environment. Gradle changes do not
 ## Limits
 
 Safari/iOS and Edge/Android device combinations, accessibility certification, prolonged load, huge-directory capacity, actual NAS stalls/disconnections and disk exhaustion were not comprehensively exercised by this migration. Native secure-directory support must be checked on the target filesystem. Container example limits are not a service-capacity guarantee. Public-host verification from the development environment is not an independent external-network measurement.
+
+## Scoped timed random playback — 2026-11-15
+
+Unit/HTTP and real app-adapter regressions cover all five time budgets, exact subtree boundaries and similarly named siblings, whole-video millisecond accounting, unique entries, source replacement, symlink rejection, scan/depth/probe/queue/deadline bounds, cached-file revalidation, explicit refresh, cancellation, late responses, navigation, recovery and unchanged saved queues. Isolated API checks exercised 15 scope/time combinations with three real H.264 fixtures: home selected all three, one category selected its direct and nested clips, and its similarly named sibling selected only its own clip. Cancellation returned 204 and subsequent lookup 410; unsupported times and traversal returned 400.
+
+Actual macOS Chrome observed fullscreen preparation, root/category-specific generated lists, sequential playback and natural final-popup closure with the saved queue retained. Mobile layout was checked at 320px; native OS fullscreen and iOS/Edge hardware are not newly claimed as verified. Large NAS blocking-I/O behavior remains limited as documented in the architecture. Original media and pending unrelated PWA work are excluded from the release artifact.
