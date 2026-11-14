@@ -178,3 +178,12 @@ test('a selected random source replaced by a different video is blocked instead 
  const a=await app({random:async(url,options,response)=>response(randomPage(url,[{...entry('changed'),duration:60,version:'selected-old-version'}]))});
  a.click('random-10');await flush();assert.equal(a.ids.get('video-player').src,'');assert.match(a.ids.get('player-state').textContent,/파일이 바뀌었/);assert.equal(a.ids.get('retry-player').hidden,true);a.closePlayer();
 });
+test('refresh remains bound to its category across navigation and is consumed only by a completed selection',async()=>{
+ const calls=[];const a=await app({random:async(url,options,response)=>{calls.push([url,options]);const path=new URL(url,'http://test').searchParams.get('path');return response(randomPage(url,[{path:path+'/clip.mp4',name:'clip.mp4',duration:60}]));}});
+ await a.loadFolder('folder',{force:true});await a.loadFolder('other');await a.startRandom(10);a.closePlayer();await flush();
+ const other=new URL(calls.find(([u,o])=>o.method!=='DELETE'&&new URL(u,'http://test').searchParams.get('path')==='other')[0],'http://test').searchParams;assert.equal(other.has('refresh'),false);
+ await a.loadFolder('folder');await a.startRandom(10);a.closePlayer();await flush();
+ const folderCalls=calls.filter(([u,o])=>o.method!=='DELETE'&&new URL(u,'http://test').searchParams.get('path')==='folder');assert.equal(new URL(folderCalls[0][0],'http://test').searchParams.get('refresh'),'true');
+ await a.startRandom(10);a.closePlayer();await flush();
+ const last=calls.filter(([u,o])=>o.method!=='DELETE'&&new URL(u,'http://test').searchParams.get('path')==='folder').at(-1);assert.equal(new URL(last[0],'http://test').searchParams.has('refresh'),false);
+});

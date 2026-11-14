@@ -7,7 +7,8 @@ const $=id=>document.getElementById(id);
 const cache=new DirectoryCache();
 const state={config:null,path:'',history:new PageHistory(),listing:null,generation:0,requests:new Map(),metadata:new Map(),queue:[],workers:0,player:null,playerTimer:null};
 const randomTimes=[10,20,30,40,50];
-let randomRequest=null,randomRetry=null,randomPlaylist=null,sessionLabel='',randomRefresh=false;
+let randomRequest=null,randomRetry=null,randomPlaylist=null,sessionLabel='';
+const randomRefreshScopes=new Set();
 let selectedVersions=new Map();
 let observer, playbackQueue;
 const playback = new PlaybackSession(showPlayer, () => { closePlayer(); toast('모든 영상의 재생이 끝났습니다.'); });
@@ -74,7 +75,7 @@ async function startRandom(minutes) {
   $('player-state').textContent='함께 볼 영상을 고르고 있어요.';$('player-position').textContent='랜덤 목록 준비 중';
   $('player-previous').disabled=true;$('player-next').disabled=true;
   if(!$('player-dialog').open)$('player-dialog').showModal();fullscreen.start();renderQueue();
-  const refresh=randomRefresh;randomRefresh=false;
+  const refresh=randomRefreshScopes.has(request.path);
   try{
     while(randomRequest===request){
       const data=await api('/api/random-playback?'+new URLSearchParams({path:request.path,minutes,...(request.query?{query:request.query}:refresh?{refresh:'true'}:{})}),{signal:request.controller.signal});
@@ -87,6 +88,7 @@ async function startRandom(minutes) {
         await waitForPreparation(request.controller.signal);continue;
       }
       if(data.state!=='ready'||!Array.isArray(data.entries)||data.entries.length>MAX_QUEUE)throw new Error('랜덤 목록을 확인하지 못했어요.');
+      randomRefreshScopes.delete(request.path);
       let millis=0;const paths=new Set();
       for(const entry of data.entries){
         if(typeof entry.path!=='string'||entry.path.length>4096||entry.path.startsWith('/')||/[\\\0]/.test(entry.path)||entry.path.split('/').some(part=>!part||part==='.'||part==='..')||request.path&&!entry.path.startsWith(request.path+'/')||paths.has(entry.path)||typeof entry.name!=='string'||!entry.name||entry.name.length>4096||!Number.isFinite(entry.duration)||entry.duration<=0)throw new Error('랜덤 목록의 영상 범위를 확인하지 못했어요.');
@@ -160,7 +162,7 @@ function navigate(path){if(path!==state.path){const url=new URL(location.href);i
 async function loadFolder(path,{force=false,keepPage=false}={}){
   if(randomRequest||randomRetry)closePlayer();
   if(path!==state.path||force){randomPlaylist=null;$('random-playlist').hidden=true;}
-  if(force)randomRefresh=true;
+  if(force){randomRefreshScopes.add(path);while(randomRefreshScopes.size>20)randomRefreshScopes.delete(randomRefreshScopes.values().next().value);}
   const generation=++state.generation;$('queue-add-page').hidden=true;state.queue=[];observer?.disconnect();state.path=path;
   for(const [key,request] of state.requests){request.controller.abort();state.requests.delete(key);}
   if(!keepPage)state.history.reset();
