@@ -1,8 +1,9 @@
+import {assetModule} from './frontend-test-support.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {t,setLocale,localeTag} from '../src/main/resources/static/js/i18n.js';
-import {durationGroups,topicLabels} from '../src/main/resources/static/js/library.js';
+const {t,setLocale,localeTag} = await assetModule('js/shared/i18n/index.js');
+const {durationGroups,topicLabels} = await assetModule('js/catalog/catalog-model.js');
 test('locale switches packaged copy, interpolates values literally and preserves operator tags',()=>{
  setLocale('en');assert.equal(localeTag(),'en-US');assert.equal(t('다시 확인'),'Try again');
  assert.equal(t`최대 ${10}분 랜덤 재생`,'Random play · up to 10 min');

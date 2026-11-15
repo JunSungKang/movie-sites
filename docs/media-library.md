@@ -27,7 +27,7 @@ Use JPEGs up to 512 KiB, with each dimension at most 1280 pixels and no more tha
 
 ## Formats and playback
 
-Common candidate extensions include MP4, MOV, MKV, WebM and AVI; the full extension set is declared in [DirectoryBrowser.java](../src/main/java/io/moviesites/DirectoryBrowser.java). An extension being listed does not guarantee a decodable container/codec combination.
+Common candidate extensions include MP4, MOV, MKV, WebM and AVI; the full extension set is declared in [MediaFiles.java](../src/main/java/xyz/gg_jskang/moviesites/support/MediaFiles.java). An extension being listed does not guarantee a decodable container/codec combination.
 
 Compatible MP4/H.264/yuv420p/AAC inputs with the supported stream arrangement use the original file. Other supported inputs are repackaged or converted to a complete H.264/AAC playback file before streaming. Conversion preserves originals and keeps the image within 1920×1080 while preserving aspect ratio. Available FFmpeg filters determine HDR-to-SDR handling. Damaged, encrypted or unsupported inputs can fail with a recoverable error.
 

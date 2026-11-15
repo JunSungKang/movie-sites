@@ -26,7 +26,7 @@ JPEG는 최대 512 KiB, 각 변 1280픽셀 이하, 전체 921600픽셀 이하여
 
 ## 형식과 재생
 
-MP4·MOV·MKV·WebM·AVI 등이 후보 확장자입니다. 전체 목록은 [DirectoryBrowser.java](../../src/main/java/io/moviesites/DirectoryBrowser.java)에 있습니다. 확장자가 표시된다고 모든 컨테이너·코덱 조합이 재생되는 것은 아닙니다.
+MP4·MOV·MKV·WebM·AVI 등이 후보 확장자입니다. 전체 목록은 [MediaFiles.java](../../src/main/java/xyz/gg_jskang/moviesites/support/MediaFiles.java)에 있습니다. 확장자가 표시된다고 모든 컨테이너·코덱 조합이 재생되는 것은 아닙니다.
 
 지원 스트림 조건에 맞는 MP4/H.264/yuv420p/AAC는 원본을 사용합니다. 다른 지원 입력은 완성된 H.264/AAC 재생 파일로 재포장 또는 변환한 뒤 전송합니다. 원본을 보존하고 비율을 유지하며 1920×1080 안으로 제한합니다. HDR→SDR 처리는 설치된 FFmpeg 필터에 따라 다릅니다. 손상·암호화·미지원 입력에는 복구 가능한 오류를 표시합니다.
 

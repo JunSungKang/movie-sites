@@ -72,7 +72,8 @@ def main():
     assert get(base, '/api/browse?' + urllib.parse.urlencode({'path': missing}), 404)['code'] == 'NOT_FOUND'
     for path in ['/', '/index.html', '/themes/preview.html', '/offline.html']:
         verify_static(base, path, 'no-store')
-    for path in ['/js/app.js', '/js/cache.js', '/js/playback.js', '/js/library.js', '/js/i18n.js', '/js/pwa.js',
+    for path in ['/js/app.js', '/js/catalog/index.js', '/js/player/index.js', '/js/queue/index.js',
+                 '/js/random-playback/index.js', '/js/shared/i18n/index.js', '/js/pwa.js',
                  '/css/app.css', '/css/pwa.css', '/themes/runtime.js', '/themes/catalog.json',
                  '/themes/' + config['theme']['directory'] + '/theme.css', '/manifest.webmanifest', '/service-worker.js']:
         verify_static(base, path, 'public, no-cache')

@@ -1,8 +1,10 @@
-import {setLocale} from '../src/main/resources/static/js/i18n.js';
+import {assetModule} from './frontend-test-support.mjs';
+const {setLocale} = await assetModule('js/shared/i18n/index.js');
 setLocale('ko');
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {durationGroup,durationGroups,topicLabels,waitForPreparation} from '../src/main/resources/static/js/library.js';
+const {durationGroup,durationGroups,topicLabels} = await assetModule('js/catalog/catalog-model.js');
+const {waitForPreparation} = await assetModule('js/shared/api/index.js');
 
 test('duration dividers use exact non-overlapping thresholds and keep unknowns separate',()=>{
   const examples=[[0,'unknown'],[null,'unknown'],[undefined,'unknown'],['300','unknown'],[NaN,'unknown'],[Infinity,'unknown'],[-1,'unknown'],[0.5,'under-five'],[299.999,'under-five'],[300,'under-ten'],[599.999,'under-ten'],[600,'under-twenty'],[1199.999,'under-twenty'],[1200,'twenty-plus'],[7200,'twenty-plus']];

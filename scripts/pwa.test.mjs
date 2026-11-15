@@ -1,10 +1,11 @@
-import {setLocale} from '../src/main/resources/static/js/i18n.js';
+import {assetModule} from './frontend-test-support.mjs';
+const {setLocale} = await assetModule('js/shared/i18n/index.js');
 setLocale('ko');
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
-import {initPwa} from '../src/main/resources/static/js/pwa.js';
+const {initInstallation:initPwa} = await assetModule('js/installation/index.js');
 
 const flush = () => new Promise(resolve => setImmediate(resolve));
 function browser({secure = true, ios = false, standalone = false, registrationFails = false} = {}) {

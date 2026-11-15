@@ -1,16 +1,14 @@
-import {t,setLocale,localeTag} from '../src/main/resources/static/js/i18n.js';
-setLocale('ko');
+import {assetModule} from './frontend-test-support.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import vm from 'node:vm';
-import {PlaybackQueue,PlaybackSession,PlaybackFullscreen,MAX_QUEUE} from '../src/main/resources/static/js/playback.js';
-import {DirectoryCache,PageHistory} from '../src/main/resources/static/js/cache.js';
-import {durationGroups,topicLabels,waitForPreparation} from '../src/main/resources/static/js/library.js';
+const {setLocale} = await assetModule('js/shared/i18n/index.js');
+const {createApplication} = await assetModule('js/app.js');
+setLocale('ko');
 const entry=name=>({path:`folder/${name}.mp4`,name:`${name}.mp4`,size:12});
-const flush=async()=>{for(let i=0;i<15;i++)await Promise.resolve();};
-// Run the actual app event wiring with a small DOM/media adapter. No duplicated player logic.
-async function app({inspect,random,initialPath='folder',locale='ko',play=()=>Promise.resolve(),entries=[],denyFullscreen=false,theme=async()=>({rootTitle:'Videos',rootCollection:'Collection'}),onBoot=()=>{}}={}) {
+const flush=async()=>{for(let i=0;i<30;i++)await Promise.resolve();};
+// Exercise the actual module graph with small DOM and browser boundaries.
+async function app({inspect,random,initialPath='folder',locale='ko',play=()=>Promise.resolve(),entries=[],visible=false,denyFullscreen=false,theme=async()=>({rootTitle:'Videos',rootCollection:'Collection'}),onBoot=()=>{}}={}) {
  setLocale(locale);
  let document;
  const fullscreenCalls={enter:0,exit:0};
@@ -37,18 +35,16 @@ async function app({inspect,random,initialPath='folder',locale='ko',play=()=>Pro
  ids.get('player-fullscreen').requestFullscreen=()=>{fullscreenCalls.enter++;if(denyFullscreen)return Promise.reject(new Error('permission denied'));document.fullscreenElement=ids.get('player-fullscreen');document.dispatchEvent(new Event('fullscreenchange'));return Promise.resolve();};
  document.exitFullscreen=()=>{fullscreenCalls.exit++;document.fullscreenElement=null;document.dispatchEvent(new Event('fullscreenchange'));return Promise.resolve();};
  const disk=new Map(),localStorage={getItem:key=>disk.get(key),setItem:(key,value)=>disk.set(key,value)};
+ const context={scrollX:0,scrollY:321,location:{href:'http://test/'+(initialPath?'?path='+encodeURIComponent(initialPath):''),reload(){}}};
  const window=Object.assign(new EventTarget(),{localStorage,scrollTo:(x,y)=>{if(typeof x==='object'){context.scrollY=x.top;}else{context.scrollX=x;context.scrollY=y;}}});
+ Object.defineProperties(window,{scrollX:{get:()=>context.scrollX},scrollY:{get:()=>context.scrollY}});
  const response=data=>({ok:true,json:async()=>data});
  const ready={state:'ready',version:'video-v1',streamToken:'original.signature'};
- const context=vm.createContext({document,window,location:{href:'http://test/'+(initialPath?'?path='+encodeURIComponent(initialPath):''),reload(){}},history:{pushState(){}},scrollX:0,scrollY:321,URL,URLSearchParams,AbortController,Event,queueMicrotask,
-  setTimeout:(fn,ms)=>{if(ms<2000)queueMicrotask(fn);return 1;},clearTimeout:()=>{},IntersectionObserver:class{observe(){}disconnect(){}},PlaybackQueue,PlaybackSession,PlaybackFullscreen,MAX_QUEUE,DirectoryCache,PageHistory,
-  t,setLocale,localeTag,durationGroups,topicLabels,waitForPreparation,applyTheme:theme,
-  fetch:async(url,options)=>url==='/api/config'?response({locale,rootId:'r',cacheTtlSeconds:120,folderLabels:{},sourceUrl:'#'}):url.startsWith('/api/browse')?response({entries,state:'ready'}):url.startsWith('/api/random-playback')&&random?random(url,options,response):inspect?inspect(url,options,response,ready):response(ready)});
- const source=readFileSync('src/main/resources/static/js/app.js','utf8').replace(/^import .*;$/gm,'');
- const boot=vm.runInContext(`(async()=>{${source}\nreturn {startPlayback,startRandom,loadFolder,closePlayer,playback,state,playbackQueue,enrich,renderVideo};})()`,context);
- onBoot({window,context});
- const exposed=await boot;
- return {...exposed,ids,context,document,fullscreenCalls,click:id=>ids.get(id).dispatchEvent(new Event('click')),end:()=>{ids.get('video-player').ended=true;ids.get('video-player').dispatchEvent(new Event('ended'));}};
+ const environment={window,document,location:context.location,history:{pushState(_state,_title,url){context.location.href=new URL(url,context.location.href).href;}},setTimeout:(fn,ms)=>{if(ms<2000)queueMicrotask(fn);return 1;},clearTimeout:()=>{},IntersectionObserver:class{constructor(callback){this.callback=callback;}observe(target){if(visible)queueMicrotask(()=>this.callback([{target,isIntersecting:true}]));}disconnect(){}},applyTheme:theme,
+  fetch:async(url,options)=>url==='/api/config'?response({locale,rootId:'r',cacheTtlSeconds:120,folderLabels:{},sourceUrl:'#'}):url.startsWith('/api/browse')?response({entries,state:'ready'}):url.startsWith('/api/random-playback')&&random?random(url,options,response):inspect?inspect(url,options,response,ready):response(ready)};
+ const boot=createApplication(environment);onBoot({window,context});const exposed=await boot;
+ const state={get player(){return exposed.player.current;},get path(){return exposed.catalog.snapshot.path;},get listing(){return exposed.catalog.snapshot.listing;},get generation(){return exposed.catalog.snapshot.generation;}};
+ return {...exposed,startPlayback:exposed.player.start,startRandom:exposed.random.start,loadFolder:exposed.catalog.load,closePlayer:exposed.player.close,playback:exposed.player.session,state,playbackQueue:exposed.queue.model,ids,context,document,fullscreenCalls,click:id=>ids.get(id).dispatchEvent(new Event('click')),end:()=>{ids.get('video-player').ended=true;ids.get('video-player').dispatchEvent(new Event('ended'));}};
 }
 test('actual player wiring advances on ended, closes final popup and preserves selection, scroll and saved queue',async()=>{
  const a=await app();a.playbackQueue.add([entry('first'),entry('second')]);a.startPlayback(a.playbackQueue.items);await flush();
@@ -123,8 +119,8 @@ test('missing file stays recoverable, next skips it, and Escape cancels pending 
 
 test('early curated thumbnail does not stop metadata polling before duration is available',async()=>{
  let requests=0;
- const a=await app({inspect:async(url,options,response)=>response({state:++requests===1?'analyzing':'ready',thumbnailState:'ready',thumbnailVersion:'selected-v1',version:'video-v1',duration:requests===1?null:3,width:requests===1?null:640,height:requests===1?null:360})});
- const row=a.renderVideo(entry('first'));await a.enrich({entry:entry('first'),row,generation:a.state.generation});
+ const a=await app({entries:[{...entry('first'),kind:'video',duration:null}],visible:true,inspect:async(url,options,response)=>response({state:++requests===1?'analyzing':'ready',thumbnailState:'ready',thumbnailVersion:'selected-v1',version:'video-v1',duration:requests===1?null:3,width:requests===1?null:640,height:requests===1?null:360})});
+ await flush();const row=a.ids.get('video-list').children.find(element=>element.className==='video-entry');
  assert.equal(requests,2);assert.equal(row._time.textContent,'0:03');assert.match(row._image.src,/v=selected-v1/);
 });
 test('actual list renders duration separators, initial duration badges and honest topic chips',async()=>{

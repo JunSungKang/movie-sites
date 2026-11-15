@@ -1,4 +1,4 @@
-import {t, setLocale, localeTag} from '../js/i18n.js';
+import {t, setLocale, localeTag} from '../js/shared/i18n/index.js?v=b21fadcdaa06a04e';
 const names = () => ({child:t('어린이 · 장난감 테마'), '10s':t('10대 · 실험과 에너지'), '20s':t('20대 · 나만의 취향'), '30s':t('30대 · 편안한 균형'), '40s':t('40대 · 정돈된 공간'), '50s':t('50대 · 여유로운 감상'), '60s':t('60대 · 크고 또렷하게')});
 const node = (tag, text, className) => {const el=document.createElement(tag);if(text)el.textContent=text;if(className)el.className=className;return el;};
 try {
