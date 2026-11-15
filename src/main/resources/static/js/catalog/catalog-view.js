@@ -41,7 +41,7 @@ export function createCatalogView(document, browser) {
       for (const [index, entry] of folders.entries()) {
         const text = label(entry.name), card = button('', () => actions.navigate(entry.path), 'folder-card'); card.setAttribute('aria-label', text + t(' 보기')); card.dataset.tone = ['mint', 'rose', 'sky', 'lilac'][index % 4];
         const tab = node('span', 'folder-tab', copy.folderTab); tab.setAttribute('aria-hidden', 'true'); const face = node('span', 'folder-face'), portal = node('span', 'folder-portal'); portal.setAttribute('aria-hidden', 'true');
-        const fallback = node('span', 'cover-fallback'); fallback.append(icon('folder')); portal.append(fallback); const image = node('img'); image.alt = ''; image.loading = 'lazy'; image.decoding = 'async'; image.addEventListener('error', () => image.remove(), {once: true}); image.src = entry.coverUrl; portal.append(image);
+        const fallback = node('span', 'cover-fallback'); fallback.append(icon('folder')); portal.append(fallback); const image = node('img'); image.alt = ''; image.loading = index === 0 ? 'eager' : 'lazy'; image.fetchPriority = index === 0 ? 'high' : 'auto'; image.decoding = 'async'; image.addEventListener('error', () => image.remove(), {once: true}); image.src = entry.coverUrl; portal.append(image);
         const textBox = node('span', 'folder-copy'), bottom = node('span', 'folder-bottom'); bottom.append(node('span', '', copy.openLabel), node('span', 'folder-arrow', '↗')); textBox.append(node('span', 'folder-name', text), bottom); face.append(portal, textBox); card.append(tab, face); $('folder-list').append(card);
       }
       $('folder-section').hidden = !folders.length; $('video-section').hidden = !groups.length; $('queue-add-page').hidden = !groups.length;

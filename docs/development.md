@@ -52,6 +52,8 @@ node --test scripts/architecture.test.mjs scripts/assets.test.mjs
 
 The updater propagates content fingerprints from dependencies through native module imports/re-exports to the localized HTML entry points, and updates the bounded offline-cache revision. `--check` reports stale references without writing. Use literal module specifiers so the dependency graph can be inspected; variable dynamic-import paths are rejected. Keep localized manifest/preview resources synchronized when changing shared settings or assets. Keep the root media directory, generated data, build output and credentials untracked. Do not change stream authorization or filesystem boundaries as incidental cleanup.
 
+The library entry pages also receive native module preload hints derived from their module scripts' static imports. There is no second dependency list to maintain; dynamic imports stay on demand. The generated hints are committed with the other asset references, so running or packaging the application still does not require Node.js.
+
 Java architecture tests inspect compiled dependencies for forbidden cross-feature access. JavaScript architecture tests check the full packaged module graph, public entries, cycles, Presenter DOM access, View network access and composition-root IO. The import extractor is checked against Node's V8 module parser; deliberate invalid examples verify the guard detects violations. These checks enforce declared structural rules, not every possible runtime behavior or business-policy mistake.
 
 Runtime smoke check against an already running test instance:
