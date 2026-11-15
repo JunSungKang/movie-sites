@@ -1,7 +1,7 @@
 import {t} from '../shared/i18n/index.js?v=b21fadcdaa06a04e';
 import {duration, title, folderName} from '../shared/ui/index.js?v=50e99f871f8b453e';
-import {waitForPreparation} from '../shared/api/index.js?v=c4556515510eebfb';
-import {RANDOM_TIMES, transitionRandom, validateRandomPage} from './random-model.js?v=96b751e7262146cd';
+import {waitForPreparation} from '../shared/api/index.js?v=d58f5843b24a8ea7';
+import {RANDOM_TIMES, transitionRandom, validateRandomPage} from './random-model.js?v=c13a8682cfb9d3b6';
 export function createRandomPresenter({view, api, browser, getPath, onPrepare, onProgress, onFailure, onPlay, onClose}) {
   let configured = false, request = null, retry = null, playlist = null, phase = 'idle', labels = new Map();
   const refreshScopes = new Set(), transition = event => { phase = transitionRandom(phase, event); };

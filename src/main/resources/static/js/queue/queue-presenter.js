@@ -1,5 +1,5 @@
 import {t} from '../shared/i18n/index.js?v=b21fadcdaa06a04e';
-import {PlaybackQueue, MAX_QUEUE} from './queue-model.js?v=015dbbec90f14654';
+import {PlaybackQueue, MAX_QUEUE} from './queue-model.js?v=9a2733637198587a';
 export function createQueuePresenter({view, storage, getSession, onPlay, onAddPage, toast}) {
   let model;
   function render() { if (!model) return; const session = getSession(); view.render({items: model.items, warning: model.warning, active: session.active, currentPath: session.currentPath}); }

@@ -25,6 +25,8 @@ Names and paths may contain non-ASCII characters. Relative paths stay beneath th
 
 Use JPEGs up to 512 KiB, with each dimension at most 1280 pixels and no more than 921600 total pixels. A 960×540 folder cover or 640×360 video image fits these limits. Keep important content visible when a theme crops a thumbnail. The actual player preserves the video's aspect ratio. Explicit images stay beside the originals, outside Git/JAR/container images, and their version is independent of the video's stream version. Use images you have permission to serve.
 
+Library cards use JPEG folder-cover previews up to 640 pixels wide without enlarging smaller images. Previews share the bounded server image cache and leave originals unchanged. Covers containing EXIF metadata retain their original bytes to preserve orientation; video thumbnails keep their existing processing path.
+
 ## Formats and playback
 
 Common candidate extensions include MP4, MOV, MKV, WebM and AVI; the full extension set is declared in [MediaFiles.java](../src/main/java/xyz/gg_jskang/moviesites/support/MediaFiles.java). An extension being listed does not guarantee a decodable container/codec combination.

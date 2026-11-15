@@ -72,4 +72,57 @@ class HttpCacheTests {
                 .andExpect(header().string("Cache-Control",org.hamcrest.Matchers.containsString("must-revalidate")));
         }
     }
+    @Test void coverVariantsHaveSeparatePayloadsAndKeepVersionedConditionalCaching() throws Exception {
+        var settings=new Settings(temp.resolve("media"),temp.resolve("data"),120,48,8,120,4,10_737_418_240L,0,"ffmpeg","ffprobe");
+        Files.createDirectories(settings.mediaRoot().resolve("Collection")); Path file=settings.mediaRoot().resolve("Collection/.folder.jpg");
+        byte[] original=TestImages.jpeg(960,540); Files.write(file,original); AtomicInteger loads=new AtomicInteger();
+        try(var storage=new TestStorage(settings)) {
+            var covers=new FolderCoverService(storage){@Override public byte[] read(String folder)throws IOException{loads.incrementAndGet();return super.read(folder);}};
+            var mvc=MockMvcBuilders.standaloneSetup(new MediaController(storage,covers,null)).addFilters(new WebConfiguration(settings).headers())
+                .setControllerAdvice(new ApiExceptionHandler()).build();
+            String version=storage.version("Collection/.folder.jpg");
+            var raw=mvc.perform(get("/api/media/folder-cover").param("path","Collection").param("v",version))
+                .andExpect(status().isOk()).andExpect(content().bytes(original)).andReturn().getResponse();
+            String previous=null;
+            for(int width:new int[]{320,640,960}) {
+                var result=mvc.perform(get("/api/media/folder-cover").param("path","Collection").param("v",version).param("w",Integer.toString(width)))
+                    .andExpect(status().isOk()).andExpect(content().contentType("image/jpeg"))
+                    .andExpect(header().string("Cache-Control","max-age=86400, private, immutable"))
+                    .andExpect(header().string("X-Robots-Tag","noindex, nofollow, noimageindex")).andReturn().getResponse();
+                var image=TestImages.decode(result.getContentAsByteArray()); assertEquals(width,image.getWidth()); assertEquals(width*9/16,image.getHeight());
+                String etag=result.getHeader("ETag"); assertNotNull(etag);
+                if(previous!=null)assertNotEquals(previous,etag); previous=etag;
+                int before=loads.get();
+                mvc.perform(get("/api/media/folder-cover").param("path","Collection").param("v",version).param("w",Integer.toString(width)).header("If-None-Match",etag))
+                    .andExpect(status().isNotModified()).andExpect(content().string(""));
+                assertEquals(before,loads.get());
+            }
+            assertEquals(4,loads.get()); assertArrayEquals(original,Files.readAllBytes(file));
+            mvc.perform(get("/api/media/folder-cover").param("path","Collection").param("v",version).header("If-None-Match",raw.getHeader("ETag")))
+                .andExpect(status().isNotModified()); assertEquals(4,loads.get());
+            Files.write(file,TestImages.jpeg(800,500)); String changed=storage.version("Collection/.folder.jpg"); assertNotEquals(version,changed);
+            mvc.perform(get("/api/media/folder-cover").param("path","Collection").param("v",changed).param("w","640"))
+                .andExpect(status().isOk()).andExpect(header().string("ETag",org.hamcrest.Matchers.not(previous)));
+            mvc.perform(get("/api/media/folder-cover").param("path","Collection").param("v","outdated").param("w","640"))
+                .andExpect(status().isNotFound()).andExpect(header().string("Cache-Control","no-store"));
+            mvc.perform(get("/api/media/folder-cover").param("path","Collection").param("w","640"))
+                .andExpect(status().isOk()).andExpect(header().string("Cache-Control",org.hamcrest.Matchers.containsString("must-revalidate")));
+        }
+    }
+    @Test void sourceChangesDuringVariantLoadCannotProduceImmutableMismatchedBytes() throws Exception {
+        var settings=new Settings(temp.resolve("media"),temp.resolve("data"),120,48,8,120,4,10_737_418_240L,0,"ffmpeg","ffprobe");
+        Files.createDirectories(settings.mediaRoot().resolve("Collection")); Path file=settings.mediaRoot().resolve("Collection/.folder.jpg");
+        Files.write(file,TestImages.jpeg(960,540));
+        try(var storage=new TestStorage(settings)) {
+            String version=storage.version("Collection/.folder.jpg");
+            var covers=new FolderCoverService(storage){@Override public byte[] read(String folder,Integer width)throws IOException {
+                byte[] result=super.read(folder,width);
+                try {Files.write(file,TestImages.jpeg(800,500));} catch(Exception failure){throw new IOException(failure);}
+                return result;
+            }};
+            var mvc=MockMvcBuilders.standaloneSetup(new MediaController(storage,covers,null)).setControllerAdvice(new ApiExceptionHandler()).build();
+            mvc.perform(get("/api/media/folder-cover").param("path","Collection").param("v",version).param("w","640"))
+                .andExpect(status().isNotFound()).andExpect(header().string("Cache-Control","no-store"));
+        }
+    }
 }

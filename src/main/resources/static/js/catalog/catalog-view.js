@@ -53,7 +53,7 @@ export function createCatalogView(document, browser) {
       $('listing-status').textContent = cached ? t('최근에 본 목록입니다. 새로고침하면 변경된 내용을 확인할 수 있습니다.') : t('짧은 영상부터 보여드려요. 길이별로 나누어 편하게 골라 보세요.');
     },
     failure(message) { notice(message, true); $('listing-status').textContent = t('목록을 확인할 수 없습니다.'); },
-    finish() { $('loading-state').hidden = true; $('video-list').setAttribute('aria-busy', 'false'); $('refresh-button').disabled = false; },
+    finish() { $('loading-state').hidden = true; $('video-list').setAttribute('aria-busy', 'false'); $('refresh-button').disabled = false; delete document.body.dataset.catalogPending; },
     present: path => Boolean(rows.get(path)?.isConnected),
     enrich(path, info) { const row = rows.get(path); if (!row) return;
       if (info.duration !== null) { row._time.textContent = duration(info.duration); row._time.hidden = !row._time.textContent; }

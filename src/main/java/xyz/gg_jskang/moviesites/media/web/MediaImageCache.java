@@ -14,11 +14,12 @@ final class MediaImageCache {
     private final ByteCache cache=new ByteCache(128,32L*1024*1024,8);
     private final MediaStore storage;private final FolderCoverService covers;private final MediaService media;
     MediaImageCache(MediaStore storage,FolderCoverService covers,MediaService media){this.storage=storage;this.covers=covers;this.media=media;}
-    ResponseEntity<Resource> cover(String input,String version) throws IOException {
+    ResponseEntity<Resource> cover(String input,String version,Integer width) throws IOException {
+        FolderCoverService.validateWidth(width);
         String path=storage.normalize(input), file=path.isEmpty()?".folder.jpg":path+"/.folder.jpg";
-        var value=cache.get("cover\0"+path+"\0"+version,120,()->{
+        var value=cache.get("cover\0"+path+"\0"+version+"\0"+width,120,()->{
             if(version!=null&&!storage.version(file).equals(version))throw new NoSuchFileException("Cover changed");
-            byte[] bytes=covers.read(path);
+            byte[] bytes=covers.read(path,width);
             if(version!=null&&!storage.version(file).equals(version))throw new NoSuchFileException("Cover changed");
             return bytes;
         });
