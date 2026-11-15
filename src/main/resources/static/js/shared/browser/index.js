@@ -6,7 +6,9 @@ export function createBrowserAdapter({window: win, document: doc, location = win
   const storage = name => { try { return win[name]; } catch { return undefined; } };
   return {
     storage: storage('localStorage'), sessionStorage: storage('sessionStorage'),
-    schedule, cancel, sleep: milliseconds => new Promise(resolve => schedule(resolve, milliseconds)),
+    schedule: (callback, milliseconds) => schedule.call(win, callback, milliseconds),
+    cancel: timer => cancel.call(win, timer),
+    sleep: milliseconds => new Promise(resolve => schedule.call(win, resolve, milliseconds)),
     createAbortController: () => new AbortController(),
     path: () => new URL(location.href).searchParams.get('path') || '',
     previewExit() { const url = new URL(location.href); url.searchParams.delete('preview-theme'); return url.pathname + url.search; },

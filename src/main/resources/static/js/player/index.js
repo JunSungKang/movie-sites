@@ -1,6 +1,6 @@
 import {createPlayerView} from './player-view.js?v=d71584ff8975fed7';
 import {createPlayerPresenter} from './player-presenter.js?v=d0e882552e8f6652';
-import {PlaybackFullscreen, createMediaElementAdapter} from '../shared/browser/index.js?v=8a118eda130ca28c';
+import {PlaybackFullscreen, createMediaElementAdapter} from '../shared/browser/index.js?v=95c908b3eff4d6a9';
 export function createPlayerFeature({document, ...options}) {
   const view = createPlayerView(document);
   let fullscreen;
