@@ -1,4 +1,4 @@
-import {sanitizeQueue} from '../shared/api/index.js?v=c4556515510eebfb';
+import {sanitizeQueue} from '../shared/api/index.js?v=d58f5843b24a8ea7';
 export class PlaybackSession {
   constructor(select, finish) { this.select = select; this.finish = finish; this.serial = 0; this.items = []; this.index = -1; }
   get active() { return this.index >= 0; }

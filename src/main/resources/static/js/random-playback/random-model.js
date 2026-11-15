@@ -1,5 +1,5 @@
 import {t} from '../shared/i18n/index.js?v=b21fadcdaa06a04e';
-import {MAX_QUEUE} from '../shared/api/index.js?v=c4556515510eebfb';
+import {MAX_QUEUE} from '../shared/api/index.js?v=d58f5843b24a8ea7';
 export const RANDOM_TIMES = [10, 20, 30, 40, 50];
 export function transitionRandom(state, event) {
   const next = {idle: {START: 'preparing'}, preparing: {START: 'preparing', COMPLETE: 'ready', FAIL: 'failed', CANCEL: 'idle'}, ready: {START: 'preparing'}, failed: {START: 'preparing', CANCEL: 'idle'}}[state]?.[event];

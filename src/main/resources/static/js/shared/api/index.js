@@ -33,6 +33,6 @@ export function createApiClient(fetcher) {
     cancelRandom: parameters => fetcher('/api/random-playback?' + new URLSearchParams(parameters), {method: 'DELETE', cache: 'no-store'}).catch(() => {}),
     streamUrl: parameters => '/api/media/stream?' + new URLSearchParams(parameters),
     thumbnailUrl: parameters => '/api/media/thumbnail?' + new URLSearchParams(parameters),
-    coverUrl: parameters => '/api/media/folder-cover?' + new URLSearchParams(parameters)
+    coverUrl: parameters => '/api/media/folder-cover?' + new URLSearchParams({w: 640, ...parameters})
   };
 }

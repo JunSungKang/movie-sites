@@ -1,6 +1,6 @@
-import {createCatalogApi} from './catalog-api.js?v=e4d8ae6f98f0afd1';
+import {createCatalogApi} from './catalog-api.js?v=e2f71a6970317ea2';
 import {createCatalogPresenter} from './catalog-presenter.js?v=45ee14dcd4ae56a6';
-import {createCatalogView} from './catalog-view.js?v=1f2629fb59bf09b8';
+import {createCatalogView} from './catalog-view.js?v=d771bf4a3951fca5';
 import {DirectoryCache, CachedCatalogApi, PageHistory} from '../shared/cache/index.js?v=a9b4c80acbd47314';
 export function createCatalogFeature({document, api, browser, ...callbacks}) {
   const cache = new DirectoryCache(), source = new CachedCatalogApi(createCatalogApi(api), cache);

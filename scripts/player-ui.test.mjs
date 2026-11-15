@@ -8,7 +8,7 @@ setLocale('ko');
 const entry=name=>({path:`folder/${name}.mp4`,name:`${name}.mp4`,size:12});
 const flush=async()=>{for(let i=0;i<30;i++)await Promise.resolve();};
 // Exercise the actual module graph with small DOM and browser boundaries.
-async function app({inspect,random,initialPath='folder',locale='ko',play=()=>Promise.resolve(),entries=[],visible=false,denyFullscreen=false,theme=async()=>({rootTitle:'Videos',rootCollection:'Collection'}),onBoot=()=>{}}={}) {
+async function app({inspect,browse,random,initialPath='folder',locale='ko',play=()=>Promise.resolve(),entries=[],visible=false,denyFullscreen=false,theme=async()=>({rootTitle:'Videos',rootCollection:'Collection'}),onBoot=()=>{}}={}) {
  setLocale(locale);
  let document;
  const fullscreenCalls={enter:0,exit:0};
@@ -29,8 +29,11 @@ async function app({inspect,random,initialPath='folder',locale='ko',play=()=>Pro
   load(){this.ended=false;this.error=null;this.currentTime=0;this.readyState=0;}
   async play(){await play();this.paused=false;this.readyState=4;this.dispatchEvent(new Event('playing'));}
  }
- const ids=new Map([...readFileSync('src/main/resources/static/index.html','utf8').matchAll(/id="([^"]+)"/g)].map(m=>[m[1],new Element()]));
- document=Object.assign(new EventTarget(),{fullscreenElement:null,activeElement:new Element('button'),getElementById:id=>ids.get(id),createElement:tag=>new Element(tag),createElementNS:(ns,tag)=>new Element(tag),querySelectorAll:()=>[]});
+ const html=readFileSync('src/main/resources/static/index'+(locale==='ko'?'.ko':'')+'.html','utf8');
+ const ids=new Map([...html.matchAll(/id="([^"]+)"/g)].map(m=>[m[1],new Element()]));
+ const body=new Element('body');
+ for(const [,key,value] of html.match(/<body\b[^>]*>/)[0].matchAll(/data-([a-z-]+)="([^"]*)"/g))body.dataset[key.replace(/-([a-z])/g,(_,letter)=>letter.toUpperCase())]=value;
+ document=Object.assign(new EventTarget(),{body,fullscreenElement:null,activeElement:new Element('button'),getElementById:id=>ids.get(id),createElement:tag=>new Element(tag),createElementNS:(ns,tag)=>new Element(tag),querySelectorAll:()=>[]});
  ids.get('player-fullscreen').append(ids.get('video-player'));ids.get('player-dialog').append(ids.get('player-fullscreen'));
  ids.get('player-fullscreen').requestFullscreen=()=>{fullscreenCalls.enter++;if(denyFullscreen)return Promise.reject(new Error('permission denied'));document.fullscreenElement=ids.get('player-fullscreen');document.dispatchEvent(new Event('fullscreenchange'));return Promise.resolve();};
  document.exitFullscreen=()=>{fullscreenCalls.exit++;document.fullscreenElement=null;document.dispatchEvent(new Event('fullscreenchange'));return Promise.resolve();};
@@ -41,8 +44,8 @@ async function app({inspect,random,initialPath='folder',locale='ko',play=()=>Pro
  const response=data=>({ok:true,json:async()=>data});
  const ready={state:'ready',version:'video-v1',streamToken:'original.signature'};
  const environment={window,document,location:context.location,history:{pushState(_state,_title,url){context.location.href=new URL(url,context.location.href).href;}},setTimeout:(fn,ms)=>{if(ms<2000)queueMicrotask(fn);return 1;},clearTimeout:()=>{},IntersectionObserver:class{constructor(callback){this.callback=callback;}observe(target){if(visible)queueMicrotask(()=>this.callback([{target,isIntersecting:true}]));}disconnect(){}},applyTheme:theme,
-  fetch:async(url,options)=>url==='/api/config'?response({locale,rootId:'r',cacheTtlSeconds:120,folderLabels:{},sourceUrl:'#'}):url.startsWith('/api/browse')?response({entries,state:'ready'}):url.startsWith('/api/random-playback')&&random?random(url,options,response):inspect?inspect(url,options,response,ready):response(ready)};
- const boot=createApplication(environment);onBoot({window,context});const exposed=await boot;
+  fetch:async(url,options)=>url==='/api/config'?response({locale,rootId:'r',cacheTtlSeconds:120,folderLabels:{},sourceUrl:'#'}):url.startsWith('/api/browse')?(browse?browse(url,options,response):response({entries,state:'ready'})):url.startsWith('/api/random-playback')&&random?random(url,options,response):inspect?inspect(url,options,response,ready):response(ready)};
+ const boot=createApplication(environment);onBoot({window,context,document,ids});const exposed=await boot;
  const state={get player(){return exposed.player.current;},get path(){return exposed.catalog.snapshot.path;},get listing(){return exposed.catalog.snapshot.listing;},get generation(){return exposed.catalog.snapshot.generation;}};
  return {...exposed,startPlayback:exposed.player.start,startRandom:exposed.random.start,loadFolder:exposed.catalog.load,closePlayer:exposed.player.close,playback:exposed.player.session,state,playbackQueue:exposed.queue.model,ids,context,document,fullscreenCalls,click:id=>ids.get(id).dispatchEvent(new Event('click')),end:()=>{ids.get('video-player').ended=true;ids.get('video-player').dispatchEvent(new Event('ended'));}};
 }
@@ -212,4 +215,28 @@ test('navigation during theme startup waits for initialization and uses the late
  await flush();boot.context.location.href='http://test/?path=changed-during-boot';boot.window.dispatchEvent(new Event('popstate'));
  completeTheme();const a=await pending;
  assert.equal(a.state.path,'changed-during-boot');assert.equal(a.state.listing.state,'ready');assert.ok(a.playbackQueue);
+});
+
+test('both localized library entries defer the queue and footer until the first listing settles',async()=>{
+ for(const locale of ['en','ko']){
+  let release,boot;const gate=new Promise(resolve=>release=resolve);
+  const pending=app({locale,browse:async(_url,_options,response)=>{await gate;return response({entries:[],state:'ready'});},onBoot:value=>boot=value});
+  await flush();assert.equal(boot.document.body.dataset.catalogPending,'true');assert.equal(boot.ids.get('loading-state').hidden,false);
+  release();const a=await pending;
+  assert.equal(Object.hasOwn(a.document.body.dataset,'catalogPending'),false);assert.equal(a.ids.get('loading-state').hidden,true);assert.equal(a.ids.get('refresh-button').disabled,false);
+ }
+});
+
+test('a cancelled initial listing cannot reveal a newer pending listing',async()=>{
+ let firstRelease,currentRelease,boot;
+ const first=new Promise(resolve=>firstRelease=resolve),current=new Promise(resolve=>currentRelease=resolve);
+ const pending=app({initialPath:'first',browse:async(url,_options,response)=>{const path=new URL(url,'http://test').searchParams.get('path');await(path==='first'?first:current);return response({entries:[],state:'ready'});},onBoot:value=>boot=value});
+ await flush();boot.context.location.href='http://test/?path=current';boot.window.dispatchEvent(new Event('popstate'));await flush();
+ firstRelease();const a=await pending;assert.equal(a.state.path,'current');assert.equal(a.document.body.dataset.catalogPending,'true');
+ currentRelease();await flush();assert.equal(Object.hasOwn(a.document.body.dataset,'catalogPending'),false);assert.equal(a.state.listing.state,'ready');
+});
+
+test('an initial listing error reveals recovery controls instead of leaving the queue deferred',async()=>{
+ const a=await app({browse:async()=>{throw new Error('Listing is unavailable');}});
+ assert.equal(Object.hasOwn(a.document.body.dataset,'catalogPending'),false);assert.equal(a.ids.get('notice').hidden,false);assert.equal(a.ids.get('notice').children[0].textContent,'Listing is unavailable');assert.equal(a.ids.get('refresh-button').disabled,false);
 });

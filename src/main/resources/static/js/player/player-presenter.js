@@ -1,5 +1,5 @@
 import {t} from '../shared/i18n/index.js?v=b21fadcdaa06a04e';
-import {PlaybackSession, transitionPlayer} from './player-model.js?v=816ad27637f18775';
+import {PlaybackSession, transitionPlayer} from './player-model.js?v=4abc6f158a8c38a7';
 export function createPlayerPresenter({view, media, fullscreen, api, browser, onChanged, onClose, onStart, onInvalidate, onRetry, toast}) {
   let current = null, timer, selection, label = '', selectedVersions = new Map(), phase = 'closed';
   const transition = event => { phase = transitionPlayer(phase, event); };

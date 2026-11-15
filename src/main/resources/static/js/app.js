@@ -1,11 +1,11 @@
 import {setLocale} from './shared/i18n/index.js?v=b21fadcdaa06a04e';
-import {createApiClient} from './shared/api/index.js?v=c4556515510eebfb';
+import {createApiClient} from './shared/api/index.js?v=d58f5843b24a8ea7';
 import {createBrowserAdapter} from './shared/browser/index.js?v=95c908b3eff4d6a9';
 import {createApplicationView} from './shared/ui/index.js?v=50e99f871f8b453e';
-import {createCatalogFeature} from './catalog/index.js?v=b2955b8f87bd55a5';
-import {createPlayerFeature} from './player/index.js?v=8c00245ef923b5ce';
-import {createQueueFeature} from './queue/index.js?v=c1a546306757d1a0';
-import {createRandomPlaybackFeature} from './random-playback/index.js?v=e823ec3abec2acb2';
+import {createCatalogFeature} from './catalog/index.js?v=1fd8a49ca05296d2';
+import {createPlayerFeature} from './player/index.js?v=b1e28a90a8451cd4';
+import {createQueueFeature} from './queue/index.js?v=ef3156c8f93b1065';
+import {createRandomPlaybackFeature} from './random-playback/index.js?v=db2ce9ac27319b5b';
 import {applyTheme} from '../themes/runtime.js?v=dc9c3c55396f09dc';
 
 export async function createApplication(environment) {

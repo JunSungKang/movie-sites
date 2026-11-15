@@ -23,6 +23,8 @@ Release notes will be grouped by published version. The source build currently u
 
 ### Changed
 
+- Stabilize the first library render through the shared catalog lifecycle while retaining loading feedback; improve child-theme secondary text contrast through its common palette.
+- Use bounded, version-aware JPEG folder-cover previews without changing original files, the default cover endpoint or orientation-sensitive images.
 - Organize Java features under `xyz.gg_jskang.moviesites` with public APIs, internal implementations and HTTP adapters; enforce dependency boundaries with architecture tests.
 - Split native ES-module features into model, presenter and DOM view responsibilities, with public feature entry points and shared browser/API adapters.
 - Propagate content fingerprints through the module import graph with `scripts/update-assets.mjs` and verify them without a frontend bundler.

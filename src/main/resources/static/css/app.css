@@ -1,4 +1,6 @@
 /* Functional styles remain independent of any presentation preset. */
+/* Preserve queue/footer space without painting them before the first listing settles. */
+body[data-catalog-pending] #queue-panel,body[data-catalog-pending] .page-footer{visibility:hidden}
 /* Duration headings span every supported grid/row layout without duplicating theme code. */
 body .duration-divider{grid-column:1/-1;flex-basis:100%;width:100%;margin:26px 0 0;padding:14px 0 10px;border-bottom:2px solid var(--line,#bfd5cd);font-size:18px;font-weight:750;line-height:1.6;color:var(--ink,#28443c)}
 body .duration-divider:first-child{margin-top:0}

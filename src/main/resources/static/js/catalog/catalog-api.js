@@ -1,5 +1,5 @@
 import {t} from '../shared/i18n/index.js?v=b21fadcdaa06a04e';
-import {waitForPreparation} from '../shared/api/index.js?v=c4556515510eebfb';
+import {waitForPreparation} from '../shared/api/index.js?v=d58f5843b24a8ea7';
 export function createCatalogApi(api) {
   return {async get(path, cursor, force, signal, preparing) {
     let query;
