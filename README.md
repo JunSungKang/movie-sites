@@ -6,9 +6,33 @@ An open-source, self-hosted video platform that turns your folders into a browsa
 
 ## Preview
 
-![MovieSites collection layout illustration](docs/assets/overview.svg)
+These are captures of the running application in English, using original generated sample media. The sample videos and covers are not bundled with the application.
 
-Layout illustration of the Midnight Stream theme. Collection covers come from your own media. The interface and documentation support English and Korean. Set `MOVIESITES_UI_LOCALE=ko` for Korean; the default is English.
+### Desktop and mobile
+
+![MovieSites desktop view in the Midnight Stream theme, showing sample video collections](docs/assets/demo/desktop.webp)
+
+<img src="docs/assets/demo/mobile.webp" width="260" alt="MovieSites mobile view in the Midnight Stream theme, showing the same sample library">
+
+The default theme is Midnight Stream (`20s-midnight-stream`). The interface and documentation support English and Korean; set `MOVIESITES_UI_LOCALE=ko` for Korean.
+
+### A quick walkthrough
+
+![MovieSites demonstration: open a collection, browse videos, play a video and use the playback queue](docs/assets/demo/walkthrough.gif)
+
+Open a collection, browse its videos, start playback and build a playback queue.
+
+### Choose a theme
+
+![Actual MovieSites views in Midnight Stream, Soft Minimal and Toy Playground themes, from left to right](docs/assets/demo/themes.webp)
+
+| Theme | Environment setting |
+|---|---|
+| Midnight Stream — default | `MOVIESITES_THEME=20s-midnight-stream` |
+| Soft Minimal — light | `MOVIESITES_THEME=20s-soft-minimal` |
+| Toy Playground — child | `MOVIESITES_THEME=child-toy` |
+
+All three views use the same application and sample library. Choose from 19 bundled themes with `MOVIESITES_THEME`; see the [theme guide](docs/themes.md).
 
 ## Features
 
