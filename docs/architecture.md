@@ -4,6 +4,50 @@
 
 MovieSites is one JDK 25/Spring Boot 4.1.2 application serving static HTML/CSS/ES modules, JSON endpoints and video streams. Gradle builds one executable JAR. The filesystem is the media source of truth; original media and writable generated data are separate external roots.
 
+## Code boundaries
+
+The Java base package is `xyz.gg_jskang.moviesites`. Code is grouped by feature rather than a single global controller/service/implementation tree:
+
+| Feature | Responsibility |
+|---|---|
+| `catalog` | Immediate-child listings, duration-sorted snapshots and continuation queries |
+| `media` | Metadata probing, image validation, thumbnails and playback preparation |
+| `playback` | Authorized prepared streams, byte ranges and stream resource lifetime |
+| `playlist` | Scoped timed-random selection and cancellation |
+| `storage` | Read-only original-media access and the exclusive generated-data workspace |
+| `metadata` | Validated sidecar tags and optional filename topic suggestions |
+| `presentation` | Theme/locale settings and public introduction/SEO responses |
+| `configuration`, `system`, `support` | Application wiring, health/config endpoints and small shared values/utilities |
+
+A feature's root package contains its supported public API and data types. Its `internal` package contains implementation details; `web` contains Spring MVC HTTP adapters. Other features depend on the public API, never implementation or controller types. Controllers translate HTTP concerns while feature services coordinate application work and storage/media adapters own external IO. This is source organization inside one Gradle application, not independently deployed services.
+
+Java subpackages are not automatically private. Internal types are kept out of the supported API, Java visibility is narrowed where the package relationship permits it, and compiled dependency tests enforce the cross-feature rules. A package name or an `Impl` suffix alone cannot provide encapsulation.
+
+The browser follows Model–View–Presenter within `js/catalog`, `js/player`, `js/queue`, `js/random-playback` and `js/installation`:
+
+| Part | Responsibility | Boundary |
+|---|---|---|
+| Model | State, validation and feature policy | Does not render DOM |
+| Presenter | Coordinates model, injected API/browser adapters and view | Does not directly access DOM globals or selectors |
+| View | Renders DOM and reports UI events | Does not fetch data or import model/presenter/API implementations |
+| `index.js` | Constructs a feature and returns its supported interface | Only entry imported by the composition roots |
+| `app.js` / PWA bootstrap | Constructs features and connects callbacks | Does not own feature IO, DOM operations or timers |
+
+Features do not import each other. `app.js` connects their public operations through callbacks. Shared API, browser, cache, UI and translation groups expose `js/shared/<group>/index.js`; callers, including themes, use those entry points. Theme assets remain independent of feature implementation files. The public-entry rule is a source dependency contract, not a restriction preventing a browser from downloading a packaged script.
+
+Architecture tests inspect compiled Java dependencies and the complete native module import graph, reject forbidden edges/cycles, and check the concrete Presenter/View/composition rules above. Deliberately invalid examples verify that the checks fail. Import locations are compared with Node's V8 module parser, so comments and string content do not masquerade as module dependencies. These tests enforce structural contracts; they do not replace behavioral, browser or resource-limit tests. See [development](development.md) for commands and asset fingerprint maintenance.
+
+The implementation uses small patterns at the boundaries that need them:
+
+| Pattern | Application |
+|---|---|
+| Facade | Feature APIs such as `CatalogService` and `MediaService` expose supported operations while their engines remain internal |
+| Adapter | `MediaStore`/`NioMediaStore` isolate safe filesystem access; `MediaTools`/`FfmpegAdapter` isolate process commands, probe JSON and processing limits |
+| Strategy | `PlaybackPlanner` selects an original/remux/transcode `PlaybackPlan`; playlist `SelectionPolicy` separates the whole-video time-budget rule from scanning |
+| Decorator | `CachingDurationReader` wraps `DurationReader` with version-aware, bounded caching of known or unavailable durations |
+
+Media and query work use enum values and validated transitions (`MediaJobState`, `QueryState`). These are explicit finite-state machines, not hierarchies of GoF State objects. They preserve the existing wire-state strings. Stream ownership uses an `AutoCloseable` lease so channel closure, cache unpinning and concurrency-slot release share one lifetime; HTTP status/range headers remain in the web adapter.
+
 ## Browsing and state
 
 Only immediate children of the requested directory are enumerated. The UI uses the duration-sorted query described below; the original streaming API remains available. There is no database, startup tree scan, global index, descendant count or recursive watcher. Default pages contain up to 48 supported entries. The original filesystem-order API examines at most 1000 filesystem entries per call; a duration query must examine the entire opened directory before its first sorted page is ready. In the original filesystem-order API, enumeration is not a sorted snapshot; an empty page can still have a continuation cursor.

@@ -1,6 +1,7 @@
+import {assetModule} from './frontend-test-support.mjs';
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {DirectoryCache,PageHistory} from '../src/main/resources/static/js/cache.js';
+const {DirectoryCache,PageHistory} = await assetModule('js/shared/cache/index.js');
 const page=name=>({entries:[{name}]});
 test('TTL expires from fetch time rather than the most recent cache hit',()=>{
  let time=0;const c=new DirectoryCache({ttlMs:120000,clock:()=>time});c.put('root\0a\0',page('a'));time=110000;assert.ok(c.get('root\0a\0'));time=120001;assert.equal(c.get('root\0a\0'),null);

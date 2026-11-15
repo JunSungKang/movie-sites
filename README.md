@@ -93,6 +93,8 @@ The [configuration reference](docs/configuration.md) is the source for defaults,
 
 Contributions to code, documentation, translations, tests and themes are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md), fork the repository, create a focused branch, run the checks and open a pull request. Contributor tooling does not require private maintainer credentials. Maintainers handle the repository-specific approval gate described in the contribution guide.
 
+Code is organized by feature, with public Java APIs and native ES-module entry points. The frontend separates models, presenters and DOM views while keeping one application and one JAR. Read the [architecture boundaries](docs/architecture.md#code-boundaries) before adding a dependency; the [development guide](docs/development.md) covers structure checks and asset fingerprint updates.
+
 ## Support and security
 
 Use [GitHub Issues](https://github.com/JunSungKang/movie-sites/issues) for reproducible bugs and feature requests. Follow [SECURITY.md](SECURITY.md) for sensitive reports and the [Code of Conduct](CODE_OF_CONDUCT.md) when participating.

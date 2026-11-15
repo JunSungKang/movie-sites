@@ -1,33 +1,23 @@
 #!/bin/sh
 set -eu
 cd "$(dirname "$0")/.."
-node --check src/main/resources/static/js/app.js
-node --check src/main/resources/static/js/cache.js
-node --check src/main/resources/static/js/playback.js
-node --check src/main/resources/static/js/library.js
-node --check src/main/resources/static/js/i18n.js
-node --check src/main/resources/static/js/pwa.js
-node --check src/main/resources/static/service-worker.js
-node --check src/main/resources/static/themes/runtime.js
-node --check src/main/resources/static/themes/preview.js
+node scripts/update-assets.mjs --check
 node scripts/validate-themes.mjs
-node --test scripts/cache.test.mjs scripts/playback.test.mjs scripts/player-ui.test.mjs scripts/library.test.mjs scripts/pwa.test.mjs scripts/i18n.test.mjs
+node --test scripts/*.test.mjs
 python3 -B - <<'PY'
 from pathlib import Path
 import subprocess, zipfile, hashlib, re
 resources=Path('src/main/resources')
 assets=resources/'static'
-java=Path('src/main/java/io/moviesites/DirectoryBrowser.java').read_text()
-formats=set(re.findall(r'"([^"]+)"', re.search(r'EXTENSIONS=Set.of\(([^)]+)\)',java)[1]))
+for script in assets.rglob('*.js'):
+ subprocess.run(['node', '--check', str(script)], check=True)
+java=Path('src/main/java/xyz/gg_jskang/moviesites/support/MediaFiles.java').read_text()
+formats=set(re.findall(r'"([^"]+)"', re.search(r'EXTENSIONS\s*=\s*Set.of\(([^)]+)\)',java)[1]))
 build=Path('build.gradle.kts').read_text()
 packaging_formats=set(re.findall(r'"([^"]+)"', re.search(r'val externalMediaExtensions = setOf\(([^)]+)\)',build)[1]))
 assert formats == packaging_formats, 'Keep video resource exclusions aligned with supported extensions'
 html=(assets/'index.html').read_text()
 assert {x for x in re.findall(r'(?:src|href)="([^"]+)"', html)} == {x for x in re.findall(r'(?:src|href)="([^"]+)"', (assets/'index.ko.html').read_text())}, 'Keep localized assets synchronized'
-app=(assets/'js/app.js').read_text()
-for name,content in [('js/app.js',html),('css/app.css',html),('js/pwa.js',html),('css/pwa.css',html),('js/cache.js',app),('themes/runtime.js',app),('js/playback.js',app),('js/library.js',app)]:
- expected=hashlib.sha256((assets/name).read_bytes()).hexdigest()[:16]
- assert name.split('/')[-1]+'?v='+expected in content, 'Update static content version: '+name
 offline_version=hashlib.sha256(b''.join((assets/name).read_bytes() for name in ['offline.html','pwa/offline.css','pwa/icon-192.png'])).hexdigest()[:16]
 assert "PREFIX + '"+offline_version+"'" in (assets/'service-worker.js').read_text(), 'Update the offline cache revision'
 files=subprocess.check_output(['git','ls-files','-z']).decode().split('\0')
@@ -37,6 +27,8 @@ jar=Path('build/libs/moviesites.jar')
 assert jar.is_file(), 'Build the application before checking the package'
 with zipfile.ZipFile(jar) as z:
  names=z.namelist()
+ assert 'BOOT-INF/classes/xyz/gg_jskang/moviesites/MovieSitesApplication.class' in names
+ assert not any(n.startswith('BOOT-INF/classes/io/moviesites/') for n in names), 'Obsolete Java namespace in JAR'
  assert 'BOOT-INF/classes/static/index.html' in names
  for asset in resources.rglob('*'):
   if asset.is_file() and asset.suffix.lower().lstrip('.') not in formats:

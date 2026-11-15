@@ -5,7 +5,7 @@ plugins {
     id("org.springframework.boot") version "4.1.2"
 }
 
-group = "io.moviesites"
+group = "xyz.gg_jskang.moviesites"
 version = "1.0.0"
 description = "A self-hosted folder-based video platform"
 
@@ -24,6 +24,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-webmvc")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testImplementation("com.tngtech.archunit:archunit:1.5.1")
 }
 
 tasks.withType<JavaCompile>().configureEach {

@@ -23,6 +23,9 @@ Release notes will be grouped by published version. The source build currently u
 
 ### Changed
 
+- Organize Java features under `xyz.gg_jskang.moviesites` with public APIs, internal implementations and HTTP adapters; enforce dependency boundaries with architecture tests.
+- Split native ES-module features into model, presenter and DOM view responsibilities, with public feature entry points and shared browser/API adapters.
+- Propagate content fingerprints through the module import graph with `scripts/update-assets.mjs` and verify them without a frontend bundler.
 - Remove unused state/styles/imports and align translated theme metadata, PWA colors, resource packaging and HTTP cache checks with current behavior.
 - Use the neutral Midnight Stream theme by default and portable `compose.yaml` / `moviesites` Bake targets with configurable host identity and port.
 - Publish bilingual installation, testing and maintainer guidance.

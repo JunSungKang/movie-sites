@@ -1,8 +1,11 @@
-import {setLocale} from '../src/main/resources/static/js/i18n.js';
+import {assetModule} from './frontend-test-support.mjs';
+const {setLocale} = await assetModule('js/shared/i18n/index.js');
 setLocale('ko');
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {PlaybackQueue,PlaybackSession,PlaybackFullscreen,MAX_QUEUE} from '../src/main/resources/static/js/playback.js';
+const {PlaybackQueue,MAX_QUEUE} = await assetModule('js/queue/queue-model.js');
+const {PlaybackSession} = await assetModule('js/player/player-model.js');
+const {PlaybackFullscreen} = await assetModule('js/shared/browser/index.js');
 const entry=(id)=>({path:`folder/${id}.mp4`,name:`${id}.mp4`,size:12});
 function storage(){const map=new Map();return {getItem:key=>map.get(key),setItem:(key,value)=>map.set(key,value)};}
 test('one queue survives reload, isolates media roots, deduplicates and preserves chosen order',()=>{

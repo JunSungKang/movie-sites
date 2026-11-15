@@ -4,6 +4,7 @@ MovieSites source is AGPL-3.0-only. User videos and private runtime data are not
 
 - Spring Boot and Spring Framework: Apache License 2.0. Dependency license files remain inside the packaged dependency JARs.
 - Jackson: Apache License 2.0. See the notices in the packaged libraries.
+- ArchUnit 1.5.1: Apache License 2.0; used only by architecture tests, not packaged in the application. Source and license: https://github.com/TNG/ArchUnit/tree/v1.5.1
 - Gradle Wrapper: Apache License 2.0. Source: https://github.com/gradle/gradle
 - Eclipse Temurin / OpenJDK: GPLv2 with the Classpath Exception, with component-specific notices in the runtime distribution. Source: https://github.com/adoptium/temurin-build
 - The container installs Ubuntu's FFmpeg packages, including GPL components such as libx264. Their copyright, license and source-package information is retained under /usr/share/doc in the image. No --enable-nonfree build is selected. Source: https://ffmpeg.org/download.html and https://packages.ubuntu.com/resolute/ffmpeg

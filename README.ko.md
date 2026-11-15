@@ -93,6 +93,8 @@ java -jar build/libs/moviesites.jar
 
 코드·문서·번역·테스트·테마 기여를 환영합니다. [기여 안내](CONTRIBUTING.md)에 따라 fork, 작업 브랜치, 검사, PR 순서로 진행합니다. 기여자에게 개인 Codex 도구나 유지관리자 인증정보를 요구하지 않습니다. 현재 저장소의 유지관리자 전용 승인 제약은 기여 안내에 명시했습니다.
 
+코드는 기능별로 구성하며 Java 공개 API와 기본 ES 모듈 진입점을 사용합니다. 프런트엔드는 모델·프레젠터·DOM 뷰를 분리하고 실행 애플리케이션과 JAR는 하나로 유지합니다. 의존성을 추가하기 전에 [코드 경계](docs/ko/architecture.md#코드-경계)를 확인하세요. 구조 검사와 자원 해시 갱신은 [개발 안내](docs/ko/development.md)에 정리했습니다.
+
 ## 지원과 보안
 
 재현 가능한 버그와 기능 제안은 [GitHub Issues](https://github.com/JunSungKang/movie-sites/issues)를 사용하세요. 민감한 신고는 [보안 정책](SECURITY.md), 참여 규칙은 [행동 강령](CODE_OF_CONDUCT.md)을 따릅니다.
