@@ -24,6 +24,40 @@ function versioned(specifier, hash) {
   return pathname + '?' + query + (fragment === undefined ? '' : '#' + fragment);
 }
 
+const preloadStart = '<!-- modulepreload:start -->', preloadEnd = '<!-- modulepreload:end -->';
+
+function clearModulePreloads(source) {
+  const starts = source.split(preloadStart).length - 1, ends = source.split(preloadEnd).length - 1;
+  if (!starts && !ends) return {source, enabled: false};
+  const first = source.indexOf(preloadStart), last = source.indexOf(preloadEnd);
+  if (starts !== 1 || ends !== 1 || first > last) throw new Error('Expected one paired modulepreload marker block');
+  // Stale hints may name modules that have since been removed from the graph.
+  return {source: source.slice(0, first) + preloadStart + preloadEnd + source.slice(last + preloadEnd.length), enabled: true};
+}
+
+function modulePreloadMarkup(owner, source, files) {
+  const urls = new Set();
+  const html = source.replace(/<!--[\s\S]*?-->/g, '');
+  const attribute = (attributes, name) => new RegExp('(?:^|\\s)' + name + '\\s*=\\s*(["\'])(.*?)\\1', 'i').exec(attributes)?.[2];
+  for (const script of html.matchAll(/<script\b([^>]*)>[\s\S]*?<\/script\s*>/gi)) {
+    if (attribute(script[1], 'type') !== 'module') continue;
+    const src = attribute(script[1], 'src');
+    if (!src) continue;
+    const root = target(owner, src);
+    if (root === null) continue;
+    if (!root.endsWith('.js') || !files.has(root)) throw new Error(`Missing module entry: ${owner}: ${src}`);
+    for (const entry of moduleImports(files.get(root).toString('utf8'))) {
+      if (entry.kind !== 'static') continue;
+      const dependency = target(root, entry.specifier);
+      if (dependency === null || !files.has(dependency)) throw new Error(`Missing preload module: ${root}: ${entry.specifier}`);
+      const split = entry.specifier.search(/[?#]/);
+      urls.add('/' + dependency + (split < 0 ? '' : entry.specifier.slice(split)));
+    }
+  }
+  const escape = value => value.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll("'", '&#39;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+  return preloadStart + [...urls].map(url => '\n  <link rel="modulepreload" href="' + escape(url) + '">').join('') + '\n  ' + preloadEnd;
+}
+
 /** Version dependencies before their importers so immutable URLs identify final bytes. */
 export function fingerprintAssets(input) {
   const files = new Map([...input].map(([name, bytes]) => [name, Buffer.from(bytes)]));
@@ -42,7 +76,9 @@ export function fingerprintAssets(input) {
       const dependency = target(name, specifier);
       if (!dependency?.endsWith('.js')) throw new Error(`Expected a JavaScript module: ${name}: ${specifier}`);
       visit(dependency);
-      edits.push({...item, value: versioned(specifier, digest(files.get(dependency)))});
+      // Rewritten contents must remain valid inside either JavaScript quote delimiter.
+      const value = JSON.stringify(versioned(specifier, digest(files.get(dependency)))).slice(1, -1).replaceAll("'", "\\'");
+      edits.push({...item, value});
     }
     for (const edit of edits.sort((a, b) => b.start - a.start)) source = source.slice(0, edit.start) + edit.value + source.slice(edit.end);
     files.set(name, Buffer.from(source));
@@ -52,12 +88,14 @@ export function fingerprintAssets(input) {
   for (const [name, bytes] of files) if (name.endsWith('.html')) {
     // The service worker caches only exact fallback URLs without queries.
     if (name === 'offline.html') continue;
-    const source = bytes.toString('utf8').replace(/\b(?:src|href)\s*=\s*(["'])([^"']+\.(?:js|css)(?:\?[^"'#]*)?(?:#[^"']*)?)\1/g, (match, quote, specifier) => {
+    const preload = clearModulePreloads(bytes.toString('utf8'));
+    let source = preload.source.replace(/\b(?:src|href)\s*=\s*(["'])([^"']+\.(?:js|css)(?:\?[^"'#]*)?(?:#[^"']*)?)\1/g, (match, quote, specifier) => {
       const dependency = target(name, specifier);
       if (dependency === null) return match;
       if (!files.has(dependency)) throw new Error(`Missing HTML asset: ${name}: ${specifier}`);
       return match.replace(quote + specifier + quote, quote + versioned(specifier, digest(files.get(dependency))) + quote);
     });
+    if (preload.enabled) source = source.replace(preloadStart + preloadEnd, modulePreloadMarkup(name, source, files));
     files.set(name, Buffer.from(source));
   }
   // Keep the revision tied to the exact, query-free fallback resources.

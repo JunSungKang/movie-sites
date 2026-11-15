@@ -23,6 +23,7 @@ Release notes will be grouped by published version. The source build currently u
 
 ### Changed
 
+- Prioritize the first collection cover and derive native module preload hints from the existing module roots, keeping one dependency graph for loading and content fingerprints.
 - Stabilize the first library render through the shared catalog lifecycle while retaining loading feedback; improve child-theme secondary text contrast through its common palette.
 - Use bounded, version-aware JPEG folder-cover previews without changing original files, the default cover endpoint or orientation-sensitive images.
 - Organize Java features under `xyz.gg_jskang.moviesites` with public APIs, internal implementations and HTTP adapters; enforce dependency boundaries with architecture tests.

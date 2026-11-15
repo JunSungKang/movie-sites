@@ -10,7 +10,19 @@
   <link rel="icon" href="/pwa/icon.svg" type="image/svg+xml"><link rel="stylesheet" href="/css/app.css?v=e50ad30b0374c2ef">
   <link rel="stylesheet" href="/css/pwa.css?v=43bf60f55f8c598d">
   <script type="module" src="/js/pwa.js?v=a01a79115cd8e229"></script>
-  <script type="module" src="/js/app.js?v=ccbd193c9d1372be"></script>
+  <script type="module" src="/js/app.js?v=99d5e91525988425"></script>
+  <!-- modulepreload:start -->
+  <link rel="modulepreload" href="/js/installation/index.js?v=b0a6a24844ae126a">
+  <link rel="modulepreload" href="/js/shared/i18n/index.js?v=b21fadcdaa06a04e">
+  <link rel="modulepreload" href="/js/shared/api/index.js?v=d58f5843b24a8ea7">
+  <link rel="modulepreload" href="/js/shared/browser/index.js?v=95c908b3eff4d6a9">
+  <link rel="modulepreload" href="/js/shared/ui/index.js?v=50e99f871f8b453e">
+  <link rel="modulepreload" href="/js/catalog/index.js?v=1c0463d16a30e57c">
+  <link rel="modulepreload" href="/js/player/index.js?v=b1e28a90a8451cd4">
+  <link rel="modulepreload" href="/js/queue/index.js?v=ef3156c8f93b1065">
+  <link rel="modulepreload" href="/js/random-playback/index.js?v=db2ce9ac27319b5b">
+  <link rel="modulepreload" href="/themes/runtime.js?v=dc9c3c55396f09dc">
+  <!-- modulepreload:end -->
 </head>
 <body data-catalog-pending="true">
 <section id="boot-state" class="boot-state" role="status"><p id="boot-message">영상 라이브러리를 준비하고 있습니다.</p><button id="boot-retry" type="button" hidden>다시 연결</button></section>
