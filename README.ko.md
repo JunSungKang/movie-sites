@@ -6,9 +6,33 @@
 
 ## 미리 보기
 
-![MovieSites 컬렉션 배치 도식](docs/assets/overview.svg)
+직접 만든 샘플 미디어를 연결해 실제 실행 중인 애플리케이션을 영어 화면으로 촬영했습니다. 샘플 영상과 표지는 애플리케이션에 포함되지 않습니다.
 
-Midnight Stream 테마의 배치 도식입니다. 실제 컬렉션 표지는 사용자의 외부 미디어에서 가져옵니다. 화면과 문서는 영어와 한국어를 지원합니다. 기본 화면은 영어이며 `MOVIESITES_UI_LOCALE=ko`로 한국어를 선택합니다.
+### PC와 모바일
+
+![Midnight Stream 테마로 샘플 영상 컬렉션을 보여주는 MovieSites PC 화면](docs/assets/demo/desktop.webp)
+
+<img src="docs/assets/demo/mobile.webp" width="260" alt="같은 샘플 라이브러리를 Midnight Stream 테마로 보여주는 MovieSites 모바일 화면">
+
+기본 테마는 Midnight Stream(`20s-midnight-stream`)입니다. 화면과 문서는 영어와 한국어를 지원하며, `MOVIESITES_UI_LOCALE=ko`로 한국어를 선택합니다.
+
+### 짧은 사용 시연
+
+![MovieSites 사용 시연: 컬렉션 열기, 영상 목록 탐색, 영상 재생과 재생 대기열 사용](docs/assets/demo/walkthrough.gif)
+
+컬렉션을 열고 영상을 탐색한 뒤 재생하거나, 보고 싶은 영상을 재생 대기열에 담습니다.
+
+### 테마 선택
+
+![왼쪽부터 Midnight Stream, Soft Minimal, Toy Playground 테마를 적용한 실제 MovieSites 화면](docs/assets/demo/themes.webp)
+
+| 테마 | 환경변수 설정 |
+|---|---|
+| Midnight Stream — 기본 | `MOVIESITES_THEME=20s-midnight-stream` |
+| Soft Minimal — 밝은 화면 | `MOVIESITES_THEME=20s-soft-minimal` |
+| Toy Playground — 어린이용 | `MOVIESITES_THEME=child-toy` |
+
+세 화면은 같은 애플리케이션과 샘플 라이브러리를 사용합니다. `MOVIESITES_THEME`로 기본 제공 테마 19개 중 하나를 선택할 수 있습니다. 자세한 내용은 [테마 안내](docs/ko/themes.md)를 참고하세요.
 
 ## 주요 기능
 
